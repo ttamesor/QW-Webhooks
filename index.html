@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>QuoteWerks Live Dashboard</title>
+<title>QuoteValet Accepted Dashboard</title>
 
 <style>
 body {
@@ -18,32 +18,19 @@ body {
 
 .container {
   width:90%;
-  max-width:1400px;
+  max-width:1300px;
   text-align:center;
 }
 
 .header {
-  font-size:22px;
-  margin-bottom:20px;
-  opacity:0.9;
-}
-
-.value {
-  font-size:72px;
-  font-weight:700;
-  color:#00ffcc;
-  text-shadow:0 0 20px rgba(0,255,200,0.6);
-}
-
-.company {
-  font-size:36px;
-  margin-top:10px;
+  font-size:24px;
+  margin-bottom:30px;
 }
 
 .grid {
   display:flex;
   justify-content:space-around;
-  margin-top:40px;
+  margin-bottom:40px;
   font-size:20px;
 }
 
@@ -51,21 +38,16 @@ body {
   padding:20px;
 }
 
+.big {
+  font-size:36px;
+  font-weight:700;
+  color:#00ffcc;
+}
+
 .leaderboard {
-  margin-top:40px;
-  font-size:18px;
-  opacity:0.9;
+  font-size:20px;
 }
 
-.pulse {
-  animation:pulse 1.2s ease;
-}
-
-@keyframes pulse {
-  0% { transform:scale(1); }
-  50% { transform:scale(1.05); }
-  100% { transform:scale(1); }
-}
 </style>
 </head>
 
@@ -73,27 +55,23 @@ body {
 
 <div class="container">
 
-  <div id="headline" class="header"></div>
-
-  <div id="deal"></div>
+  <div class="header">
+    QuoteValet Accepted Performance
+  </div>
 
   <div class="grid">
     <div class="card" id="today"></div>
     <div class="card" id="month"></div>
-    <div class="card" id="lifetime"></div>
+    <div class="card" id="lastMonth"></div>
   </div>
 
-  <div class="leaderboard" id="leaderboard"></div>
+  <div class="leaderboard" id="topReps"></div>
 
 </div>
 
 <script>
 
 const endpoint = "https://script.google.com/macros/s/AKfycbzzQtKk_VCtHwYjhmC1f32dNPMXDb5CWa2jE7Sg2rMwVHY_HUvmijH9SnMUQjSTTG3ubw/exec";
-
-let accepted = [];
-let index = 0;
-let lastCount = 0;
 
 function sum(arr, field) {
   return arr.reduce((s,r)=>s+(parseFloat(r[field])||0),0);
@@ -104,9 +82,9 @@ function loadData() {
     .then(res => res.json())
     .then(rows => {
 
-      accepted = rows.filter(r =>
-        r.EventFullName &&
-        r.EventFullName.toLowerCase().includes("accepted")
+      // STRICT match
+      const accepted = rows.filter(r =>
+        r.EventFullName === "QuoteValet.Accepted"
       );
 
       const now = new Date();
@@ -116,107 +94,73 @@ function loadData() {
         return d.toDateString() === now.toDateString();
       });
 
-      const month = accepted.filter(r => {
+      const thisMonth = accepted.filter(r => {
         const d = new Date(r.EventDateTime);
         return d.getMonth() === now.getMonth() &&
                d.getFullYear() === now.getFullYear();
       });
 
-      // HEADLINE
-      document.getElementById("headline").innerHTML =
-        "Accepted Today: <strong>" + today.length + "</strong>";
+      const lastMonth = accepted.filter(r => {
+        const d = new Date(r.EventDateTime);
+
+        let lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+        return d.getMonth() === lastMonthDate.getMonth() &&
+               d.getFullYear() === lastMonthDate.getFullYear();
+      });
 
       // TODAY
       document.getElementById("today").innerHTML =
-        "Today<br><strong>£" +
+        "Today<br><div class='big'>£" +
         sum(today,"SubTotal").toLocaleString("en-GB",{minimumFractionDigits:2}) +
-        "</strong><br>" +
+        "</div>" +
         today.length + " accepted";
 
-      // MONTH
+      // THIS MONTH
       document.getElementById("month").innerHTML =
-        "Month<br><strong>£" +
-        sum(month,"SubTotal").toLocaleString("en-GB",{minimumFractionDigits:2}) +
-        "</strong><br>" +
-        month.length + " accepted<br>" +
-        "Profit £" +
-        sum(month,"ProfitAmount").toLocaleString("en-GB",{minimumFractionDigits:2});
+        "This Month<br><div class='big'>£" +
+        sum(thisMonth,"SubTotal").toLocaleString("en-GB",{minimumFractionDigits:2}) +
+        "</div>" +
+        thisMonth.length + " accepted";
 
-      // LIFETIME
-      document.getElementById("lifetime").innerHTML =
-        "Lifetime<br><strong>£" +
-        sum(accepted,"SubTotal").toLocaleString("en-GB",{minimumFractionDigits:2}) +
-        "</strong><br>" +
-        accepted.length + " accepted";
+      // LAST MONTH
+      document.getElementById("lastMonth").innerHTML =
+        "Last Month<br><div class='big'>£" +
+        sum(lastMonth,"SubTotal").toLocaleString("en-GB",{minimumFractionDigits:2}) +
+        "</div>" +
+        lastMonth.length + " accepted";
 
-      buildLeaderboard(month);
-
-      if (accepted.length > lastCount) {
-        playSound();
-      }
-
-      lastCount = accepted.length;
-
-      if (accepted.length > 0) showNext();
+      buildTop3(thisMonth);
     });
 }
 
-function buildLeaderboard(monthData) {
+function buildTop3(data) {
 
   const reps = {};
 
-  monthData.forEach(r => {
+  data.forEach(r => {
     const rep = r.SalesRep || "Unknown";
-    reps[rep] = (reps[rep] || 0) + (parseFloat(r.SubTotal) || 0);
+    reps[rep] = (reps[rep] || 0) + (parseFloat(r.SubTotal)||0);
   });
 
   const sorted = Object.entries(reps)
     .sort((a,b)=>b[1]-a[1])
-    .slice(0,5);
+    .slice(0,3);
 
-  let html = "<strong>Top 5 Sales Reps This Month</strong><br><br>";
+  let html = "<strong>Top 3 Sales Reps This Month</strong><br><br>";
 
-  sorted.forEach(([rep,total], i)=>{
+  sorted.forEach(([rep,total],i)=>{
     html += (i+1) + ". " + rep +
-      " £" +
+      " — £" +
       total.toLocaleString("en-GB",{minimumFractionDigits:2}) +
       "<br>";
   });
 
-  document.getElementById("leaderboard").innerHTML = html;
-}
-
-function showNext() {
-  if (accepted.length === 0) return;
-
-  const row = accepted[index];
-
-  const formattedValue =
-    parseFloat(row.SubTotal)
-    .toLocaleString("en-GB",{minimumFractionDigits:2});
-
-  const dealDiv = document.getElementById("deal");
-  dealDiv.classList.remove("pulse");
-
-  dealDiv.innerHTML =
-    "<div class='value'>£" + formattedValue + "</div>" +
-    "<div class='company'>" + row.SoldToCompany + "</div>";
-
-  void dealDiv.offsetWidth;
-  dealDiv.classList.add("pulse");
-
-  index = (index + 1) % accepted.length;
-}
-
-function playSound() {
-  const audio = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-cash-register-purchase-707.mp3");
-  audio.volume = 0.2;
-  audio.play();
+  document.getElementById("topReps").innerHTML = html;
 }
 
 loadData();
 setInterval(loadData, 60000);
-setInterval(showNext, 5000);
 
 </script>
 
