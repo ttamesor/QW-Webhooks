@@ -1,9 +1,3 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>QuoteWerks Live Dashboard</title>
-
 <style>
 body {
   margin:0;
@@ -20,23 +14,35 @@ body {
   text-align:center;
 }
 
+/* ===== TABS ===== */
+
 .tabs {
-  margin-bottom:30px;
+  margin-bottom:40px;
 }
 
 .tabButton {
   background:#111;
   color:#00ff99;
-  border:1px solid #00ff99;
-  padding:10px 20px;
+  border:2px solid #00ff99;
+  padding:14px 30px;
   cursor:pointer;
-  margin:0 10px;
+  margin:0 15px;
+  font-size:18px;
+  border-radius:6px;
+  transition:0.2s;
+}
+
+.tabButton:hover {
+  background:#003b33;
 }
 
 .tabButton.active {
   background:#00ff99;
   color:#000;
+  box-shadow:0 0 15px #00ff99;
 }
+
+/* ===== DASHBOARD ===== */
 
 .dashboard {
   display:none;
@@ -65,168 +71,4 @@ body {
 .leaderboard {
   font-size:20px;
 }
-
 </style>
-</head>
-
-<body>
-
-<div class="container">
-
-  <div class="tabs">
-    <button class="tabButton active" onclick="showTab(event,'accepted')">Accepted</button>
-    <button class="tabButton" onclick="showTab(event,'views')">Views</button>
-  </div>
-
-  <!-- ACCEPTED DASHBOARD -->
-  <div id="accepted" class="dashboard active">
-    <div class="grid">
-      <div class="card" id="todayAccepted"></div>
-      <div class="card" id="monthAccepted"></div>
-      <div class="card" id="lastMonthAccepted"></div>
-    </div>
-    <div class="leaderboard" id="topReps"></div>
-  </div>
-
-  <!-- VIEWS DASHBOARD -->
-  <div id="views" class="dashboard">
-    <div class="grid">
-      <div class="card" id="todayViews"></div>
-      <div class="card" id="monthViews"></div>
-      <div class="card" id="lastMonthViews"></div>
-    </div>
-  </div>
-
-</div>
-
-<script>
-
-const endpoint = "https://script.google.com/macros/s/AKfycbzzQtKk_VCtHwYjhmC1f32dNPMXDb5CWa2jE7Sg2rMwVHY_HUvmijH9SnMUQjSTTG3ubw/exec";
-
-function showTab(evt,id) {
-  document.querySelectorAll('.dashboard').forEach(d => d.classList.remove('active'));
-  document.querySelectorAll('.tabButton').forEach(b => b.classList.remove('active'));
-
-  document.getElementById(id).classList.add('active');
-  evt.target.classList.add('active');
-}
-
-function sum(arr, field) {
-  return arr.reduce((s,r)=>s+(parseFloat(r[field])||0),0);
-}
-
-function filterToday(data) {
-  const now = new Date();
-  return data.filter(r=>{
-    const d = new Date(r.EventDateTime);
-    return d.toDateString() === now.toDateString();
-  });
-}
-
-function filterMonth(data, offset=0) {
-  const now = new Date();
-  const target = new Date(now.getFullYear(), now.getMonth()+offset, 1);
-
-  return data.filter(r=>{
-    const d = new Date(r.EventDateTime);
-    return d.getMonth() === target.getMonth() &&
-           d.getFullYear() === target.getFullYear();
-  });
-}
-
-function loadData() {
-
-  fetch(endpoint)
-    .then(res=>res.json())
-    .then(rows=>{
-
-      const accepted = rows.filter(r =>
-        r.EventFullName === "QuoteValet.Accepted"
-      );
-
-      const views = rows.filter(r =>
-        r.EventFullName === "QuoteValet.ViewedExternal" ||
-        r.EventFullName === "QuoteValet.ViewedExternalFirstView"
-      );
-
-      buildAccepted(accepted);
-      buildViews(views);
-
-    })
-    .catch(err=>{
-      console.error("Fetch error:",err);
-    });
-}
-
-function buildAccepted(data){
-
-  const today = filterToday(data);
-  const month = filterMonth(data,0);
-  const lastMonth = filterMonth(data,-1);
-
-  document.getElementById("todayAccepted").innerHTML =
-    "Today<br><div class='big'>£" +
-    sum(today,"SubTotal").toLocaleString("en-GB",{minimumFractionDigits:2}) +
-    "</div>" + today.length + " accepted";
-
-  document.getElementById("monthAccepted").innerHTML =
-    "This Month<br><div class='big'>£" +
-    sum(month,"SubTotal").toLocaleString("en-GB",{minimumFractionDigits:2}) +
-    "</div>" + month.length + " accepted";
-
-  document.getElementById("lastMonthAccepted").innerHTML =
-    "Last Month<br><div class='big'>£" +
-    sum(lastMonth,"SubTotal").toLocaleString("en-GB",{minimumFractionDigits:2}) +
-    "</div>" + lastMonth.length + " accepted";
-
-  buildTop3(month);
-}
-
-function buildViews(data){
-
-  const today = filterToday(data);
-  const month = filterMonth(data,0);
-  const lastMonth = filterMonth(data,-1);
-
-  document.getElementById("todayViews").innerHTML =
-    "Today<br><div class='big'>" + today.length + "</div> views";
-
-  document.getElementById("monthViews").innerHTML =
-    "This Month<br><div class='big'>" + month.length + "</div> views";
-
-  document.getElementById("lastMonthViews").innerHTML =
-    "Last Month<br><div class='big'>" + lastMonth.length + "</div> views";
-}
-
-function buildTop3(data){
-
-  const reps = {};
-
-  data.forEach(r=>{
-    const rep = r.SalesRep || "Unknown";
-    reps[rep] = (reps[rep]||0) + (parseFloat(r.SubTotal)||0);
-  });
-
-  const sorted = Object.entries(reps)
-    .sort((a,b)=>b[1]-a[1])
-    .slice(0,3);
-
-  let html = "<strong>Top 3 Sales Reps This Month</strong><br><br>";
-
-  sorted.forEach(([rep,total],i)=>{
-    html += (i+1) + ". " + rep +
-      " - £" +
-      total.toLocaleString("en-GB",{minimumFractionDigits:2}) +
-      "<br>";
-  });
-
-  document.getElementById("topReps").innerHTML = html;
-}
-
-loadData();
-setInterval(loadData,60000);
-
-</script>
-
-</body>
-</html>
