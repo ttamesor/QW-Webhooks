@@ -2,7 +2,8 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>QuoteWerks Live Sales Dashboard</title>
+<title>QuoteWerks Live Dashboard</title>
+
 <style>
 body {
   margin:0;
@@ -67,6 +68,7 @@ body {
 }
 </style>
 </head>
+
 <body>
 
 <div class="container">
@@ -93,8 +95,8 @@ let accepted = [];
 let index = 0;
 let lastCount = 0;
 
-function sum(arr) {
-  return arr.reduce((s,r)=>s+(parseFloat(r.SubTotal)||0),0);
+function sum(arr, field) {
+  return arr.reduce((s,r)=>s+(parseFloat(r[field])||0),0);
 }
 
 function loadData() {
@@ -103,44 +105,47 @@ function loadData() {
     .then(rows => {
 
       accepted = rows.filter(r =>
-        r.EventType && r.EventType.toLowerCase().includes("accepted")
+        r.EventFullName &&
+        r.EventFullName.toLowerCase().includes("accepted")
       );
 
       const now = new Date();
-      const todayStr = now.toDateString();
 
-      const today = accepted.filter(r =>
-        new Date(r.Timestamp).toDateString() === todayStr
-      );
+      const today = accepted.filter(r => {
+        const d = new Date(r.EventDateTime);
+        return d.toDateString() === now.toDateString();
+      });
 
       const month = accepted.filter(r => {
-        const d = new Date(r.Timestamp);
+        const d = new Date(r.EventDateTime);
         return d.getMonth() === now.getMonth() &&
                d.getFullYear() === now.getFullYear();
       });
 
-      // HEADLINE (Accepted Today Count)
+      // HEADLINE
       document.getElementById("headline").innerHTML =
         "Accepted Today: <strong>" + today.length + "</strong>";
 
-      // TODAY CARD
+      // TODAY
       document.getElementById("today").innerHTML =
         "Today<br><strong>£" +
-        sum(today).toLocaleString("en-GB",{minimumFractionDigits:2}) +
+        sum(today,"SubTotal").toLocaleString("en-GB",{minimumFractionDigits:2}) +
         "</strong><br>" +
         today.length + " accepted";
 
-      // MONTH CARD
+      // MONTH
       document.getElementById("month").innerHTML =
         "Month<br><strong>£" +
-        sum(month).toLocaleString("en-GB",{minimumFractionDigits:2}) +
+        sum(month,"SubTotal").toLocaleString("en-GB",{minimumFractionDigits:2}) +
         "</strong><br>" +
-        month.length + " accepted";
+        month.length + " accepted<br>" +
+        "Profit £" +
+        sum(month,"ProfitAmount").toLocaleString("en-GB",{minimumFractionDigits:2});
 
-      // LIFETIME CARD
+      // LIFETIME
       document.getElementById("lifetime").innerHTML =
         "Lifetime<br><strong>£" +
-        sum(accepted).toLocaleString("en-GB",{minimumFractionDigits:2}) +
+        sum(accepted,"SubTotal").toLocaleString("en-GB",{minimumFractionDigits:2}) +
         "</strong><br>" +
         accepted.length + " accepted";
 
@@ -172,8 +177,8 @@ function buildLeaderboard(monthData) {
   let html = "<strong>Top 5 Sales Reps This Month</strong><br><br>";
 
   sorted.forEach(([rep,total], i)=>{
-    html += (i+1) + ". " + rep + 
-      " — £" +
+    html += (i+1) + ". " + rep +
+      " £" +
       total.toLocaleString("en-GB",{minimumFractionDigits:2}) +
       "<br>";
   });
@@ -185,6 +190,7 @@ function showNext() {
   if (accepted.length === 0) return;
 
   const row = accepted[index];
+
   const formattedValue =
     parseFloat(row.SubTotal)
     .toLocaleString("en-GB",{minimumFractionDigits:2});
