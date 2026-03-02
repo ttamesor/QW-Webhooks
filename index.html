@@ -238,15 +238,25 @@ function showDrill(label, dataset) {
 
   dataset.forEach(r => {
 
-    const d = new Date(r.EventDateTime);
+let raw = r.EventDateTime;
 
-    let timeDisplay;
+let d = null;
 
-    if (label === "Today") {
-      timeDisplay = d.toLocaleTimeString();
-    } else {
-      timeDisplay = d.toLocaleString();
-    }
+if (raw) {
+  // Trim microseconds beyond 3 digits
+  raw = raw.replace(/(\.\d{3})\d+Z$/, "$1Z");
+  d = new Date(raw);
+}
+
+let timeDisplay = "";
+
+if (d && !isNaN(d)) {
+  if (label === "Today") {
+    timeDisplay = d.toLocaleTimeString("en-GB");
+  } else {
+    timeDisplay = d.toLocaleString("en-GB");
+  }
+}
 
     const row = document.createElement("div");
     row.className = "doc-row";
