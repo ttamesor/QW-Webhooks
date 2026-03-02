@@ -5,15 +5,18 @@ fetch("https://api.allorigins.win/raw?url=" + encodeURIComponent(csvUrl))
   .then(response => response.text())
   .then(csv => {
 
-    const rows = csv.trim().split("\n").slice(1).map(r => r.split(","));
+    const rows = csv.trim().split("\n").slice(1)
+      .map(r => r.split(","))
+      .filter(r => r.length >= 5);
 
-    // Filter only accepted events
-    const accepted = rows.filter(r => r[1].toLowerCase().includes("accepted"));
+    const accepted = rows.filter(r =>
+      r[1] && r[1].toLowerCase().includes("accepted")
+    );
 
     const totalCount = accepted.length;
 
     const totalValue = accepted.reduce((sum, r) => {
-      return sum + parseFloat(r[4] || 0);
+      return sum + (parseFloat(r[4]) || 0);
     }, 0);
 
     const lastFive = accepted.slice(-5);
@@ -21,14 +24,16 @@ fetch("https://api.allorigins.win/raw?url=" + encodeURIComponent(csvUrl))
     let index = 0;
 
     function showNext() {
-      if (lastFive.length === 0) {
-        document.getElementById("ticker").innerHTML = "No accepted quotes yet";
+
+      if (accepted.length === 0) {
+        document.getElementById("ticker").innerHTML =
+          "<div>No accepted quotes yet</div>";
         return;
       }
 
       const row = lastFive[index];
       const company = row[3];
-      const value = parseFloat(row[4]).toLocaleString("en-GB", {minimumFractionDigits:2});
+      const value = parseFloat(row[4] || 0).toLocaleString("en-GB", {minimumFractionDigits:2});
 
       document.getElementById("ticker").innerHTML =
         "<div style='text-align:center'>" +
@@ -42,5 +47,9 @@ fetch("https://api.allorigins.win/raw?url=" + encodeURIComponent(csvUrl))
 
     showNext();
     setInterval(showNext, 4000);
+  })
+  .catch(error => {
+    document.body.innerHTML = "Error loading data";
+    console.log(error);
   });
 </script>
