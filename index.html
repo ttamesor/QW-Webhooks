@@ -3,81 +3,120 @@
 <head>
 <meta charset="UTF-8">
 <title>QuoteWerks Live Sales</title>
-<meta http-equiv="refresh" content="15">
 <style>
 body {
   margin:0;
-  background:#111;
-  color:#00ff7f;
-  font-family:Arial, sans-serif;
+  background: radial-gradient(circle at top, #0f2027, #0b1114 70%);
+  color:#00ff99;
+  font-family: 'Segoe UI', Arial, sans-serif;
   display:flex;
   justify-content:center;
   align-items:center;
   height:100vh;
+  overflow:hidden;
 }
-#ticker {
+
+.container {
   text-align:center;
-  font-size:42px;
 }
-.small {
-  font-size:24px;
+
+.totals {
+  font-size:22px;
+  opacity:0.8;
+  margin-bottom:20px;
+}
+
+.big {
+  font-size:64px;
+  font-weight:600;
+  letter-spacing:1px;
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.fade-out {
+  opacity:0;
+  transform: translateY(10px);
+}
+
+.fade-in {
+  opacity:1;
+  transform: translateY(0px);
+}
+
+.value {
+  font-size:72px;
+  font-weight:700;
+  color:#00ffcc;
+  text-shadow:0 0 20px rgba(0,255,200,0.6);
+}
+
+.company {
+  font-size:40px;
+  margin-top:10px;
 }
 </style>
 </head>
 <body>
 
-<div id="ticker">Loading...</div>
+<div class="container">
+  <div id="totals" class="totals">Loading...</div>
+  <div id="deal" class="big"></div>
+</div>
 
 <script>
-const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS8z7ljXIvH5_gi8IiCgNy3TyHwRrphzsJKxLJxB_KlaFNNafDDYsUtiAwamqlOkqQWzME3onMtizc6/pub?output=csv";
-
-fetch("https://api.allorigins.win/raw?url=" + encodeURIComponent(csvUrl))
-  .then(response => response.text())
-  .then(csv => {
-
-    const rows = csv.trim().split("\n").slice(1)
-      .map(r => r.split(","))
-      .filter(r => r.length >= 5);
+fetch("https://script.google.com/macros/s/AKfycbzzQtKk_VCtHwYjhmC1f32dNPMXDb5CWa2jE7Sg2rMwVHY_HUvmijH9SnMUQjSTTG3ubw/exec")
+  .then(response => response.json())
+  .then(rows => {
 
     const accepted = rows.filter(r =>
-      r[1] && r[1].toLowerCase().includes("accepted")
+      r.EventType && r.EventType.toLowerCase().includes("accepted")
     );
 
     const totalCount = accepted.length;
 
     const totalValue = accepted.reduce((sum, r) => {
-      return sum + (parseFloat(r[4]) || 0);
+      return sum + (parseFloat(r.SubTotal) || 0);
     }, 0);
 
-    const lastFive = accepted.slice(-5);
+    document.getElementById("totals").innerHTML =
+      "Total Accepted: <strong>" + totalCount + "</strong> &nbsp; | &nbsp; " +
+      "Total Value: <strong>£" +
+      totalValue.toLocaleString("en-GB",{minimumFractionDigits:2}) +
+      "</strong>";
 
+    const lastFive = accepted.slice(-5);
     let index = 0;
+    const dealDiv = document.getElementById("deal");
 
     function showNext() {
 
-      if (accepted.length === 0) {
-        document.getElementById("ticker").innerHTML =
-          "No accepted quotes yet";
+      if (lastFive.length === 0) {
+        dealDiv.innerHTML = "No accepted quotes yet";
         return;
       }
 
       const row = lastFive[index];
-      const company = row[3];
-      const value = parseFloat(row[4] || 0)
-        .toLocaleString("en-GB", {minimumFractionDigits:2});
+      const formattedValue = parseFloat(row.SubTotal)
+        .toLocaleString("en-GB",{minimumFractionDigits:2});
 
-      document.getElementById("ticker").innerHTML =
-        "<div class='small'>Total Accepted: " + totalCount + "</div>" +
-        "<div class='small'>Total Value: £" + 
-        totalValue.toLocaleString("en-GB",{minimumFractionDigits:2}) +
-        "</div>" +
-        "<div style='margin-top:30px'>£" + value + " - " + company + "</div>";
+      dealDiv.classList.remove("fade-in");
+      dealDiv.classList.add("fade-out");
 
-      index = (index + 1) % lastFive.length;
+      setTimeout(() => {
+        dealDiv.innerHTML =
+          "<div class='value'>£" + formattedValue + "</div>" +
+          "<div class='company'>" + row.SoldToCompany + "</div>";
+
+        dealDiv.classList.remove("fade-out");
+        dealDiv.classList.add("fade-in");
+
+        index = (index + 1) % lastFive.length;
+
+      }, 500);
     }
 
     showNext();
-    setInterval(showNext, 4000);
+    setInterval(showNext, 5000);
   });
 </script>
 
