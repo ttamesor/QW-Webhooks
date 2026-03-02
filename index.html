@@ -24,7 +24,7 @@ body {
 .header {
   font-size:22px;
   margin-bottom:20px;
-  opacity:0.85;
+  opacity:0.9;
 }
 
 .value {
@@ -51,8 +51,9 @@ body {
 }
 
 .leaderboard {
-  margin-top:30px;
+  margin-top:40px;
   font-size:18px;
+  opacity:0.9;
 }
 
 .pulse {
@@ -70,7 +71,7 @@ body {
 
 <div class="container">
 
-  <div id="headline"></div>
+  <div id="headline" class="header"></div>
 
   <div id="deal"></div>
 
@@ -85,6 +86,7 @@ body {
 </div>
 
 <script>
+
 const endpoint = "https://script.google.com/macros/s/AKfycbzzQtKk_VCtHwYjhmC1f32dNPMXDb5CWa2jE7Sg2rMwVHY_HUvmijH9SnMUQjSTTG3ubw/exec";
 
 let accepted = [];
@@ -117,7 +119,7 @@ function loadData() {
                d.getFullYear() === now.getFullYear();
       });
 
-      // HEADLINE = total accepted TODAY
+      // HEADLINE (Accepted Today Count)
       document.getElementById("headline").innerHTML =
         "Accepted Today: <strong>" + today.length + "</strong>";
 
@@ -142,6 +144,8 @@ function loadData() {
         "</strong><br>" +
         accepted.length + " accepted";
 
+      buildLeaderboard(month);
+
       if (accepted.length > lastCount) {
         playSound();
       }
@@ -150,6 +154,31 @@ function loadData() {
 
       if (accepted.length > 0) showNext();
     });
+}
+
+function buildLeaderboard(monthData) {
+
+  const reps = {};
+
+  monthData.forEach(r => {
+    const rep = r.SalesRep || "Unknown";
+    reps[rep] = (reps[rep] || 0) + (parseFloat(r.SubTotal) || 0);
+  });
+
+  const sorted = Object.entries(reps)
+    .sort((a,b)=>b[1]-a[1])
+    .slice(0,5);
+
+  let html = "<strong>Top 5 Sales Reps This Month</strong><br><br>";
+
+  sorted.forEach(([rep,total], i)=>{
+    html += (i+1) + ". " + rep + 
+      " — £" +
+      total.toLocaleString("en-GB",{minimumFractionDigits:2}) +
+      "<br>";
+  });
+
+  document.getElementById("leaderboard").innerHTML = html;
 }
 
 function showNext() {
@@ -182,6 +211,7 @@ function playSound() {
 loadData();
 setInterval(loadData, 60000);
 setInterval(showNext, 5000);
+
 </script>
 
 </body>
