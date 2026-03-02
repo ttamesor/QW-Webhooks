@@ -1,1 +1,17 @@
+<script>
+fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vS8z7ljXIvH5_gi8IiCgNy3TyHwRrphzsJKxLJxB_KlaFNNafDDYsUtiAwamqlOkqQWzME3onMtizc6/pub?output=csv")
+  .then(response => response.text())
+  .then(csv => {
+    const rows = csv.trim().split("\n");
+    const lastRow = rows[rows.length - 1].split(",");
+    
+    const time = lastRow[0];
+    const eventType = lastRow[1];
+    const docNo = lastRow[2];
+    const company = lastRow[3];
+    const value = lastRow[4];
 
+    document.getElementById("ticker").innerHTML =
+      "£" + value + " - " + company + " - " + eventType;
+  });
+</script>
