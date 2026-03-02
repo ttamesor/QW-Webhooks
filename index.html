@@ -2,56 +2,71 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>QuoteValet Accepted Dashboard</title>
+<title>QuoteValet Live Dashboard</title>
 
 <style>
-body {
+body{
   margin:0;
   background:#0c1418;
   color:#00ff99;
-  font-family:'Segoe UI', Arial, sans-serif;
+  font-family:'Segoe UI',Arial,sans-serif;
 }
 
-.container {
+.container{
   width:90%;
   max-width:1400px;
   margin:auto;
-  padding-top:40px;
+  padding-top:30px;
   text-align:center;
 }
 
-.grid {
+.tabs{
+  margin-bottom:30px;
+}
+
+.tabButton{
+  background:#111;
+  color:#00ff99;
+  border:2px solid #00ff99;
+  padding:12px 28px;
+  margin:0 10px;
+  cursor:pointer;
+  font-size:18px;
+  border-radius:6px;
+}
+
+.tabButton.active{
+  background:#00ff99;
+  color:#000;
+}
+
+.grid{
   display:flex;
   justify-content:space-around;
   margin-bottom:40px;
 }
 
-.card {
+.card{
   padding:20px;
   cursor:pointer;
 }
 
-.card:hover {
+.card:hover{
   background:#122026;
   border-radius:6px;
 }
 
-.big {
+.big{
   font-size:36px;
   font-weight:700;
   color:#00ffcc;
 }
 
-.leaderboard {
-  font-size:20px;
-  margin-bottom:40px;
-}
-
-.hidden {
+.hidden{
   display:none;
 }
 
-.backButton {
+.backButton{
   margin-bottom:20px;
   padding:8px 20px;
   border:1px solid #00ff99;
@@ -60,28 +75,24 @@ body {
   cursor:pointer;
 }
 
-.backButton:hover {
+.backButton:hover{
   background:#003b33;
 }
 
-.listItem {
+.listItem{
   padding:12px;
   border-bottom:1px solid #222;
   cursor:pointer;
 }
 
-.listItem:hover {
+.listItem:hover{
   background:#122026;
 }
 
-.docTitle {
-  font-weight:600;
+.leaderboard{
+  margin-top:30px;
+  font-size:18px;
 }
-
-.docValue {
-  color:#00ffcc;
-}
-
 </style>
 </head>
 
@@ -89,149 +100,190 @@ body {
 
 <div class="container">
 
-  <!-- MAIN DASHBOARD -->
-  <div id="mainView">
-
-    <div class="grid">
-      <div class="card" id="todayCard"></div>
-      <div class="card" id="monthCard"></div>
-      <div class="card" id="lastMonthCard"></div>
-    </div>
-
-    <div class="leaderboard" id="topReps"></div>
-
+  <div class="tabs">
+    <button class="tabButton active" onclick="switchTab(event,'accepted')">Accepted</button>
+    <button class="tabButton" onclick="switchTab(event,'views')">Views</button>
   </div>
 
-  <!-- DRILLDOWN VIEW -->
+  <!-- MAIN DASHBOARDS -->
+  <div id="acceptedTab">
+    <div class="grid">
+      <div class="card" id="todayAccepted"></div>
+      <div class="card" id="monthAccepted"></div>
+      <div class="card" id="lastMonthAccepted"></div>
+    </div>
+    <div class="leaderboard" id="topReps"></div>
+  </div>
+
+  <div id="viewsTab" class="hidden">
+    <div class="grid">
+      <div class="card" id="todayViews"></div>
+      <div class="card" id="monthViews"></div>
+      <div class="card" id="lastMonthViews"></div>
+    </div>
+  </div>
+
+  <!-- DETAIL VIEW -->
   <div id="detailView" class="hidden">
-
     <button class="backButton" onclick="goBack()">Back</button>
-
-    <div id="detailTitle" style="font-size:24px; margin-bottom:20px;"></div>
-
+    <div id="detailTitle" style="font-size:22px;margin-bottom:20px;"></div>
     <div id="detailList"></div>
-
   </div>
 
 </div>
 
 <script>
 
-const endpoint = "https://script.google.com/macros/s/AKfycbzzQtKk_VCtHwYjhmC1f32dNPMXDb5CWa2jE7Sg2rMwVHY_HUvmijH9SnMUQjSTTG3ubw/exec";
+const endpoint="https://script.google.com/macros/s/AKfycbzzQtKk_VCtHwYjhmC1f32dNPMXDb5CWa2jE7Sg2rMwVHY_HUvmijH9SnMUQjSTTG3ubw/exec";
 
-let accepted = [];
+let accepted=[];
+let views=[];
 
-function sum(arr, field) {
+function switchTab(evt,tab){
+  document.querySelectorAll('.tabButton').forEach(b=>b.classList.remove('active'));
+  evt.target.classList.add('active');
+
+  document.getElementById('acceptedTab').classList.add('hidden');
+  document.getElementById('viewsTab').classList.add('hidden');
+
+  if(tab==='accepted') document.getElementById('acceptedTab').classList.remove('hidden');
+  if(tab==='views') document.getElementById('viewsTab').classList.remove('hidden');
+}
+
+function sum(arr,field){
   return arr.reduce((s,r)=>s+(parseFloat(r[field])||0),0);
 }
 
-function filterToday(data) {
-  const now = new Date();
+function filterToday(data){
+  const now=new Date();
   return data.filter(r=>{
-    const d = new Date(r.EventDateTime);
-    return d.toDateString() === now.toDateString();
+    const d=new Date(r.EventDateTime);
+    return d.toDateString()===now.toDateString();
   });
 }
 
-function filterMonth(data, offset=0) {
-  const now = new Date();
-  const target = new Date(now.getFullYear(), now.getMonth()+offset, 1);
+function filterMonth(data,offset=0){
+  const now=new Date();
+  const target=new Date(now.getFullYear(),now.getMonth()+offset,1);
 
   return data.filter(r=>{
-    const d = new Date(r.EventDateTime);
-    return d.getMonth() === target.getMonth() &&
-           d.getFullYear() === target.getFullYear();
+    const d=new Date(r.EventDateTime);
+    return d.getMonth()===target.getMonth() &&
+           d.getFullYear()===target.getFullYear();
   });
 }
 
-function loadData() {
-
+function loadData(){
   fetch(endpoint)
     .then(res=>res.json())
     .then(rows=>{
 
-      accepted = rows.filter(r =>
-        r.EventFullName === "QuoteValet.Accepted"
+      accepted=rows.filter(r=>r.EventFullName==="QuoteValet.Accepted");
+
+      views=rows.filter(r=>
+        r.EventFullName==="QuoteValet.ViewedExternal" ||
+        r.EventFullName==="QuoteValet.ViewedExternalFirstView"
       );
 
-      const today = filterToday(accepted);
-      const month = filterMonth(accepted,0);
-      const lastMonth = filterMonth(accepted,-1);
-
-      document.getElementById("todayCard").innerHTML =
-        "Today<br><div class='big'>£" +
-        sum(today,"SubTotal").toLocaleString("en-GB",{minimumFractionDigits:2}) +
-        "</div>" + today.length + " accepted";
-
-      document.getElementById("monthCard").innerHTML =
-        "This Month<br><div class='big'>£" +
-        sum(month,"SubTotal").toLocaleString("en-GB",{minimumFractionDigits:2}) +
-        "</div>" + month.length + " accepted";
-
-      document.getElementById("lastMonthCard").innerHTML =
-        "Last Month<br><div class='big'>£" +
-        sum(lastMonth,"SubTotal").toLocaleString("en-GB",{minimumFractionDigits:2}) +
-        "</div>" + lastMonth.length + " accepted";
-
-      document.getElementById("todayCard").onclick = ()=>showDetail("Today Accepted", today);
-      document.getElementById("monthCard").onclick = ()=>showDetail("This Month Accepted", month);
-      document.getElementById("lastMonthCard").onclick = ()=>showDetail("Last Month Accepted", lastMonth);
-
-      buildTop3(month);
-
+      buildAccepted();
+      buildViews();
     });
 }
 
-function buildTop3(data){
+function buildAccepted(){
+  const today=filterToday(accepted);
+  const month=filterMonth(accepted,0);
+  const lastMonth=filterMonth(accepted,-1);
 
-  const reps = {};
+  document.getElementById("todayAccepted").innerHTML=
+    "Today<br><div class='big'>£"+
+    sum(today,"SubTotal").toLocaleString("en-GB",{minimumFractionDigits:2})+
+    "</div>"+today.length+" accepted";
 
-  data.forEach(r=>{
-    const rep = r.SalesRep || "Unknown";
-    reps[rep] = (reps[rep]||0) + (parseFloat(r.SubTotal)||0);
-  });
+  document.getElementById("monthAccepted").innerHTML=
+    "This Month<br><div class='big'>£"+
+    sum(month,"SubTotal").toLocaleString("en-GB",{minimumFractionDigits:2})+
+    "</div>"+month.length+" accepted";
 
-  const sorted = Object.entries(reps)
-    .sort((a,b)=>b[1]-a[1])
-    .slice(0,3);
+  document.getElementById("lastMonthAccepted").innerHTML=
+    "Last Month<br><div class='big'>£"+
+    sum(lastMonth,"SubTotal").toLocaleString("en-GB",{minimumFractionDigits:2})+
+    "</div>"+lastMonth.length+" accepted";
 
-  let html = "<strong>Top 3 Sales Reps This Month</strong><br><br>";
+  document.getElementById("todayAccepted").onclick=()=>showDetail("Today Accepted",today,true);
+  document.getElementById("monthAccepted").onclick=()=>showDetail("This Month Accepted",month,true);
+  document.getElementById("lastMonthAccepted").onclick=()=>showDetail("Last Month Accepted",lastMonth,true);
 
-  sorted.forEach(([rep,total],i)=>{
-    html += (i+1) + ". " + rep +
-      " - £" +
-      total.toLocaleString("en-GB",{minimumFractionDigits:2}) +
-      "<br>";
-  });
-
-  document.getElementById("topReps").innerHTML = html;
+  buildTop3(month);
 }
 
-function showDetail(title, data){
+function buildViews(){
+  const today=filterToday(views);
+  const month=filterMonth(views,0);
+  const lastMonth=filterMonth(views,-1);
 
-  document.getElementById("mainView").classList.add("hidden");
+  document.getElementById("todayViews").innerHTML=
+    "Today<br><div class='big'>"+today.length+"</div> views";
+
+  document.getElementById("monthViews").innerHTML=
+    "This Month<br><div class='big'>"+month.length+"</div> views";
+
+  document.getElementById("lastMonthViews").innerHTML=
+    "Last Month<br><div class='big'>"+lastMonth.length+"</div> views";
+
+  document.getElementById("todayViews").onclick=()=>showDetail("Today Views",today,false);
+  document.getElementById("monthViews").onclick=()=>showDetail("This Month Views",month,false);
+  document.getElementById("lastMonthViews").onclick=()=>showDetail("Last Month Views",lastMonth,false);
+}
+
+function buildTop3(data){
+  const reps={};
+  data.forEach(r=>{
+    const rep=r.SalesRep||"Unknown";
+    reps[rep]=(reps[rep]||0)+(parseFloat(r.SubTotal)||0);
+  });
+
+  const sorted=Object.entries(reps).sort((a,b)=>b[1]-a[1]).slice(0,3);
+
+  let html="<strong>Top 3 Sales Reps This Month</strong><br><br>";
+  sorted.forEach(([rep,total],i)=>{
+    html+=(i+1)+". "+rep+" - £"+
+      total.toLocaleString("en-GB",{minimumFractionDigits:2})+"<br>";
+  });
+
+  document.getElementById("topReps").innerHTML=html;
+}
+
+function showDetail(title,data,showValue){
+  document.getElementById("acceptedTab").classList.add("hidden");
+  document.getElementById("viewsTab").classList.add("hidden");
   document.getElementById("detailView").classList.remove("hidden");
 
-  document.getElementById("detailTitle").innerText = title;
+  document.getElementById("detailTitle").innerText=title;
 
-  let html = "";
-
+  let html="";
   data.forEach(r=>{
-
-    html += `
+    html+=`
       <div class="listItem" onclick="window.open('${r.SalesRepFacingUrl}','_blank')">
-        <div class="docTitle">${r.DocNo} - ${r.SoldToCompany}</div>
-        <div class="docValue">£${parseFloat(r.SubTotal).toLocaleString("en-GB",{minimumFractionDigits:2})}</div>
+        <div><strong>${r.DocNo||""}</strong> - ${r.SoldToCompany||""}</div>
+        ${showValue?`<div>£${parseFloat(r.SubTotal).toLocaleString("en-GB",{minimumFractionDigits:2})}</div>`:""}
       </div>
     `;
   });
 
-  document.getElementById("detailList").innerHTML = html;
+  document.getElementById("detailList").innerHTML=html;
 }
 
 function goBack(){
   document.getElementById("detailView").classList.add("hidden");
-  document.getElementById("mainView").classList.remove("hidden");
+
+  const activeTab=document.querySelector('.tabButton.active').innerText;
+
+  if(activeTab==="Accepted"){
+    document.getElementById("acceptedTab").classList.remove("hidden");
+  }else{
+    document.getElementById("viewsTab").classList.remove("hidden");
+  }
 }
 
 loadData();
