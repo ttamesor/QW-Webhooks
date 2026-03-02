@@ -91,6 +91,10 @@ let accepted = [];
 let index = 0;
 let lastCount = 0;
 
+function sum(arr) {
+  return arr.reduce((s,r)=>s+(parseFloat(r.SubTotal)||0),0);
+}
+
 function loadData() {
   fetch(endpoint)
     .then(res => res.json())
@@ -113,53 +117,39 @@ function loadData() {
                d.getFullYear() === now.getFullYear();
       });
 
-      const sum = arr => arr.reduce((s,r)=>s+(parseFloat(r.SubTotal)||0),0);
+      // HEADLINE = total accepted TODAY
+      document.getElementById("headline").innerHTML =
+        "Accepted Today: <strong>" + today.length + "</strong>";
 
+      // TODAY CARD
       document.getElementById("today").innerHTML =
         "Today<br><strong>£" +
         sum(today).toLocaleString("en-GB",{minimumFractionDigits:2}) +
-        "</strong>";
+        "</strong><br>" +
+        today.length + " accepted";
 
+      // MONTH CARD
       document.getElementById("month").innerHTML =
         "Month<br><strong>£" +
         sum(month).toLocaleString("en-GB",{minimumFractionDigits:2}) +
-        "</strong>";
+        "</strong><br>" +
+        month.length + " accepted";
 
+      // LIFETIME CARD
       document.getElementById("lifetime").innerHTML =
         "Lifetime<br><strong>£" +
         sum(accepted).toLocaleString("en-GB",{minimumFractionDigits:2}) +
-        "</strong>";
-
-      document.getElementById("headline").innerHTML =
-        "Total Accepted: " + accepted.length;
-
-      buildLeaderboard();
+        "</strong><br>" +
+        accepted.length + " accepted";
 
       if (accepted.length > lastCount) {
         playSound();
       }
 
       lastCount = accepted.length;
+
+      if (accepted.length > 0) showNext();
     });
-}
-
-function buildLeaderboard() {
-  const reps = {};
-  accepted.forEach(r=>{
-    const rep = r.SalesRep || "Unknown";
-    reps[rep] = (reps[rep] || 0) + (parseFloat(r.SubTotal)||0);
-  });
-
-  const sorted = Object.entries(reps)
-    .sort((a,b)=>b[1]-a[1]);
-
-  let html = "<strong>Leaderboard</strong><br>";
-  sorted.forEach(([rep,total])=>{
-    html += rep + ": £" +
-      total.toLocaleString("en-GB",{minimumFractionDigits:2}) + "<br>";
-  });
-
-  document.getElementById("leaderboard").innerHTML = html;
 }
 
 function showNext() {
