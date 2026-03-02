@@ -1,42 +1,46 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>QuoteWerks Live Sales</title>
-  <meta http-equiv="refresh" content="10">
-  <style>
-    body {
-      margin: 0;
-      background: #111;
-      color: #00ff7f;
-      font-family: Arial, sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      font-size: 42px;
-    }
-  </style>
-</head>
-<body>
-
-<div id="ticker">Loading...</div>
-
 <script>
-fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vS8z7ljXIvH5_gi8IiCgNy3TyHwRrphzsJKxLJxB_KlaFNNafDDYsUtiAwamqlOkqQWzME3onMtizc6/pub?output=csv")
+const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS8z7ljXIvH5_gi8IiCgNy3TyHwRrphzsJKxLJxB_KlaFNNafDDYsUtiAwamqlOkqQWzME3onMtizc6/pub?output=csv";
+
+fetch("https://api.allorigins.win/raw?url=" + encodeURIComponent(csvUrl))
   .then(response => response.text())
   .then(csv => {
-    const rows = csv.trim().split("\n");
-    const lastRow = rows[rows.length - 1].split(",");
 
-    const company = lastRow[3];
-    const value = lastRow[4];
-    const eventType = lastRow[1];
+    const rows = csv.trim().split("\n").slice(1).map(r => r.split(","));
 
-    document.getElementById("ticker").innerHTML =
-      "£" + value + " - " + company + " - " + eventType;
+    // Filter only accepted events
+    const accepted = rows.filter(r => r[1].toLowerCase().includes("accepted"));
+
+    const totalCount = accepted.length;
+
+    const totalValue = accepted.reduce((sum, r) => {
+      return sum + parseFloat(r[4] || 0);
+    }, 0);
+
+    const lastFive = accepted.slice(-5);
+
+    let index = 0;
+
+    function showNext() {
+      if (lastFive.length === 0) {
+        document.getElementById("ticker").innerHTML = "No accepted quotes yet";
+        return;
+      }
+
+      const row = lastFive[index];
+      const company = row[3];
+      const value = parseFloat(row[4]).toLocaleString("en-GB", {minimumFractionDigits:2});
+
+      document.getElementById("ticker").innerHTML =
+        "<div style='text-align:center'>" +
+        "<div style='font-size:28px'>Total Accepted: " + totalCount + "</div>" +
+        "<div style='font-size:28px'>Total Value: £" + totalValue.toLocaleString("en-GB",{minimumFractionDigits:2}) + "</div>" +
+        "<div style='margin-top:30px;font-size:42px'>£" + value + " - " + company + "</div>" +
+        "</div>";
+
+      index = (index + 1) % lastFive.length;
+    }
+
+    showNext();
+    setInterval(showNext, 4000);
   });
 </script>
-
-</body>
-</html>
