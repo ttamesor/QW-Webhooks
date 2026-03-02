@@ -1,17 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>QuoteWerks Live Sales</title>
+  <meta http-equiv="refresh" content="10">
+  <style>
+    body {
+      margin: 0;
+      background: #111;
+      color: #00ff7f;
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-size: 42px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="ticker">Loading...</div>
+
 <script>
 fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vS8z7ljXIvH5_gi8IiCgNy3TyHwRrphzsJKxLJxB_KlaFNNafDDYsUtiAwamqlOkqQWzME3onMtizc6/pub?output=csv")
   .then(response => response.text())
   .then(csv => {
     const rows = csv.trim().split("\n");
     const lastRow = rows[rows.length - 1].split(",");
-    
-    const time = lastRow[0];
-    const eventType = lastRow[1];
-    const docNo = lastRow[2];
+
     const company = lastRow[3];
     const value = lastRow[4];
+    const eventType = lastRow[1];
 
     document.getElementById("ticker").innerHTML =
       "£" + value + " - " + company + " - " + eventType;
   });
 </script>
+
+</body>
+</html>
