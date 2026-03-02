@@ -7,7 +7,7 @@
 <style>
 body {
   margin: 0;
-  font-family: Segoe UI, Arial, sans-serif;
+  font-family: Arial, sans-serif;
   background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
   color: white;
   display: flex;
@@ -123,9 +123,9 @@ h1 {
   justify-content: space-between;
   align-items: center;
   background: rgba(255,255,255,0.08);
-  padding: 15px 20px;
-  border-radius: 10px;
-  margin-bottom: 10px;
+  padding: 18px 24px;
+  border-radius: 12px;
+  margin-bottom: 12px;
   cursor: pointer;
   transition: 0.2s;
   border: 1px solid rgba(255,255,255,0.08);
@@ -137,26 +137,27 @@ h1 {
   border-color: rgba(255,255,255,0.25);
 }
 
-.doc-time {
-  font-size: 0.75rem;
-  opacity: 0.75;
-  margin-top: 4px;
+.doc-meta {
+  font-size: 0.8rem;
+  opacity: 0.7;
+  margin-top: 6px;
 }
 
-.doc-label {
-  font-size: 0.7rem;
-  opacity: 0.5;
-  letter-spacing: 1px;
+.view-count {
+  font-size: 1.6rem;
+  font-weight: bold;
+  text-align: right;
+}
+
+.view-label {
+  font-size: 0.75rem;
+  opacity: 0.6;
 }
 
 .external-icon {
   font-size: 0.8rem;
   margin-left: 6px;
   opacity: 0.6;
-}
-
-.doc-row:hover .external-icon {
-  opacity: 1;
 }
 
 .back-btn {
@@ -261,19 +262,15 @@ function renderDashboard() {
 }
 
 function createCard(label, dataset) {
-
   const total = dataset.reduce((sum, r) => sum + parseFloat(r.GrandTotal || 0), 0);
-
   const card = document.createElement("div");
   card.className = "stat-card";
   card.onclick = () => showDrill(label, dataset);
-
   card.innerHTML = `
     <div class="stat-label">${label}</div>
     <div class="stat-value">£${total.toFixed(2)}</div>
     <div class="stat-count">${dataset.length} ${currentTab}</div>
   `;
-
   document.getElementById("statsContainer").appendChild(card);
 }
 
@@ -287,7 +284,7 @@ function showDrill(label, dataset) {
   container.innerHTML = `
     <div class="drill-header">
       <div class="drill-title">${label} - ${currentTab}</div>
-      <div class="drill-subtitle">Latest View shown clearly. Click to open in QuoteValet.</div>
+      <div class="drill-subtitle">Click a row to open in QuoteValet</div>
     </div>
   `;
 
@@ -304,14 +301,10 @@ function showDrill(label, dataset) {
         grouped[key] = {
           ...r,
           viewCount: 1,
-          firstView: r.EventDateTime,
           latestView: r.EventDateTime
         };
       } else {
         grouped[key].viewCount++;
-        if (new Date(r.EventDateTime) < new Date(grouped[key].firstView)) {
-          grouped[key].firstView = r.EventDateTime;
-        }
         if (new Date(r.EventDateTime) > new Date(grouped[key].latestView)) {
           grouped[key].latestView = r.EventDateTime;
         }
@@ -341,35 +334,35 @@ function showDrill(label, dataset) {
       });
     };
 
-    let timeBlock = "";
-
-    if (currentTab === "Views") {
-      timeBlock = `
-        <div class="doc-label">First View</div>
-        <div class="doc-time">${formatDate(r.firstView)}</div>
-        <div class="doc-label">Latest View</div>
-        <div class="doc-time">${formatDate(r.latestView)}</div>
-        <div class="doc-label">${r.viewCount} view${r.viewCount > 1 ? "s" : ""}</div>
-      `;
-    } else {
-      timeBlock = `
-        <div class="doc-time">${formatDate(r.EventDateTime)}</div>
-      `;
-    }
-
     const row = document.createElement("div");
     row.className = "doc-row";
 
-    row.innerHTML = `
-      <div>
-        <strong>${r.DocNo || ""}</strong> - ${r.SoldToCompany || ""}
-        ${timeBlock}
-      </div>
-      <div>
-        £${parseFloat(r.GrandTotal || 0).toFixed(2)}
-        <span class="external-icon">↗</span>
-      </div>
-    `;
+    if (currentTab === "Views") {
+
+      row.innerHTML = `
+        <div>
+          <strong>${r.DocNo || ""}</strong> - ${r.SoldToCompany || ""}
+          <div class="doc-meta">Latest View: ${formatDate(r.latestView)}</div>
+        </div>
+        <div>
+          <div class="view-count">${r.viewCount}</div>
+          <div class="view-label">views</div>
+        </div>
+      `;
+
+    } else {
+
+      row.innerHTML = `
+        <div>
+          <strong>${r.DocNo || ""}</strong> - ${r.SoldToCompany || ""}
+          <div class="doc-meta">${formatDate(r.EventDateTime)}</div>
+        </div>
+        <div>
+          £${parseFloat(r.GrandTotal || 0).toFixed(2)}
+          <span class="external-icon">↗</span>
+        </div>
+      `;
+    }
 
     row.onclick = () => {
       if (r.SalesRepFacingUrl) {
