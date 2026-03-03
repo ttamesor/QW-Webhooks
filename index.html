@@ -8,10 +8,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
 
 <style>
-
 body {
   margin: 0;
-  font-family: 'Roboto', sans-serif;
+  font-family: "Roboto", sans-serif;
   background: linear-gradient(140deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
   color: white;
   min-height: 100vh;
@@ -45,7 +44,10 @@ h1 {
   background: rgba(255,255,255,0.05);
   cursor: pointer;
   transition: 0.2s ease;
+  font-weight: 500;
 }
+
+.tab-btn:hover { background: rgba(255,255,255,0.15); }
 
 .tab-btn.active {
   background: white;
@@ -80,9 +82,6 @@ h1 {
 .stat-number { font-size: 2rem; font-weight: 600; }
 .stat-sub { font-size: 0.85rem; opacity: 0.7; margin-top: 4px; }
 
-.heat-up { color: #4caf50; }
-.heat-down { color: #ff5252; }
-
 #drillView { display:none; margin-top:30px; }
 
 .sort-select {
@@ -90,6 +89,7 @@ h1 {
   border-radius: 20px;
   border: none;
   margin-bottom: 20px;
+  font-family: "Roboto", sans-serif;
 }
 
 .doc-row {
@@ -116,16 +116,8 @@ h1 {
   cursor: pointer;
 }
 
-.activity-feed {
-  margin-top: 40px;
-}
-
-.activity-item {
-  padding: 6px 0;
-  font-size: 0.9rem;
-  opacity: 0.8;
-}
-
+.activity-feed { margin-top: 40px; }
+.activity-item { padding: 6px 0; font-size: 0.9rem; opacity: 0.85; }
 </style>
 </head>
 
@@ -153,189 +145,222 @@ h1 {
 </div>
 
 <script>
+const APPS_SCRIPT_BASE =
+  "https://script.google.com/macros/s/AKfycbzzQtKk_VCtHwYjhmC1f32dNPMXDb5CWa2jE7Sg2rMwVHY_HUvmijH9SnMUQjSTTG3ubw/exec";
 
-let allData=[];
-let currentTab="Accepted";
-let currentDataset=[];
+function makeJsonpUrl() {
+  return APPS_SCRIPT_BASE + "?callback=handleData&ts=" + new Date().getTime();
+}
 
-function handleData(data){
-  allData=data||[];
+let allData = [];
+let currentTab = "Accepted";
+let currentDataset = [];
+
+function handleData(data) {
+  allData = data || [];
   renderDashboard();
 }
 
-function switchTab(e,tab){
-  currentTab=tab;
-  document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+function switchTab(e, tab) {
+  currentTab = tab;
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
   e.target.classList.add("active");
   goBack();
   renderDashboard();
 }
 
-function renderDashboard(){
+function renderDashboard() {
 
-  document.getElementById("statsContainer").innerHTML="";
-  document.getElementById("activityFeed").innerHTML="";
+  document.getElementById("statsContainer").innerHTML = "";
+  document.getElementById("activityFeed").innerHTML = "";
 
-  const now=new Date();
-  const thisMonth=now.getMonth();
-  const thisYear=now.getFullYear();
-  const lastMonthDate=new Date(thisYear,thisMonth-1,1);
-  const lastMonth=lastMonthDate.getMonth();
-  const lastMonthYear=lastMonthDate.getFullYear();
+  const now = new Date();
+  const thisMonth = now.getMonth();
+  const thisYear = now.getFullYear();
+  const lastMonthDate = new Date(thisYear, thisMonth - 1, 1);
+  const lastMonth = lastMonthDate.getMonth();
+  const lastMonthYear = lastMonthDate.getFullYear();
 
-  const eventFilter=currentTab==="Accepted"?"QuoteValet.Accepted":"QuoteValet.ViewedExternal";
-  const filtered=allData.filter(r=>r.EventFullName===eventFilter);
+  const eventFilter = currentTab === "Accepted"
+    ? "QuoteValet.Accepted"
+    : "QuoteValet.ViewedExternal";
 
-  const thisMonthData=filtered.filter(r=>{
-    const d=new Date(r.EventDateTime);
-    return d.getMonth()===thisMonth&&d.getFullYear()===thisYear;
+  const filtered = allData.filter(r => r.EventFullName === eventFilter);
+
+  const thisMonthData = filtered.filter(r => {
+    const d = new Date(r.EventDateTime);
+    return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
   });
 
-  const lastMonthData=filtered.filter(r=>{
-    const d=new Date(r.EventDateTime);
-    return d.getMonth()===lastMonth&&d.getFullYear()===lastMonthYear;
+  const lastMonthData = filtered.filter(r => {
+    const d = new Date(r.EventDateTime);
+    return d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear;
   });
 
-  createCard("📅 This Month",thisMonthData);
-  createCard("📆 Last Month",lastMonthData);
+  createCard("📅 This Month", thisMonthData);
+  createCard("📆 Last Month", lastMonthData);
 
   createActivityFeed(filtered);
 }
 
-function createCard(title,dataset){
+function createCard(title, dataset) {
 
-  const value=dataset.reduce((s,r)=>s+parseFloat(r.GrandTotal||0),0);
-  const card=document.createElement("div");
-  card.className="stat-card clickable";
-  card.onclick=()=>showDrill(dataset);
+  const count = dataset.length;
+  const value = dataset.reduce((s, r) => s + parseFloat(r.GrandTotal || 0), 0);
 
-  card.innerHTML=`
+  const card = document.createElement("div");
+  card.className = "stat-card";
+
+  if (count > 0) {
+    card.classList.add("clickable");
+    card.onclick = () => showDrill(dataset);
+  }
+
+  card.innerHTML = `
     <div class="stat-title">${title}</div>
-    <div class="stat-number">${dataset.length} deals</div>
-    <div class="stat-sub">£${value.toFixed(2)}</div>
+    <div class="stat-number">${count} ${currentTab === "Accepted" ? "deals" : "events"}</div>
+    <div class="stat-sub">${currentTab === "Accepted" ? ("£" + value.toFixed(2)) : (count === 1 ? "Result" : "Results")}</div>
   `;
 
   document.getElementById("statsContainer").appendChild(card);
 }
 
-function showDrill(dataset){
+function showDrill(dataset) {
 
-  document.getElementById("mainView").style.display="none";
-  document.getElementById("drillView").style.display="block";
+  document.getElementById("mainView").style.display = "none";
+  document.getElementById("drillView").style.display = "block";
 
-  if(currentTab==="Views"){
-    const grouped={};
-    dataset.forEach(r=>{
-      const key=r.DocNo;
-      if(!grouped[key]){
-        grouped[key]={...r,viewCount:1,latestView:r.EventDateTime};
-      }else{
+  if (currentTab === "Views") {
+    const grouped = {};
+    dataset.forEach(r => {
+      const key = r.DocNo || "UNKNOWN";
+      if (!grouped[key]) {
+        grouped[key] = { ...r, viewCount: 1, latestView: r.EventDateTime };
+      } else {
         grouped[key].viewCount++;
-        if(new Date(r.EventDateTime)>new Date(grouped[key].latestView)){
-          grouped[key].latestView=r.EventDateTime;
+        if (new Date(r.EventDateTime) > new Date(grouped[key].latestView)) {
+          grouped[key].latestView = r.EventDateTime;
         }
       }
     });
-    currentDataset=Object.values(grouped);
-  }else{
-    currentDataset=dataset;
+    currentDataset = Object.values(grouped);
+  } else {
+    currentDataset = dataset;
   }
 
   setupSort();
   renderDrill();
 }
 
-function setupSort(){
-  const select=document.getElementById("sortSelect");
-  if(currentTab==="Views"){
-    select.innerHTML=`
-      <option value="latest">Latest View</option>
-      <option value="views">Most Views</option>
+function setupSort() {
+
+  const select = document.getElementById("sortSelect");
+
+  if (currentTab === "Views") {
+    select.innerHTML = `
+      <option value="latest">Latest View (new to old)</option>
+      <option value="views">Most Views (high to low)</option>
     `;
-  }else{
-    select.innerHTML=`
+  } else {
+    select.innerHTML = `
       <option value="recent">Most Recent</option>
       <option value="value">Highest Value</option>
     `;
   }
 }
 
-function renderDrill(){
+function renderDrill() {
 
-  const sortBy=document.getElementById("sortSelect").value;
-  let sorted=[...currentDataset];
+  const sortBy = document.getElementById("sortSelect").value;
+  let sorted = [...currentDataset];
 
-  if(currentTab==="Views"){
-    if(sortBy==="views") sorted.sort((a,b)=>b.viewCount-a.viewCount);
-    else sorted.sort((a,b)=>new Date(b.latestView)-new Date(a.latestView));
-  }else{
-    if(sortBy==="value") sorted.sort((a,b)=>parseFloat(b.GrandTotal||0)-parseFloat(a.GrandTotal||0));
-    else sorted.sort((a,b)=>new Date(b.EventDateTime)-new Date(a.EventDateTime));
+  if (currentTab === "Views") {
+    if (sortBy === "views") sorted.sort((a,b) => (b.viewCount||0) - (a.viewCount||0));
+    else sorted.sort((a,b) => new Date(b.latestView) - new Date(a.latestView));
+  } else {
+    if (sortBy === "value") sorted.sort((a,b) => parseFloat(b.GrandTotal||0) - parseFloat(a.GrandTotal||0));
+    else sorted.sort((a,b) => new Date(b.EventDateTime) - new Date(a.EventDateTime));
   }
 
-  const container=document.getElementById("drillContent");
-  container.innerHTML="";
+  const container = document.getElementById("drillContent");
+  container.innerHTML = "";
 
-  sorted.forEach(r=>{
-    const row=document.createElement("div");
-    row.className="doc-row";
+  sorted.forEach(r => {
 
-    if(currentTab==="Views"){
-      row.innerHTML=`
+    const row = document.createElement("div");
+    row.className = "doc-row";
+
+    const docNo = r.DocNo || "";
+    const docName = r.DocName || "";
+    const url = r.SalesRepFacingUrl || "";
+
+    if (currentTab === "Views") {
+      row.innerHTML = `
         <div>
-          <strong>${r.DocNo}</strong> - ${r.DocName||""}
-          <div>${new Date(r.latestView).toLocaleString("en-GB",{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit',year:'numeric'})}</div>
+          <strong>${docNo}</strong>${docName ? " - " + docName : ""}
+          <div class="doc-meta">
+            Latest View: ${new Date(r.latestView).toLocaleString("en-GB",{hour:"2-digit",minute:"2-digit",day:"2-digit",month:"2-digit",year:"numeric"})}
+          </div>
         </div>
-        <div>${r.viewCount} views</div>
+        <div class="view-count">${r.viewCount} views</div>
       `;
-    }else{
-      row.innerHTML=`
+    } else {
+      row.innerHTML = `
         <div>
-          <strong>${r.DocNo}</strong> - ${r.DocName||""}
-          <div>${new Date(r.EventDateTime).toLocaleString("en-GB",{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit',year:'numeric'})}</div>
+          <strong>${docNo}</strong>${docName ? " - " + docName : ""}
+          <div class="doc-meta">
+            ${new Date(r.EventDateTime).toLocaleString("en-GB",{hour:"2-digit",minute:"2-digit",day:"2-digit",month:"2-digit",year:"numeric"})}
+          </div>
         </div>
-        <div>£${parseFloat(r.GrandTotal||0).toFixed(2)}</div>
+        <div class="view-count">£${parseFloat(r.GrandTotal||0).toFixed(2)}</div>
       `;
     }
 
-    row.onclick=()=>{
-      if(r.SalesRepFacingUrl){
-        window.open(r.SalesRepFacingUrl,"_blank");
-      }
+    row.onclick = () => {
+      if (url) window.open(url, "_blank");
     };
 
     container.appendChild(row);
   });
 }
 
-function createActivityFeed(data){
-  const latest=[...data].sort((a,b)=>new Date(b.EventDateTime)-new Date(a.EventDateTime)).slice(0,5);
+function createActivityFeed(data) {
 
-  let html="<h3>📡 Live Activity</h3>";
-  latest.forEach(r=>{
-    const emoji=r.EventFullName.includes("Accepted")?"💰":"👀";
-    html+=`<div class="activity-item">${emoji} ${r.DocNo} - ${r.DocName||""}</div>`;
+  const latest = [...data]
+    .sort((a,b) => new Date(b.EventDateTime) - new Date(a.EventDateTime))
+    .slice(0, 6);
+
+  let html = "<h3>📡 Live Activity</h3>";
+
+  latest.forEach(r => {
+    const emoji = r.EventFullName && r.EventFullName.includes("Accepted") ? "💰" : "👀";
+    const docNo = r.DocNo || "";
+    const docName = r.DocName || "";
+    const t = r.EventDateTime
+      ? new Date(r.EventDateTime).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})
+      : "";
+    html += `<div class="activity-item">${emoji} ${t} - ${docNo}${docName ? " - " + docName : ""}</div>`;
   });
 
-  document.getElementById("activityFeed").innerHTML=html;
+  document.getElementById("activityFeed").innerHTML = html;
 }
 
-function goBack(){
-  document.getElementById("drillView").style.display="none";
-  document.getElementById("mainView").style.display="block";
+function goBack() {
+  document.getElementById("drillView").style.display = "none";
+  document.getElementById("mainView").style.display = "block";
 }
 
-setInterval(()=>{
-  const script=document.createElement("script");
-  script.src="https://script.google.com/macros/s/AKfycbzzQtKk_VCtHwYjhmC1f32dNPMXDb5CWa2jE7Sg2rMwVHY_HUvmijH9SnMUQjSTTG3ubw/exec
-?callback=handleData&ts="+new Date().getTime();
+// Auto refresh every 60s (JSONP)
+setInterval(() => {
+  const script = document.createElement("script");
+  script.src = makeJsonpUrl();
   document.body.appendChild(script);
-},60000);
+}, 60000);
 
 </script>
 
-<script src="https://script.google.com/macros/s/AKfycbzzQtKk_VCtHwYjhmC1f32dNPMXDb5CWa2jE7Sg2rMwVHY_HUvmijH9SnMUQjSTTG3ubw/exec
-?callback=handleData"></script>
+<!-- Initial JSONP load -->
+<script src="https://script.google.com/macros/s/AKfycbzzQtKk_VCtHwYjhmC1f32dNPMXDb5CWa2jE7Sg2rMwVHY_HUvmijH9SnMUQjSTTG3ubw/exec?callback=handleData"></script>
 
 </body>
 </html>
