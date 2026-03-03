@@ -75,11 +75,13 @@ h1 {
   box-shadow: 0 12px 30px rgba(0,0,0,0.4);
 }
 
-#drillView { display: none; margin-top: 30px; }
-
-.drill-header {
-  margin-bottom: 20px;
+.stat-number {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-top: 10px;
 }
+
+#drillView { display: none; margin-top: 30px; }
 
 .sort-container {
   margin-bottom: 20px;
@@ -110,7 +112,7 @@ h1 {
 }
 
 .view-count {
-  font-size: 1.6rem;
+  font-size: 2rem;
   font-weight: bold;
   text-align: right;
 }
@@ -147,7 +149,6 @@ h1 {
 
 <div id="mainView">
   <div class="stats-container" id="statsContainer"></div>
-  <div id="leaderboard"></div>
 </div>
 
 <div id="drillView">
@@ -164,8 +165,6 @@ h1 {
 
 <script>
 
-
-
 let allData = [];
 let currentTab = "Accepted";
 let currentDataset = [];
@@ -179,14 +178,24 @@ function switchTab(e, tab) {
   currentTab = tab;
   document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
   e.target.classList.add("active");
+  goBack();
   renderDashboard();
 }
 
 function renderDashboard() {
 
+  const statsContainer = document.getElementById("statsContainer");
+  statsContainer.innerHTML = "";
+
   const now = new Date();
+  const todayStr = now.toDateString();
+
   const thisMonth = now.getMonth();
   const thisYear = now.getFullYear();
+
+  const lastMonthDate = new Date(thisYear, thisMonth - 1, 1);
+  const lastMonth = lastMonthDate.getMonth();
+  const lastMonthYear = lastMonthDate.getFullYear();
 
   const eventFilter = currentTab === "Accepted"
     ? "QuoteValet.Accepted"
@@ -194,18 +203,42 @@ function renderDashboard() {
 
   const filtered = allData.filter(r => r.EventFullName === eventFilter);
 
-  createCard("This Month", filtered.filter(r => {
+  const todayData = filtered.filter(r =>
+    new Date(r.EventDateTime).toDateString() === todayStr
+  );
+
+  const thisMonthData = filtered.filter(r => {
     const d = new Date(r.EventDateTime);
     return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
-  }));
+  });
+
+  const lastMonthData = filtered.filter(r => {
+    const d = new Date(r.EventDateTime);
+    return d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear;
+  });
+
+  createCard("Today", todayData);
+  createCard("This Month", thisMonthData);
+  createCard("Last Month", lastMonthData);
 }
 
 function createCard(label, dataset) {
+
   const card = document.createElement("div");
   card.className = "stat-card";
-  card.innerHTML = `<div>${label}</div>`;
+
+  let displayValue = dataset.length;
+
+  if (currentTab === "Accepted") {
+    const totalValue = dataset.reduce((sum, r) => sum + parseFloat(r.GrandTotal||0), 0);
+    displayValue = "£" + totalValue.toFixed(2) + "<div class='stat-number'>" + dataset.length + " docs</div>";
+  } else {
+    displayValue = "<div class='stat-number'>" + dataset.length + "</div> views";
+  }
+
+  card.innerHTML = `<div>${label}</div><div class="stat-number">${displayValue}</div>`;
   card.onclick = () => showDrill(dataset);
-  document.getElementById("statsContainer").innerHTML = "";
+
   document.getElementById("statsContainer").appendChild(card);
 }
 
@@ -215,7 +248,9 @@ function showDrill(dataset) {
   document.getElementById("drillView").style.display = "block";
 
   if (currentTab === "Views") {
+
     const grouped = {};
+
     dataset.forEach(r => {
       const key = r.DocNo;
       if (!grouped[key]) {
@@ -227,7 +262,9 @@ function showDrill(dataset) {
         }
       }
     });
+
     currentDataset = Object.values(grouped);
+
   } else {
     currentDataset = dataset;
   }
@@ -237,18 +274,22 @@ function showDrill(dataset) {
 }
 
 function setupSortOptions() {
+
   const select = document.getElementById("sortSelect");
-  select.innerHTML = "";
 
   if (currentTab === "Views") {
     select.innerHTML = `
-      <option value="latest">Latest View (new → old)</option>
-      <option value="views">Most Views (high → low)</option>
+      <option value="latest_desc">Latest View - Newest First</option>
+      <option value="latest_asc">Latest View - Oldest First</option>
+      <option value="views_desc">Most Views - High to Low</option>
+      <option value="views_asc">Most Views - Low to High</option>
     `;
   } else {
     select.innerHTML = `
-      <option value="recent">Most Recent</option>
-      <option value="value">Highest Value</option>
+      <option value="recent_desc">Most Recent</option>
+      <option value="recent_asc">Oldest First</option>
+      <option value="value_desc">Highest Value</option>
+      <option value="value_asc">Lowest Value</option>
     `;
   }
 }
@@ -256,21 +297,22 @@ function setupSortOptions() {
 function renderDrill() {
 
   const sortBy = document.getElementById("sortSelect").value;
-
   let sorted = [...currentDataset];
 
   if (currentTab === "Views") {
-    if (sortBy === "views") {
-      sorted.sort((a,b) => b.viewCount - a.viewCount);
-    } else {
-      sorted.sort((a,b) => new Date(b.latestView) - new Date(a.latestView));
-    }
+
+    if (sortBy === "views_desc") sorted.sort((a,b) => b.viewCount - a.viewCount);
+    else if (sortBy === "views_asc") sorted.sort((a,b) => a.viewCount - b.viewCount);
+    else if (sortBy === "latest_asc") sorted.sort((a,b) => new Date(a.latestView) - new Date(b.latestView));
+    else sorted.sort((a,b) => new Date(b.latestView) - new Date(a.latestView));
+
   } else {
-    if (sortBy === "value") {
-      sorted.sort((a,b) => parseFloat(b.GrandTotal||0) - parseFloat(a.GrandTotal||0));
-    } else {
-      sorted.sort((a,b) => new Date(b.EventDateTime) - new Date(a.EventDateTime));
-    }
+
+    if (sortBy === "value_desc") sorted.sort((a,b) => parseFloat(b.GrandTotal||0) - parseFloat(a.GrandTotal||0));
+    else if (sortBy === "value_asc") sorted.sort((a,b) => parseFloat(a.GrandTotal||0) - parseFloat(b.GrandTotal||0));
+    else if (sortBy === "recent_asc") sorted.sort((a,b) => new Date(a.EventDateTime) - new Date(b.EventDateTime));
+    else sorted.sort((a,b) => new Date(b.EventDateTime) - new Date(a.EventDateTime));
+
   }
 
   const container = document.getElementById("drillContent");
@@ -282,27 +324,34 @@ function renderDrill() {
     row.className = "doc-row";
 
     if (currentTab === "Views") {
+
       row.innerHTML = `
         <div>
           <strong>${r.DocNo}</strong>
-          <div class="doc-meta">Latest View: ${new Date(r.latestView).toLocaleString("en-GB",{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit',year:'numeric'})}</div>
+          <div class="doc-meta">
+            Latest View:
+            ${new Date(r.latestView).toLocaleString("en-GB",{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit',year:'numeric'})}
+          </div>
         </div>
         <div class="view-count">${r.viewCount}</div>
       `;
+
     } else {
+
       row.innerHTML = `
         <div>
           <strong>${r.DocNo}</strong>
-          <div class="doc-meta">${new Date(r.EventDateTime).toLocaleString("en-GB",{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit',year:'numeric'})}</div>
+          <div class="doc-meta">
+            ${new Date(r.EventDateTime).toLocaleString("en-GB",{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit',year:'numeric'})}
+          </div>
         </div>
-        <div>£${parseFloat(r.GrandTotal||0).toFixed(2)}</div>
+        <div class="view-count">£${parseFloat(r.GrandTotal||0).toFixed(2)}</div>
       `;
+
     }
 
     row.onclick = () => {
-      if (r.SalesRepFacingUrl) {
-        window.open(r.SalesRepFacingUrl, "_blank");
-      }
+      if (r.SalesRepFacingUrl) window.open(r.SalesRepFacingUrl, "_blank");
     };
 
     container.appendChild(row);
