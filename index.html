@@ -21,13 +21,13 @@ body {
 
 .wrapper {
   width: 95%;
-  max-width: 1200px;
+  max-width: 1300px;
   padding: 60px 20px;
-  text-align: center;
 }
 
 h1 {
   font-weight: 400;
+  text-align: center;
   margin-bottom: 40px;
 }
 
@@ -61,57 +61,76 @@ h1 {
   justify-content: center;
   gap: 30px;
   flex-wrap: wrap;
-  margin-bottom: 50px;
+  margin-bottom: 40px;
 }
 
 .stat-card {
   background: rgba(255,255,255,0.07);
   backdrop-filter: blur(10px);
-  padding: 32px 44px;
+  padding: 28px 38px;
   border-radius: 18px;
   min-width: 240px;
   transition: 0.25s ease;
 }
 
-.stat-card.clickable {
-  cursor: pointer;
-}
+.stat-card.clickable { cursor: pointer; }
 
 .stat-card.clickable:hover {
   transform: translateY(-6px);
   box-shadow: 0 16px 40px rgba(0,0,0,0.5);
 }
 
-.stat-title {
-  font-size: 0.85rem;
-  opacity: 0.7;
-  margin-bottom: 12px;
+.stat-title { font-size: 0.85rem; opacity: 0.7; margin-bottom: 8px; }
+
+.stat-number { font-size: 2rem; font-weight: 600; }
+
+.stat-sub { margin-top: 6px; font-size: 0.85rem; opacity: 0.7; }
+
+.heat-up { color: #4caf50; }
+.heat-down { color: #ff5252; }
+
+.leaderboard {
+  margin-top: 30px;
+  text-align: left;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
-.stat-number {
-  font-size: 2.4rem;
-  font-weight: 500;
+.leaderboard h3 {
+  font-weight: 400;
+  margin-bottom: 10px;
 }
 
-.stat-sub {
-  margin-top: 8px;
+.leader-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.activity-feed {
+  margin-top: 40px;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: left;
+}
+
+.activity-item {
+  padding: 6px 0;
   font-size: 0.9rem;
-  opacity: 0.7;
+  opacity: 0.8;
 }
 
-#drillView {
-  display: none;
-}
+#drillView { display: none; margin-top: 30px; }
 
-.back-btn {
-  margin-bottom: 25px;
-  padding: 8px 20px;
-  border-radius: 22px;
+.sort-select {
+  padding: 8px 14px;
+  border-radius: 20px;
   border: none;
-  background: rgba(255,255,255,0.1);
-  color: white;
-  cursor: pointer;
-  font-size: 0.9rem;
+  margin-bottom: 20px;
+  font-family: Roboto;
 }
 
 .doc-row {
@@ -119,49 +138,49 @@ h1 {
   justify-content: space-between;
   align-items: center;
   background: rgba(255,255,255,0.08);
-  padding: 22px 28px;
-  border-radius: 14px;
-  margin-bottom: 14px;
+  padding: 18px 24px;
+  border-radius: 12px;
+  margin-bottom: 12px;
   cursor: pointer;
-  transition: 0.2s ease;
+  transition: 0.2s;
 }
 
 .doc-row:hover {
   background: rgba(255,255,255,0.18);
-  transform: translateX(6px);
 }
 
-.view-count {
-  font-size: 2.2rem;
-  font-weight: 700;
-}
-
-.doc-meta {
-  font-size: 0.85rem;
-  opacity: 0.7;
-  margin-top: 6px;
+.back-btn {
+  margin-bottom: 20px;
+  padding: 6px 16px;
+  border-radius: 18px;
+  border: none;
+  background: rgba(255,255,255,0.1);
+  color: white;
+  cursor: pointer;
 }
 
 </style>
 </head>
 
 <body>
-
 <div class="wrapper">
 
-<h1>QuoteValet Dashboard</h1>
+<h1>🚀 QuoteValet Live Dashboard</h1>
 
 <div class="tab-container">
-  <div class="tab-btn active" onclick="switchTab(event,'Accepted')">Accepted</div>
-  <div class="tab-btn" onclick="switchTab(event,'Views')">Views</div>
+  <div class="tab-btn active" onclick="switchTab(event,'Accepted')">💰 Accepted</div>
+  <div class="tab-btn" onclick="switchTab(event,'Views')">👀 Views</div>
 </div>
 
 <div id="mainView">
   <div class="stats-container" id="statsContainer"></div>
+  <div id="leaderboard" class="leaderboard"></div>
+  <div id="activityFeed" class="activity-feed"></div>
 </div>
 
 <div id="drillView">
   <button class="back-btn" onclick="goBack()">← Back</button>
+  <select id="sortSelect" class="sort-select" onchange="renderDrill()"></select>
   <div id="drillContent"></div>
 </div>
 
@@ -188,11 +207,11 @@ function switchTab(e, tab) {
 
 function renderDashboard() {
 
-  const container = document.getElementById("statsContainer");
-  container.innerHTML = "";
+  document.getElementById("statsContainer").innerHTML = "";
+  document.getElementById("leaderboard").innerHTML = "";
+  document.getElementById("activityFeed").innerHTML = "";
 
   const now = new Date();
-  const today = now.toDateString();
   const thisMonth = now.getMonth();
   const thisYear = now.getFullYear();
 
@@ -206,10 +225,6 @@ function renderDashboard() {
 
   const filtered = allData.filter(r => r.EventFullName === eventFilter);
 
-  const todayData = filtered.filter(r =>
-    new Date(r.EventDateTime).toDateString() === today
-  );
-
   const thisMonthData = filtered.filter(r => {
     const d = new Date(r.EventDateTime);
     return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
@@ -220,106 +235,81 @@ function renderDashboard() {
     return d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear;
   });
 
-  createCard("Today", todayData);
-  createCard("This Month", thisMonthData);
-  createCard("Last Month", lastMonthData);
+  const thisMonthValue = thisMonthData.reduce((s,r)=>s+parseFloat(r.GrandTotal||0),0);
+  const lastMonthValue = lastMonthData.reduce((s,r)=>s+parseFloat(r.GrandTotal||0),0);
+
+  const diff = thisMonthValue - lastMonthValue;
+  const heatClass = diff >= 0 ? "heat-up" : "heat-down";
+  const heatSymbol = diff >= 0 ? "▲" : "▼";
+
+  createCard("📅 This Month", thisMonthData.length, thisMonthValue,
+    `<span class="${heatClass}">${heatSymbol} £${Math.abs(diff).toFixed(2)} vs last month</span>`
+  );
+
+  createTopPerformers(thisMonthData);
+  createActivityFeed(filtered);
 }
 
-function createCard(title, dataset) {
-
-  const count = dataset.length;
+function createCard(title, count, value, heat) {
   const card = document.createElement("div");
-  card.className = "stat-card";
-
-  if (count > 0) {
-    card.classList.add("clickable");
-    card.onclick = () => showDrill(dataset);
-  }
+  card.className = "stat-card clickable";
 
   card.innerHTML = `
     <div class="stat-title">${title}</div>
-    <div class="stat-number">${count}</div>
-    <div class="stat-sub">${count === 0 ? "No results" : (count === 1 ? "Result" : "Results")}</div>
+    <div class="stat-number">${count} deals</div>
+    <div class="stat-sub">£${value.toFixed(2)}</div>
+    <div class="stat-sub">${heat || ""}</div>
   `;
 
   document.getElementById("statsContainer").appendChild(card);
 }
 
-function showDrill(dataset) {
+function createTopPerformers(data) {
+  if(currentTab !== "Accepted") return;
 
-  document.getElementById("mainView").style.display = "none";
-  document.getElementById("drillView").style.display = "block";
-
-  if (currentTab === "Views") {
-
-    const grouped = {};
-    dataset.forEach(r => {
-      const key = r.DocNo;
-      if (!grouped[key]) {
-        grouped[key] = { ...r, viewCount: 1, latestView: r.EventDateTime };
-      } else {
-        grouped[key].viewCount++;
-        if (new Date(r.EventDateTime) > new Date(grouped[key].latestView)) {
-          grouped[key].latestView = r.EventDateTime;
-        }
-      }
-    });
-
-    currentDataset = Object.values(grouped);
-
-  } else {
-    currentDataset = dataset;
-  }
-
-  renderDrill();
-}
-
-function renderDrill() {
-
-  const container = document.getElementById("drillContent");
-  container.innerHTML = "";
-
-  currentDataset.forEach(r => {
-
-    const row = document.createElement("div");
-    row.className = "doc-row";
-
-    if (currentTab === "Views") {
-      row.innerHTML = `
-        <div>
-          <strong>${r.DocNo}</strong>
-          <div class="doc-meta">
-            Latest View:
-            ${new Date(r.latestView).toLocaleString("en-GB",{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit',year:'numeric'})}
-          </div>
-        </div>
-        <div class="view-count">${r.viewCount} views</div>
-      `;
-    } else {
-      row.innerHTML = `
-        <div>
-          <strong>${r.DocNo}</strong>
-          <div class="doc-meta">
-            ${new Date(r.EventDateTime).toLocaleString("en-GB",{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit',year:'numeric'})}
-          </div>
-        </div>
-      `;
-    }
-
-    row.onclick = () => {
-      if (r.SalesRepFacingUrl) {
-        window.open(r.SalesRepFacingUrl, "_blank");
-      }
-    };
-
-    container.appendChild(row);
+  const grouped = {};
+  data.forEach(r=>{
+    const rep = r.SalesRep || "Unknown";
+    if(!grouped[rep]) grouped[rep]=0;
+    grouped[rep]+=parseFloat(r.GrandTotal||0);
   });
+
+  const sorted = Object.entries(grouped)
+    .sort((a,b)=>b[1]-a[1])
+    .slice(0,3);
+
+  let html = "<h3>🏆 Top Performers This Month</h3>";
+  sorted.forEach((r,i)=>{
+    html+=`<div class="leader-row"><span>${i+1}. ${r[0]}</span><span>£${r[1].toFixed(2)}</span></div>`;
+  });
+
+  document.getElementById("leaderboard").innerHTML = html;
 }
 
-function goBack() {
-  document.getElementById("drillView").style.display = "none";
-  document.getElementById("mainView").style.display = "block";
+function createActivityFeed(data){
+  const latest = [...data]
+    .sort((a,b)=>new Date(b.EventDateTime)-new Date(a.EventDateTime))
+    .slice(0,5);
+
+  let html = "<h3>📡 Live Activity</h3>";
+  latest.forEach(r=>{
+    const emoji = r.EventFullName.includes("Accepted") ? "💰" : "👀";
+    html+=`<div class="activity-item">${emoji} ${r.DocNo} – ${new Date(r.EventDateTime).toLocaleTimeString()}</div>`;
+  });
+
+  document.getElementById("activityFeed").innerHTML = html;
 }
+
+function goBack(){
+  document.getElementById("drillView").style.display="none";
+  document.getElementById("mainView").style.display="block";
+}
+
+setInterval(()=>{
+  const script=document.createElement("script");
+  script.src="https://script.google.com/macros/s/AKfycbzzQtKk_VCtHwYjhmC1f32dNPMXDb5CWa2jE7Sg2rMwVHY_HUvmijH9SnMUQjSTTG3ubw/exec?callback=handleData&ts="+new Date().getTime();
+  document.body.appendChild(script);
+},60000);
 
 </script>
 
