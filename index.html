@@ -118,6 +118,11 @@ h1 {
 
 .activity-feed { margin-top: 40px; }
 .activity-item { padding: 6px 0; font-size: 0.9rem; opacity: 0.85; }
+
+.view-count {
+  font-size: 1.4rem;
+  font-weight: 600;
+}
 </style>
 </head>
 
@@ -145,16 +150,19 @@ h1 {
 </div>
 
 <script>
-const APPS_SCRIPT_BASE =
-  "https://script.google.com/macros/s/AKfycbzzQtKk_VCtHwYjhmC1f32dNPMXDb5CWa2jE7Sg2rMwVHY_HUvmijH9SnMUQjSTTG3ubw/exec";
 
-function makeJsonpUrl() {
-  return APPS_SCRIPT_BASE + "?callback=handleData&ts=" + new Date().getTime();
-}
+const APPS_SCRIPT_BASE =
+"https://script.google.com/macros/s/AKfycbzzQtKk_VCtHwYjhmC1f32dNPMXDb5CWa2jE7Sg2rMwVHY_HUvmijH9SnMUQjSTTG3ubw/exec";
 
 let allData = [];
 let currentTab = "Accepted";
 let currentDataset = [];
+
+function loadData() {
+  const script = document.createElement("script");
+  script.src = APPS_SCRIPT_BASE + "?callback=handleData&ts=" + new Date().getTime();
+  document.body.appendChild(script);
+}
 
 function handleData(data) {
   allData = data || [];
@@ -218,8 +226,10 @@ function createCard(title, dataset) {
 
   card.innerHTML = `
     <div class="stat-title">${title}</div>
-    <div class="stat-number">${count} ${currentTab === "Accepted" ? "deals" : "events"}</div>
-    <div class="stat-sub">${currentTab === "Accepted" ? ("£" + value.toFixed(2)) : (count === 1 ? "Result" : "Results")}</div>
+    <div class="stat-number">${count}</div>
+    <div class="stat-sub">
+      ${currentTab === "Accepted" ? "£" + value.toFixed(2) : "Events"}
+    </div>
   `;
 
   document.getElementById("statsContainer").appendChild(card);
@@ -253,13 +263,12 @@ function showDrill(dataset) {
 }
 
 function setupSort() {
-
   const select = document.getElementById("sortSelect");
 
   if (currentTab === "Views") {
     select.innerHTML = `
-      <option value="latest">Latest View (new to old)</option>
-      <option value="views">Most Views (high to low)</option>
+      <option value="latest">Latest View</option>
+      <option value="views">Most Views</option>
     `;
   } else {
     select.innerHTML = `
@@ -275,11 +284,15 @@ function renderDrill() {
   let sorted = [...currentDataset];
 
   if (currentTab === "Views") {
-    if (sortBy === "views") sorted.sort((a,b) => (b.viewCount||0) - (a.viewCount||0));
-    else sorted.sort((a,b) => new Date(b.latestView) - new Date(a.latestView));
+    if (sortBy === "views")
+      sorted.sort((a,b) => (b.viewCount||0)-(a.viewCount||0));
+    else
+      sorted.sort((a,b)=>new Date(b.latestView)-new Date(a.latestView));
   } else {
-    if (sortBy === "value") sorted.sort((a,b) => parseFloat(b.GrandTotal||0) - parseFloat(a.GrandTotal||0));
-    else sorted.sort((a,b) => new Date(b.EventDateTime) - new Date(a.EventDateTime));
+    if (sortBy === "value")
+      sorted.sort((a,b)=>parseFloat(b.GrandTotal||0)-parseFloat(a.GrandTotal||0));
+    else
+      sorted.sort((a,b)=>new Date(b.EventDateTime)-new Date(a.EventDateTime));
   }
 
   const container = document.getElementById("drillContent");
@@ -297,20 +310,16 @@ function renderDrill() {
     if (currentTab === "Views") {
       row.innerHTML = `
         <div>
-          <strong>${docNo}</strong>${docName ? " - " + docName : ""}
-          <div class="doc-meta">
-            Latest View: ${new Date(r.latestView).toLocaleString("en-GB",{hour:"2-digit",minute:"2-digit",day:"2-digit",month:"2-digit",year:"numeric"})}
-          </div>
+          <strong>${docNo}</strong> ${docName}
+          <div>Latest: ${new Date(r.latestView).toLocaleString("en-GB",{hour:"2-digit",minute:"2-digit",day:"2-digit",month:"2-digit",year:"numeric"})}</div>
         </div>
         <div class="view-count">${r.viewCount} views</div>
       `;
     } else {
       row.innerHTML = `
         <div>
-          <strong>${docNo}</strong>${docName ? " - " + docName : ""}
-          <div class="doc-meta">
-            ${new Date(r.EventDateTime).toLocaleString("en-GB",{hour:"2-digit",minute:"2-digit",day:"2-digit",month:"2-digit",year:"numeric"})}
-          </div>
+          <strong>${docNo}</strong> ${docName}
+          <div>${new Date(r.EventDateTime).toLocaleString("en-GB",{hour:"2-digit",minute:"2-digit",day:"2-digit",month:"2-digit",year:"numeric"})}</div>
         </div>
         <div class="view-count">£${parseFloat(r.GrandTotal||0).toFixed(2)}</div>
       `;
@@ -327,19 +336,17 @@ function renderDrill() {
 function createActivityFeed(data) {
 
   const latest = [...data]
-    .sort((a,b) => new Date(b.EventDateTime) - new Date(a.EventDateTime))
-    .slice(0, 6);
+    .sort((a,b)=>new Date(b.EventDateTime)-new Date(a.EventDateTime))
+    .slice(0,6);
 
   let html = "<h3>📡 Live Activity</h3>";
 
   latest.forEach(r => {
-    const emoji = r.EventFullName && r.EventFullName.includes("Accepted") ? "💰" : "👀";
-    const docNo = r.DocNo || "";
-    const docName = r.DocName || "";
-    const t = r.EventDateTime
+    const emoji = r.EventFullName.includes("Accepted") ? "💰" : "👀";
+    const time = r.EventDateTime
       ? new Date(r.EventDateTime).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})
       : "";
-    html += `<div class="activity-item">${emoji} ${t} - ${docNo}${docName ? " - " + docName : ""}</div>`;
+    html += `<div class="activity-item">${emoji} ${time} - ${r.DocNo} ${r.DocName||""}</div>`;
   });
 
   document.getElementById("activityFeed").innerHTML = html;
@@ -350,17 +357,10 @@ function goBack() {
   document.getElementById("mainView").style.display = "block";
 }
 
-// Auto refresh every 60s (JSONP)
-setInterval(() => {
-  const script = document.createElement("script");
-  script.src = makeJsonpUrl();
-  document.body.appendChild(script);
-}, 60000);
+setInterval(loadData, 60000);
+loadData();
 
 </script>
-
-<!-- Initial JSONP load -->
-<script src="https://script.google.com/macros/s/AKfycbzzQtKk_VCtHwYjhmC1f32dNPMXDb5CWa2jE7Sg2rMwVHY_HUvmijH9SnMUQjSTTG3ubw/exec?callback=handleData"></script>
 
 </body>
 </html>
