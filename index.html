@@ -97,7 +97,7 @@ h1 {
   justify-content: space-between;
   align-items: center;
   background: rgba(255,255,255,0.08);
-  padding: 20px 26px;
+  padding: 22px 26px;
   border-radius: 14px;
   margin-bottom: 14px;
   cursor: pointer;
@@ -105,6 +105,12 @@ h1 {
 }
 
 .doc-row:hover { background: rgba(255,255,255,0.18); }
+
+.view-count {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #00e0ff;
+}
 
 .back-btn {
   margin-bottom: 20px;
@@ -117,11 +123,28 @@ h1 {
 }
 
 .activity-feed { margin-top: 40px; }
-.activity-item { padding: 6px 0; font-size: 0.9rem; opacity: 0.85; }
 
-.view-count {
-  font-size: 1.4rem;
-  font-weight: 600;
+.activity-feed h3 {
+  margin-bottom: 12px;
+}
+
+.activity-item {
+  padding: 6px 0;
+  font-size: 0.9rem;
+  opacity: 0.85;
+}
+
+.leaderboard {
+  margin-top: 40px;
+}
+
+.leaderboard h3 {
+  margin-bottom: 12px;
+}
+
+.leaderboard-item {
+  padding: 6px 0;
+  font-size: 0.95rem;
 }
 </style>
 </head>
@@ -138,6 +161,7 @@ h1 {
 
 <div id="mainView">
   <div class="stats-container" id="statsContainer"></div>
+  <div id="leaderboard" class="leaderboard"></div>
   <div id="activityFeed" class="activity-feed"></div>
 </div>
 
@@ -181,13 +205,11 @@ function renderDashboard() {
 
   document.getElementById("statsContainer").innerHTML = "";
   document.getElementById("activityFeed").innerHTML = "";
+  document.getElementById("leaderboard").innerHTML = "";
 
   const now = new Date();
   const thisMonth = now.getMonth();
   const thisYear = now.getFullYear();
-  const lastMonthDate = new Date(thisYear, thisMonth - 1, 1);
-  const lastMonth = lastMonthDate.getMonth();
-  const lastMonthYear = lastMonthDate.getFullYear();
 
   const eventFilter = currentTab === "Accepted"
     ? "QuoteValet.Accepted"
@@ -200,21 +222,20 @@ function renderDashboard() {
     return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
   });
 
-  const lastMonthData = filtered.filter(r => {
-    const d = new Date(r.EventDateTime);
-    return d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear;
-  });
-
   createCard("📅 This Month", thisMonthData);
-  createCard("📆 Last Month", lastMonthData);
 
-  createActivityFeed(filtered);
+  if (currentTab === "Accepted") {
+    renderLeaderboard(thisMonthData);
+    createActivityFeed(filtered, "Most Recent Acceptances");
+  } else {
+    createActivityFeed(filtered, "Live Views");
+  }
 }
 
 function createCard(title, dataset) {
 
   const count = dataset.length;
-  const value = dataset.reduce((s, r) => s + parseFloat(r.GrandTotal || 0), 0);
+  const value = dataset.reduce((s, r) => s + parseFloat(r.SubTotal || 0), 0);
 
   const card = document.createElement("div");
   card.className = "stat-card";
@@ -228,11 +249,34 @@ function createCard(title, dataset) {
     <div class="stat-title">${title}</div>
     <div class="stat-number">${count}</div>
     <div class="stat-sub">
-      ${currentTab === "Accepted" ? "£" + value.toFixed(2) : "Events"}
+      ${currentTab === "Accepted" ? "accepted · £" + value.toFixed(2) : "events"}
     </div>
   `;
 
   document.getElementById("statsContainer").appendChild(card);
+}
+
+function renderLeaderboard(data) {
+
+  const totals = {};
+
+  data.forEach(r => {
+    const rep = r.SalesRep || "Unknown";
+    totals[rep] = (totals[rep] || 0) + parseFloat(r.SubTotal || 0);
+  });
+
+  const sorted = Object.entries(totals)
+    .sort((a,b) => b[1] - a[1]);
+
+  let html = "<h3>🏆 Top Performers This Month</h3>";
+
+  sorted.forEach(([rep, total], i) => {
+    html += `<div class="leaderboard-item">
+      ${i+1}. ${rep} - £${total.toFixed(2)}
+    </div>`;
+  });
+
+  document.getElementById("leaderboard").innerHTML = html;
 }
 
 function showDrill(dataset) {
@@ -258,95 +302,56 @@ function showDrill(dataset) {
     currentDataset = dataset;
   }
 
-  setupSort();
   renderDrill();
-}
-
-function setupSort() {
-  const select = document.getElementById("sortSelect");
-
-  if (currentTab === "Views") {
-    select.innerHTML = `
-      <option value="latest">Latest View</option>
-      <option value="views">Most Views</option>
-    `;
-  } else {
-    select.innerHTML = `
-      <option value="recent">Most Recent</option>
-      <option value="value">Highest Value</option>
-    `;
-  }
 }
 
 function renderDrill() {
 
-  const sortBy = document.getElementById("sortSelect").value;
-  let sorted = [...currentDataset];
-
-  if (currentTab === "Views") {
-    if (sortBy === "views")
-      sorted.sort((a,b) => (b.viewCount||0)-(a.viewCount||0));
-    else
-      sorted.sort((a,b)=>new Date(b.latestView)-new Date(a.latestView));
-  } else {
-    if (sortBy === "value")
-      sorted.sort((a,b)=>parseFloat(b.GrandTotal||0)-parseFloat(a.GrandTotal||0));
-    else
-      sorted.sort((a,b)=>new Date(b.EventDateTime)-new Date(a.EventDateTime));
-  }
-
   const container = document.getElementById("drillContent");
   container.innerHTML = "";
 
-  sorted.forEach(r => {
+  currentDataset.forEach(r => {
 
     const row = document.createElement("div");
     row.className = "doc-row";
 
-    const docNo = r.DocNo || "";
-    const docName = r.DocName || "";
-    const url = r.SalesRepFacingUrl || "";
-
     if (currentTab === "Views") {
       row.innerHTML = `
         <div>
-          <strong>${docNo}</strong> ${docName}
-          <div>Latest: ${new Date(r.latestView).toLocaleString("en-GB",{hour:"2-digit",minute:"2-digit",day:"2-digit",month:"2-digit",year:"numeric"})}</div>
+          <strong>${r.DocNo}</strong> ${r.DocName || ""}
+          <div>Latest: ${new Date(r.latestView).toLocaleString("en-GB")}</div>
         </div>
-        <div class="view-count">${r.viewCount} views</div>
+        <div class="view-count">${r.viewCount}</div>
       `;
     } else {
       row.innerHTML = `
         <div>
-          <strong>${docNo}</strong> ${docName}
-          <div>${new Date(r.EventDateTime).toLocaleString("en-GB",{hour:"2-digit",minute:"2-digit",day:"2-digit",month:"2-digit",year:"numeric"})}</div>
+          <strong>${r.DocNo}</strong> ${r.DocName || ""}
+          <div>${new Date(r.EventDateTime).toLocaleString("en-GB")}</div>
         </div>
-        <div class="view-count">£${parseFloat(r.GrandTotal||0).toFixed(2)}</div>
+        <div class="view-count">£${parseFloat(r.SubTotal||0).toFixed(2)}</div>
       `;
     }
-
-    row.onclick = () => {
-      if (url) window.open(url, "_blank");
-    };
 
     container.appendChild(row);
   });
 }
 
-function createActivityFeed(data) {
+function createActivityFeed(data, title) {
 
   const latest = [...data]
     .sort((a,b)=>new Date(b.EventDateTime)-new Date(a.EventDateTime))
     .slice(0,6);
 
-  let html = "<h3>📡 Live Activity</h3>";
+  let html = `<h3>📡 ${title}</h3>`;
 
   latest.forEach(r => {
     const emoji = r.EventFullName.includes("Accepted") ? "💰" : "👀";
-    const time = r.EventDateTime
-      ? new Date(r.EventDateTime).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})
-      : "";
-    html += `<div class="activity-item">${emoji} ${time} - ${r.DocNo} ${r.DocName||""}</div>`;
+    const time = new Date(r.EventDateTime)
+      .toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
+    html += `<div class="activity-item">
+      ${emoji} ${time} - ${r.DocNo} ${r.DocName||""}
+    </div>`;
   });
 
   document.getElementById("activityFeed").innerHTML = html;
