@@ -13,7 +13,7 @@ body {
   margin: 0;
   font-family: 'Roboto', sans-serif;
   background: linear-gradient(140deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
-  color: #ffffff;
+  color: white;
   min-height: 100vh;
   display: flex;
   justify-content: center;
@@ -26,8 +26,8 @@ body {
 }
 
 h1 {
-  font-weight: 400;
   text-align: center;
+  font-weight: 400;
   margin-bottom: 40px;
 }
 
@@ -35,7 +35,7 @@ h1 {
   display: flex;
   justify-content: center;
   gap: 14px;
-  margin-bottom: 50px;
+  margin-bottom: 40px;
 }
 
 .tab-btn {
@@ -44,15 +44,11 @@ h1 {
   border: 1px solid rgba(255,255,255,0.15);
   background: rgba(255,255,255,0.05);
   cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 500;
   transition: 0.2s ease;
 }
 
-.tab-btn:hover { background: rgba(255,255,255,0.15); }
-
 .tab-btn.active {
-  background: #ffffff;
+  background: white;
   color: #203a43;
 }
 
@@ -67,9 +63,9 @@ h1 {
 .stat-card {
   background: rgba(255,255,255,0.07);
   backdrop-filter: blur(10px);
-  padding: 28px 38px;
+  padding: 30px 40px;
   border-radius: 18px;
-  min-width: 240px;
+  min-width: 260px;
   transition: 0.25s ease;
 }
 
@@ -80,57 +76,20 @@ h1 {
   box-shadow: 0 16px 40px rgba(0,0,0,0.5);
 }
 
-.stat-title { font-size: 0.85rem; opacity: 0.7; margin-bottom: 8px; }
-
+.stat-title { font-size: 0.9rem; opacity: 0.7; margin-bottom: 8px; }
 .stat-number { font-size: 2rem; font-weight: 600; }
-
-.stat-sub { margin-top: 6px; font-size: 0.85rem; opacity: 0.7; }
+.stat-sub { font-size: 0.85rem; opacity: 0.7; margin-top: 4px; }
 
 .heat-up { color: #4caf50; }
 .heat-down { color: #ff5252; }
 
-.leaderboard {
-  margin-top: 30px;
-  text-align: left;
-  max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.leaderboard h3 {
-  font-weight: 400;
-  margin-bottom: 10px;
-}
-
-.leader-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-}
-
-.activity-feed {
-  margin-top: 40px;
-  max-width: 700px;
-  margin-left: auto;
-  margin-right: auto;
-  text-align: left;
-}
-
-.activity-item {
-  padding: 6px 0;
-  font-size: 0.9rem;
-  opacity: 0.8;
-}
-
-#drillView { display: none; margin-top: 30px; }
+#drillView { display:none; margin-top:30px; }
 
 .sort-select {
   padding: 8px 14px;
   border-radius: 20px;
   border: none;
   margin-bottom: 20px;
-  font-family: Roboto;
 }
 
 .doc-row {
@@ -138,16 +97,14 @@ h1 {
   justify-content: space-between;
   align-items: center;
   background: rgba(255,255,255,0.08);
-  padding: 18px 24px;
-  border-radius: 12px;
-  margin-bottom: 12px;
+  padding: 20px 26px;
+  border-radius: 14px;
+  margin-bottom: 14px;
   cursor: pointer;
   transition: 0.2s;
 }
 
-.doc-row:hover {
-  background: rgba(255,255,255,0.18);
-}
+.doc-row:hover { background: rgba(255,255,255,0.18); }
 
 .back-btn {
   margin-bottom: 20px;
@@ -157,6 +114,16 @@ h1 {
   background: rgba(255,255,255,0.1);
   color: white;
   cursor: pointer;
+}
+
+.activity-feed {
+  margin-top: 40px;
+}
+
+.activity-item {
+  padding: 6px 0;
+  font-size: 0.9rem;
+  opacity: 0.8;
 }
 
 </style>
@@ -174,7 +141,6 @@ h1 {
 
 <div id="mainView">
   <div class="stats-container" id="statsContainer"></div>
-  <div id="leaderboard" class="leaderboard"></div>
   <div id="activityFeed" class="activity-feed"></div>
 </div>
 
@@ -188,116 +154,170 @@ h1 {
 
 <script>
 
-let allData = [];
-let currentTab = "Accepted";
-let currentDataset = [];
+let allData=[];
+let currentTab="Accepted";
+let currentDataset=[];
 
-function handleData(data) {
-  allData = data || [];
+function handleData(data){
+  allData=data||[];
   renderDashboard();
 }
 
-function switchTab(e, tab) {
-  currentTab = tab;
-  document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
+function switchTab(e,tab){
+  currentTab=tab;
+  document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
   e.target.classList.add("active");
   goBack();
   renderDashboard();
 }
 
-function renderDashboard() {
+function renderDashboard(){
 
-  document.getElementById("statsContainer").innerHTML = "";
-  document.getElementById("leaderboard").innerHTML = "";
-  document.getElementById("activityFeed").innerHTML = "";
+  document.getElementById("statsContainer").innerHTML="";
+  document.getElementById("activityFeed").innerHTML="";
 
-  const now = new Date();
-  const thisMonth = now.getMonth();
-  const thisYear = now.getFullYear();
+  const now=new Date();
+  const thisMonth=now.getMonth();
+  const thisYear=now.getFullYear();
+  const lastMonthDate=new Date(thisYear,thisMonth-1,1);
+  const lastMonth=lastMonthDate.getMonth();
+  const lastMonthYear=lastMonthDate.getFullYear();
 
-  const lastMonthDate = new Date(thisYear, thisMonth - 1, 1);
-  const lastMonth = lastMonthDate.getMonth();
-  const lastMonthYear = lastMonthDate.getFullYear();
+  const eventFilter=currentTab==="Accepted"?"QuoteValet.Accepted":"QuoteValet.ViewedExternal";
+  const filtered=allData.filter(r=>r.EventFullName===eventFilter);
 
-  const eventFilter = currentTab === "Accepted"
-    ? "QuoteValet.Accepted"
-    : "QuoteValet.ViewedExternal";
-
-  const filtered = allData.filter(r => r.EventFullName === eventFilter);
-
-  const thisMonthData = filtered.filter(r => {
-    const d = new Date(r.EventDateTime);
-    return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
+  const thisMonthData=filtered.filter(r=>{
+    const d=new Date(r.EventDateTime);
+    return d.getMonth()===thisMonth&&d.getFullYear()===thisYear;
   });
 
-  const lastMonthData = filtered.filter(r => {
-    const d = new Date(r.EventDateTime);
-    return d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear;
+  const lastMonthData=filtered.filter(r=>{
+    const d=new Date(r.EventDateTime);
+    return d.getMonth()===lastMonth&&d.getFullYear()===lastMonthYear;
   });
 
-  const thisMonthValue = thisMonthData.reduce((s,r)=>s+parseFloat(r.GrandTotal||0),0);
-  const lastMonthValue = lastMonthData.reduce((s,r)=>s+parseFloat(r.GrandTotal||0),0);
+  createCard("📅 This Month",thisMonthData);
+  createCard("📆 Last Month",lastMonthData);
 
-  const diff = thisMonthValue - lastMonthValue;
-  const heatClass = diff >= 0 ? "heat-up" : "heat-down";
-  const heatSymbol = diff >= 0 ? "▲" : "▼";
-
-  createCard("📅 This Month", thisMonthData.length, thisMonthValue,
-    `<span class="${heatClass}">${heatSymbol} £${Math.abs(diff).toFixed(2)} vs last month</span>`
-  );
-
-  createTopPerformers(thisMonthData);
   createActivityFeed(filtered);
 }
 
-function createCard(title, count, value, heat) {
-  const card = document.createElement("div");
-  card.className = "stat-card clickable";
+function createCard(title,dataset){
 
-  card.innerHTML = `
+  const value=dataset.reduce((s,r)=>s+parseFloat(r.GrandTotal||0),0);
+  const card=document.createElement("div");
+  card.className="stat-card clickable";
+  card.onclick=()=>showDrill(dataset);
+
+  card.innerHTML=`
     <div class="stat-title">${title}</div>
-    <div class="stat-number">${count} deals</div>
+    <div class="stat-number">${dataset.length} deals</div>
     <div class="stat-sub">£${value.toFixed(2)}</div>
-    <div class="stat-sub">${heat || ""}</div>
   `;
 
   document.getElementById("statsContainer").appendChild(card);
 }
 
-function createTopPerformers(data) {
-  if(currentTab !== "Accepted") return;
+function showDrill(dataset){
 
-  const grouped = {};
-  data.forEach(r=>{
-    const rep = r.SalesRep || "Unknown";
-    if(!grouped[rep]) grouped[rep]=0;
-    grouped[rep]+=parseFloat(r.GrandTotal||0);
+  document.getElementById("mainView").style.display="none";
+  document.getElementById("drillView").style.display="block";
+
+  if(currentTab==="Views"){
+    const grouped={};
+    dataset.forEach(r=>{
+      const key=r.DocNo;
+      if(!grouped[key]){
+        grouped[key]={...r,viewCount:1,latestView:r.EventDateTime};
+      }else{
+        grouped[key].viewCount++;
+        if(new Date(r.EventDateTime)>new Date(grouped[key].latestView)){
+          grouped[key].latestView=r.EventDateTime;
+        }
+      }
+    });
+    currentDataset=Object.values(grouped);
+  }else{
+    currentDataset=dataset;
+  }
+
+  setupSort();
+  renderDrill();
+}
+
+function setupSort(){
+  const select=document.getElementById("sortSelect");
+  if(currentTab==="Views"){
+    select.innerHTML=`
+      <option value="latest">Latest View</option>
+      <option value="views">Most Views</option>
+    `;
+  }else{
+    select.innerHTML=`
+      <option value="recent">Most Recent</option>
+      <option value="value">Highest Value</option>
+    `;
+  }
+}
+
+function renderDrill(){
+
+  const sortBy=document.getElementById("sortSelect").value;
+  let sorted=[...currentDataset];
+
+  if(currentTab==="Views"){
+    if(sortBy==="views") sorted.sort((a,b)=>b.viewCount-a.viewCount);
+    else sorted.sort((a,b)=>new Date(b.latestView)-new Date(a.latestView));
+  }else{
+    if(sortBy==="value") sorted.sort((a,b)=>parseFloat(b.GrandTotal||0)-parseFloat(a.GrandTotal||0));
+    else sorted.sort((a,b)=>new Date(b.EventDateTime)-new Date(a.EventDateTime));
+  }
+
+  const container=document.getElementById("drillContent");
+  container.innerHTML="";
+
+  sorted.forEach(r=>{
+    const row=document.createElement("div");
+    row.className="doc-row";
+
+    if(currentTab==="Views"){
+      row.innerHTML=`
+        <div>
+          <strong>${r.DocNo}</strong> - ${r.DocName||""}
+          <div>${new Date(r.latestView).toLocaleString("en-GB",{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit',year:'numeric'})}</div>
+        </div>
+        <div>${r.viewCount} views</div>
+      `;
+    }else{
+      row.innerHTML=`
+        <div>
+          <strong>${r.DocNo}</strong> - ${r.DocName||""}
+          <div>${new Date(r.EventDateTime).toLocaleString("en-GB",{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit',year:'numeric'})}</div>
+        </div>
+        <div>£${parseFloat(r.GrandTotal||0).toFixed(2)}</div>
+      `;
+    }
+
+    row.onclick=()=>{
+      if(r.SalesRepFacingUrl){
+        window.open(r.SalesRepFacingUrl,"_blank");
+      }
+    };
+
+    container.appendChild(row);
   });
-
-  const sorted = Object.entries(grouped)
-    .sort((a,b)=>b[1]-a[1])
-    .slice(0,3);
-
-  let html = "<h3>🏆 Top Performers This Month</h3>";
-  sorted.forEach((r,i)=>{
-    html+=`<div class="leader-row"><span>${i+1}. ${r[0]}</span><span>£${r[1].toFixed(2)}</span></div>`;
-  });
-
-  document.getElementById("leaderboard").innerHTML = html;
 }
 
 function createActivityFeed(data){
-  const latest = [...data]
-    .sort((a,b)=>new Date(b.EventDateTime)-new Date(a.EventDateTime))
-    .slice(0,5);
+  const latest=[...data].sort((a,b)=>new Date(b.EventDateTime)-new Date(a.EventDateTime)).slice(0,5);
 
-  let html = "<h3>📡 Live Activity</h3>";
+  let html="<h3>📡 Live Activity</h3>";
   latest.forEach(r=>{
-    const emoji = r.EventFullName.includes("Accepted") ? "💰" : "👀";
-    html+=`<div class="activity-item">${emoji} ${r.DocNo} – ${new Date(r.EventDateTime).toLocaleTimeString()}</div>`;
+    const emoji=r.EventFullName.includes("Accepted")?"💰":"👀";
+    html+=`<div class="activity-item">${emoji} ${r.DocNo} - ${r.DocName||""}</div>`;
   });
 
-  document.getElementById("activityFeed").innerHTML = html;
+  document.getElementById("activityFeed").innerHTML=html;
 }
 
 function goBack(){
@@ -307,13 +327,15 @@ function goBack(){
 
 setInterval(()=>{
   const script=document.createElement("script");
-  script.src="https://script.google.com/macros/s/AKfycbzzQtKk_VCtHwYjhmC1f32dNPMXDb5CWa2jE7Sg2rMwVHY_HUvmijH9SnMUQjSTTG3ubw/exec?callback=handleData&ts="+new Date().getTime();
+  script.src="https://script.google.com/macros/s/AKfycbzzQtKk_VCtHwYjhmC1f32dNPMXDb5CWa2jE7Sg2rMwVHY_HUvmijH9SnMUQjSTTG3ubw/exec
+?callback=handleData&ts="+new Date().getTime();
   document.body.appendChild(script);
 },60000);
 
 </script>
 
-<script src="https://script.google.com/macros/s/AKfycbzzQtKk_VCtHwYjhmC1f32dNPMXDb5CWa2jE7Sg2rMwVHY_HUvmijH9SnMUQjSTTG3ubw/exec?callback=handleData"></script>
+<script src="https://script.google.com/macros/s/AKfycbzzQtKk_VCtHwYjhmC1f32dNPMXDb5CWa2jE7Sg2rMwVHY_HUvmijH9SnMUQjSTTG3ubw/exec
+?callback=handleData"></script>
 
 </body>
 </html>
