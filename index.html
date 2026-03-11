@@ -27,14 +27,7 @@ body {
 h1 {
   text-align: center;
   font-weight: 400;
-  margin-bottom: 10px;
-}
-
-#lastUpdated {
-  text-align: center;
-  font-size: 0.85rem;
-  opacity: 0.6;
-  margin-bottom: 30px;
+  margin-bottom: 40px;
 }
 
 .tab-container {
@@ -143,7 +136,6 @@ h1 {
 <div class="wrapper">
 
 <h1>🚀 QuoteValet Live Dashboard</h1>
-<div id="lastUpdated"></div>
 
 <div class="tab-container">
   <div class="tab-btn active" onclick="switchTab(event,'Accepted')">💰 Accepted</div>
@@ -188,8 +180,6 @@ function loadData() {
 
 function handleData(data) {
   allData = data || [];
-  document.getElementById("lastUpdated").innerText =
-    "Last updated " + new Date().toLocaleTimeString("en-GB");
   renderDashboard();
 }
 
@@ -368,7 +358,7 @@ function renderDrill() {
 
       row.innerHTML = `
         <div>
-          <strong>${r.DocNo}</strong> ↗ ${r.DocName || ""}
+          <strong>${r.DocNo}</strong> ${r.DocName || ""}
           <div>Value: ${parseFloat(r.SubTotal||0).toLocaleString("en-GB",{style:"currency",currency:"GBP"})}</div>
           <div>Latest: ${new Date(r.latestView).toLocaleString("en-GB")}</div>
         </div>
@@ -379,7 +369,7 @@ function renderDrill() {
 
       row.innerHTML = `
         <div>
-          <strong>${r.DocNo}</strong> ↗ ${r.DocName || ""}
+          <strong>${r.DocNo}</strong> ${r.DocName || ""}
           <div>${new Date(r.EventDateTime).toLocaleString("en-GB")}</div>
         </div>
         <div class="view-count">
@@ -424,7 +414,7 @@ function goBack() {
   document.getElementById("mainView").style.display = "block";
 }
 
-setInterval(loadData, 60000);
+setInterval(loadData,60000);
 loadData();
 
 </script>
