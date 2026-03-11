@@ -8,130 +8,211 @@
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
 
 <style>
-
-body{
-margin:0;
-font-family:"Roboto",sans-serif;
-background:linear-gradient(140deg,#0f2027 0%,#203a43 50%,#2c5364 100%);
-color:white;
-min-height:100vh;
-display:flex;
-justify-content:center;
+/*
+ * Base styling for the dashboard.  The dark gradient background is retained
+ * from the original implementation while the panel and card styles use
+ * translucent backgrounds and blur effects to achieve a modern "glass" look.
+ */
+body {
+  margin: 0;
+  font-family: "Roboto", sans-serif;
+  background: linear-gradient(140deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+  color: white;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
 }
 
-.wrapper{
-width:95%;
-max-width:1300px;
-padding:60px 20px;
+.wrapper {
+  width: 95%;
+  max-width: 1300px;
+  padding: 60px 20px;
 }
 
-h1{
-text-align:center;
-font-weight:400;
-margin-bottom:40px;
+h1 {
+  text-align: center;
+  font-weight: 400;
+  margin-bottom: 40px;
 }
 
-.tab-container{
-display:flex;
-justify-content:center;
-gap:14px;
-margin-bottom:40px;
+.tab-container {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin-bottom: 40px;
 }
 
-.tab-btn{
-padding:10px 26px;
-border-radius:30px;
-border:1px solid rgba(255,255,255,0.15);
-background:rgba(255,255,255,0.05);
-cursor:pointer;
-transition:0.2s ease;
-font-weight:500;
+.tab-btn {
+  padding: 10px 26px;
+  border-radius: 30px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.05);
+  cursor: pointer;
+  transition: 0.2s ease;
+  font-weight: 500;
 }
 
-.tab-btn:hover{
-background:rgba(255,255,255,0.15);
+.tab-btn:hover {
+  background: rgba(255,255,255,0.15);
 }
 
-.tab-btn.active{
-background:white;
-color:#203a43;
+.tab-btn.active {
+  background: white;
+  color: #203a43;
 }
 
-.stats-container{
-display:flex;
-justify-content:center;
-gap:30px;
-flex-wrap:wrap;
-margin-bottom:40px;
+.stats-container {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  flex-wrap: wrap;
+  margin-bottom: 40px;
 }
 
-.stat-card{
-background:rgba(255,255,255,0.07);
-backdrop-filter:blur(10px);
-padding:30px 40px;
-border-radius:18px;
-min-width:220px;
+.stat-card {
+  background: rgba(255,255,255,0.07);
+  backdrop-filter: blur(10px);
+  padding: 30px 40px;
+  border-radius: 18px;
+  min-width: 220px;
+  transition: 0.25s ease;
 }
 
-.info-grid{
-display:grid;
-grid-template-columns:1fr 1fr;
-gap:24px;
-margin-bottom:28px;
+.stat-card.clickable {
+  cursor: pointer;
 }
 
-.info-panel{
-background:rgba(255,255,255,0.07);
-backdrop-filter:blur(10px);
-border-radius:18px;
-padding:24px 28px;
+.stat-card.clickable:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.5);
 }
 
-.info-panel h3{
-margin:0 0 14px 0;
-font-weight:500;
+.stat-title {
+  font-size: 0.9rem;
+  opacity: 0.7;
+  margin-bottom: 8px;
 }
 
-.panel-item{
-padding:8px 0;
-font-size:0.95rem;
-border-bottom:1px solid rgba(255,255,255,0.08);
+.stat-number {
+  font-size: 2.6rem;
+  font-weight: 600;
 }
 
-.panel-item:last-child{
-border-bottom:none;
+.stat-sub {
+  font-size: 0.85rem;
+  opacity: 0.7;
+  margin-top: 4px;
 }
 
-.panel-sub{
-display:block;
-font-size:0.85rem;
-opacity:0.75;
-margin-top:2px;
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 28px;
 }
 
-.panel-item.clickable{
-cursor:pointer;
+.info-panel {
+  background: rgba(255,255,255,0.07);
+  backdrop-filter: blur(10px);
+  border-radius: 18px;
+  padding: 24px 28px;
 }
 
-.panel-item.clickable:hover{
-opacity:1;
+.info-panel h3 {
+  margin: 0 0 14px 0;
+  font-weight: 500;
 }
 
-.hot-flag{
-color:#ffb347;
-font-weight:600;
+.panel-item {
+  padding: 8px 0;
+  font-size: 0.95rem;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 
-.attention{
-color:#ff5e5e;
-font-weight:600;
+.panel-item:last-child {
+  border-bottom: none;
 }
 
-.empty-note{
-opacity:0.7;
-font-size:0.9rem;
+.panel-sub {
+  display: block;
+  font-size: 0.85rem;
+  opacity: 0.75;
+  margin-top: 2px;
 }
 
+.panel-item.clickable {
+  cursor: pointer;
+}
+
+.panel-item.clickable:hover {
+  opacity: 1;
+}
+
+.hot-flag {
+  color: #ffb347;
+  font-weight: 600;
+}
+
+.attention {
+  color: #ff5e5e;
+  font-weight: 600;
+}
+
+.empty-note {
+  opacity: 0.7;
+  font-size: 0.9rem;
+}
+
+.drill-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.back-btn {
+  padding: 6px 16px;
+  border-radius: 18px;
+  border: none;
+  background: rgba(255,255,255,0.1);
+  color: white;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.back-btn:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+.drill-item {
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.drill-item:last-child {
+  border-bottom: none;
+}
+
+.drill-doc {
+  flex: 1;
+}
+
+.drill-meta {
+  text-align: right;
+  min-width: 160px;
+}
+
+@media (max-width: 900px) {
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+  .stat-card {
+    min-width: 180px;
+  }
+}
 </style>
 </head>
 
@@ -139,366 +220,389 @@ font-size:0.9rem;
 
 <div class="wrapper">
 
-<h1>🚀 QuoteValet Live Dashboard</h1>
+  <h1>🚀 QuoteValet Live Dashboard</h1>
 
-<div class="tab-container">
-<div class="tab-btn active" onclick="switchTab(event,'Accepted')">💰 Accepted</div>
-<div class="tab-btn" onclick="switchTab(event,'Views')">👀 Views</div>
-<div class="tab-btn" onclick="switchTab(event,'NotViewed')">📭 Not Viewed</div>
-</div>
+  <div class="tab-container">
+    <div class="tab-btn active" onclick="switchTab(event,'Accepted')">💰 Accepted</div>
+    <div class="tab-btn" onclick="switchTab(event,'Views')">👀 Views</div>
+    <div class="tab-btn" onclick="switchTab(event,'NotViewed')">📭 Not Viewed</div>
+  </div>
 
-<div class="stats-container" id="statsContainer"></div>
+  <!-- Main view: summary cards and panels -->
+  <div id="mainView">
+    <div class="stats-container" id="statsContainer"></div>
 
-<div class="info-grid">
-<div id="panelLeft" class="info-panel"></div>
-<div id="panelRight" class="info-panel"></div>
-</div>
+    <div class="info-grid">
+      <div id="panelLeft" class="info-panel"></div>
+      <div id="panelRight" class="info-panel"></div>
+    </div>
 
-<div class="info-grid">
-<div id="activityFeed" class="info-panel"></div>
-<div id="attentionQuotes" class="info-panel"></div>
-</div>
+    <div class="info-grid">
+      <div id="activityFeed" class="info-panel"></div>
+      <div id="attentionQuotes" class="info-panel"></div>
+    </div>
+  </div>
+
+  <!-- Drill view: displays detailed lists when summary cards are clicked -->
+  <div id="drillView" style="display:none;">
+    <div class="drill-header">
+      <button class="back-btn" onclick="goBack()">← Back</button>
+      <h3 id="drillTitle"></h3>
+    </div>
+    <div id="drillContent" class="info-panel"></div>
+  </div>
 
 </div>
 
 <script>
+// Base URL for Apps Script JSONP endpoint.  You must deploy your Apps Script as a web app
+// and use the /exec URL here.  The script will invoke handleData() with the data.
+const APPS_SCRIPT_BASE = "https://script.google.com/macros/s/AKfycbzzQtKk_VCtHwYjhmC1f32dNPMXDb5CWa2jE7Sg2rMwVHY_HUvmijH9SnMUQjSTTG3ubw/exec";
 
-const APPS_SCRIPT_BASE="https://script.google.com/macros/s/AKfycbzzQtKk_VCtHwYjhmC1f32dNPMXDb5CWa2jE7Sg2rMwVHY_HUvmijH9SnMUQjSTTG3ubw/exec";
-
-let allData=[];
-let quotes={};
-let currentTab="Accepted";
+// Data holders and state
+let allData = [];
+let quotes = {};
+let currentTab = "Accepted";
 let currentScript;
+let currentDataset = [];
 
-function currency(v){
-return parseFloat(v||0).toLocaleString("en-GB",{style:"currency",currency:"GBP"});
+// Format numbers as GBP currency
+function currency(v) {
+  return parseFloat(v || 0).toLocaleString("en-GB", { style: "currency", currency: "GBP" });
 }
 
-function timeAgo(date){
-const then=new Date(date);
-const now=new Date();
-const diff=Math.floor((now-then)/60000);
-if(diff<1)return"just now";
-if(diff<60)return diff+"m ago";
-const hrs=Math.floor(diff/60);
-if(hrs<24)return hrs+"h ago";
-return Math.floor(hrs/24)+"d ago";
+// Convert a date to "time ago" strings
+function timeAgo(date) {
+  const then = new Date(date);
+  const now = new Date();
+  const diff = Math.floor((now - then) / 60000); // minutes
+  if (diff < 1) return "just now";
+  if (diff < 60) return diff + "m ago";
+  const hrs = Math.floor(diff / 60);
+  if (hrs < 24) return hrs + "h ago";
+  return Math.floor(hrs / 24) + "d ago";
 }
 
-function loadData(){
-
-if(currentScript) currentScript.remove();
-
-const script=document.createElement("script");
-script.src=APPS_SCRIPT_BASE+"?callback=handleData&ts="+Date.now();
-
-currentScript=script;
-document.body.appendChild(script);
-
+// Load data via JSONP.  A timestamp is appended to prevent caching.
+function loadData() {
+  if (currentScript) currentScript.remove();
+  const script = document.createElement("script");
+  script.src = APPS_SCRIPT_BASE + "?callback=handleData&ts=" + Date.now();
+  currentScript = script;
+  document.body.appendChild(script);
 }
 
-function handleData(data){
-
-allData=data||[];
-
-groupQuotes();
-
-renderDashboard();
-
+// Callback from Apps Script.  Stores data and renders the dashboard.
+function handleData(data) {
+  allData = data || [];
+  groupQuotes();
+  renderDashboard();
 }
 
-function groupQuotes(){
-
-quotes={};
-
-allData.forEach(r=>{
-
-const doc=r.DocNo||"UNKNOWN";
-
-if(!quotes[doc]){
-
-quotes[doc]={
-doc:null,
-views:0,
-accepted:false,
-created:false,
-latestView:null
-};
-
+// Group raw event data by DocNo.  For each quote we track the
+// created flag, number of views, acceptance state and the latest view time.
+function groupQuotes() {
+  quotes = {};
+  allData.forEach(r => {
+    const doc = r.DocNo || "UNKNOWN";
+    if (!quotes[doc]) {
+      quotes[doc] = {
+        doc: null,
+        views: 0,
+        accepted: false,
+        created: false,
+        latestView: null
+      };
+    }
+    // record creation event
+    if (r.EventFullName === "QuoteValet.CreatedForCustomer") {
+      quotes[doc].created = true;
+      quotes[doc].doc = r;
+    }
+    // record view event
+    if (r.EventFullName === "QuoteValet.ViewedExternal") {
+      quotes[doc].views++;
+      const evtTime = new Date(r.EventDateTime);
+      if (!quotes[doc].latestView || evtTime > new Date(quotes[doc].latestView)) {
+        quotes[doc].latestView = r.EventDateTime;
+      }
+      if (!quotes[doc].doc) {
+        quotes[doc].doc = r;
+      }
+    }
+    // record acceptance
+    if (r.EventFullName === "QuoteValet.Accepted") {
+      quotes[doc].accepted = true;
+      if (!quotes[doc].doc) {
+        quotes[doc].doc = r;
+      }
+    }
+  });
 }
 
-if(r.EventFullName==="QuoteValet.CreatedForCustomer"){
-quotes[doc].created=true;
-quotes[doc].doc=r;
+// Switch between tabs (Accepted, Views, NotViewed).  Updates the UI accordingly.
+function switchTab(e, tab) {
+  currentTab = tab;
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  e.target.classList.add("active");
+  goBack();
+  renderDashboard();
 }
 
-if(r.EventFullName==="QuoteValet.ViewedExternal"){
+// Render the dashboard summary cards and panels for the current tab.
+function renderDashboard() {
+  // Reset containers
+  document.getElementById("statsContainer").innerHTML = "";
+  document.getElementById("panelLeft").innerHTML = "";
+  document.getElementById("panelRight").innerHTML = "";
+  document.getElementById("activityFeed").innerHTML = "";
+  document.getElementById("attentionQuotes").innerHTML = "";
 
-quotes[doc].views++;
+  const now = new Date();
+  const todayUK = now.toLocaleDateString("en-GB");
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayUK = yesterday.toLocaleDateString("en-GB");
+  const thisMonth = now.getMonth();
+  const thisYear = now.getFullYear();
 
-if(!quotes[doc].latestView || new Date(r.EventDateTime)>new Date(quotes[doc].latestView)){
-quotes[doc].latestView=r.EventDateTime;
+  // Determine which event type we're filtering on for the summary counts
+  let eventType = "";
+  if (currentTab === "Accepted") eventType = "QuoteValet.Accepted";
+  if (currentTab === "Views") eventType = "QuoteValet.ViewedExternal";
+
+  // Filter raw events only for the selected type (Accepted or Views). NotViewed has no events.
+  const filteredEvents = allData.filter(r => r.EventFullName === eventType);
+
+  // Build datasets for Today, Yesterday and This Month
+  const todayEvents = filteredEvents.filter(r => new Date(r.EventDateTime).toLocaleDateString("en-GB") === todayUK);
+  const yesterdayEvents = filteredEvents.filter(r => new Date(r.EventDateTime).toLocaleDateString("en-GB") === yesterdayUK);
+  const thisMonthEvents = filteredEvents.filter(r => {
+    const d = new Date(r.EventDateTime);
+    return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
+  });
+
+  // Create stat cards with click handlers that drill down into the respective dataset
+  createStatCard("📆 Today", todayEvents);
+  createStatCard("📅 Yesterday", yesterdayEvents);
+  createStatCard("📅 This Month", thisMonthEvents);
+
+  // Additional stats depending on tab
+  const quoteList = Object.values(quotes);
+
+  if (currentTab === "Accepted") {
+    // Average deal size for this month
+    const avgDeal = thisMonthEvents.length > 0
+      ? thisMonthEvents.reduce((sum, r) => sum + parseFloat(r.SubTotal || 0), 0) / thisMonthEvents.length
+      : 0;
+    createSimpleCard("💷 Avg Deal", currency(avgDeal), "this month");
+    // Render top accepted deals
+    renderAccepted(quoteList.filter(q => q.accepted));
+    renderActivity("QuoteValet.Accepted", "📡 Most Recent Acceptances");
+  }
+  else if (currentTab === "Views") {
+    // Unique quotes viewed this month
+    const uniqueDocs = [...new Set(thisMonthEvents.map(r => r.DocNo))].length;
+    createSimpleCard("🔎 Unique Quotes", uniqueDocs, "viewed this month");
+    renderViewed(quoteList.filter(q => q.views > 0));
+    renderActivity("QuoteValet.ViewedExternal", "📡 Live Views");
+  }
+  else if (currentTab === "NotViewed") {
+    // Count of quotes created but never viewed
+    const notViewed = quoteList.filter(q => q.created && q.views === 0);
+    createSimpleCard("📭 Never Viewed", notViewed.length, "quotes");
+    renderNotViewed(notViewed);
+  }
+  // Render quotes needing attention in all tabs for visibility
+  renderAttentionQuotes();
 }
 
-if(!quotes[doc].doc) quotes[doc].doc=r;
-
+// Helper to create a summary card.  If a dataset is provided and non-empty
+// the card becomes clickable and drills into that dataset when clicked.
+function createStatCard(title, dataset) {
+  const count = dataset.length;
+  const value = dataset.reduce((sum, r) => sum + parseFloat(r.SubTotal || 0), 0);
+  const card = document.createElement("div");
+  card.className = "stat-card";
+  // Attach click handler only if there is data
+  if (dataset && dataset.length) {
+    card.classList.add("clickable");
+    card.onclick = () => showDrill(dataset, title);
+  }
+  card.innerHTML = `
+    <div class="stat-title">${title}</div>
+    <div class="stat-number">${count}</div>
+    <div class="stat-sub">
+      ${currentTab === "Accepted"
+        ? `accepted · ${currency(value)}`
+        : (currentTab === "Views" ? "events" : "quotes")}
+    </div>
+  `;
+  document.getElementById("statsContainer").appendChild(card);
 }
 
-if(r.EventFullName==="QuoteValet.Accepted"){
-quotes[doc].accepted=true;
-if(!quotes[doc].doc) quotes[doc].doc=r;
+// Helper to create a non-clickable summary card
+function createSimpleCard(title, number, sub) {
+  const card = document.createElement("div");
+  card.className = "stat-card";
+  card.innerHTML = `
+    <div class="stat-title">${title}</div>
+    <div class="stat-number">${number}</div>
+    <div class="stat-sub">${sub}</div>
+  `;
+  document.getElementById("statsContainer").appendChild(card);
 }
 
-});
-
+// Render a list of largest accepted deals.  Sorted by SubTotal descending.
+function renderAccepted(data) {
+  let html = "<h3>💎 Largest Accepted Deals</h3>";
+  const top = data.sort((a, b) => parseFloat(b.doc.SubTotal || 0) - parseFloat(a.doc.SubTotal || 0)).slice(0, 8);
+  if (top.length === 0) {
+    html += `<div class="empty-note">No accepted deals yet.</div>`;
+  } else {
+    top.forEach(q => {
+      html += `
+        <div class="panel-item clickable" onclick="openQuote('${q.doc.SalesRepFacingUrl || ''}')">
+          <strong>${q.doc.DocNo}</strong>
+          <span class="panel-sub">${q.doc.DocName || ''} · ${currency(q.doc.SubTotal || 0)}</span>
+        </div>
+      `;
+    });
+  }
+  document.getElementById("panelLeft").innerHTML = html;
 }
 
-function switchTab(e,tab){
-
-currentTab=tab;
-
-document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
-e.target.classList.add("active");
-
-renderDashboard();
-
+// Render most viewed quotes.  Sorted by number of views.
+function renderViewed(data) {
+  let html = "<h3>👀 Most Viewed Quotes</h3>";
+  const top = data.sort((a, b) => b.views - a.views).slice(0, 8);
+  if (top.length === 0) {
+    html += `<div class="empty-note">No viewed quotes.</div>`;
+  } else {
+    top.forEach(q => {
+      const hot = (q.views > 5 && !q.accepted) ? ' <span class="hot-flag">🔥 Hot</span>' : '';
+      html += `
+        <div class="panel-item clickable" onclick="openQuote('${q.doc.SalesRepFacingUrl || ''}')">
+          <strong>${q.doc.DocNo}</strong>${hot}
+          <span class="panel-sub">${q.doc.DocName || ''} · ${q.views} views · ${timeAgo(q.latestView)}</span>
+        </div>
+      `;
+    });
+  }
+  document.getElementById("panelLeft").innerHTML = html;
 }
 
-function renderDashboard(){
-
-document.getElementById("statsContainer").innerHTML="";
-document.getElementById("panelLeft").innerHTML="";
-document.getElementById("panelRight").innerHTML="";
-document.getElementById("activityFeed").innerHTML="";
-document.getElementById("attentionQuotes").innerHTML="";
-
-const now=new Date();
-const todayUK=now.toLocaleDateString("en-GB");
-
-const yesterday=new Date();
-yesterday.setDate(yesterday.getDate()-1);
-const yesterdayUK=yesterday.toLocaleDateString("en-GB");
-
-const thisMonth=now.getMonth();
-const thisYear=now.getFullYear();
-
-let eventType="";
-if(currentTab==="Accepted") eventType="QuoteValet.Accepted";
-if(currentTab==="Views") eventType="QuoteValet.ViewedExternal";
-
-const filtered=allData.filter(r=>r.EventFullName===eventType);
-
-const todayData=filtered.filter(r=>new Date(r.EventDateTime).toLocaleDateString("en-GB")===todayUK);
-const yesterdayData=filtered.filter(r=>new Date(r.EventDateTime).toLocaleDateString("en-GB")===yesterdayUK);
-const thisMonthData=filtered.filter(r=>{
-const d=new Date(r.EventDateTime);
-return d.getMonth()===thisMonth && d.getFullYear()===thisYear;
-});
-
-createStatCard("📆 Today",todayData);
-createStatCard("📅 Yesterday",yesterdayData);
-createStatCard("📅 This Month",thisMonthData);
-
-const list=Object.values(quotes);
-
-if(currentTab==="Accepted"){
-
-const avgDeal=thisMonthData.length>0
-?thisMonthData.reduce((s,r)=>s+parseFloat(r.SubTotal||0),0)/thisMonthData.length
-:0;
-
-createSimpleCard("💷 Avg Deal",currency(avgDeal),"this month");
-
-const accepted=list.filter(q=>q.accepted);
-renderAccepted(accepted);
-
-renderActivity("QuoteValet.Accepted","📡 Most Recent Acceptances");
-
+// Render quotes not yet viewed.  Sorted by SubTotal descending.
+function renderNotViewed(data) {
+  let html = "<h3>📭 Quotes Not Viewed Yet</h3>";
+  const top = data.sort((a, b) => parseFloat(b.doc.SubTotal || 0) - parseFloat(a.doc.SubTotal || 0)).slice(0, 8);
+  if (top.length === 0) {
+    html += `<div class="empty-note">All quotes have been opened.</div>`;
+  } else {
+    top.forEach(q => {
+      html += `
+        <div class="panel-item clickable" onclick="openQuote('${q.doc.SalesRepFacingUrl || ''}')">
+          <strong>${q.doc.DocNo}</strong>
+          <span class="panel-sub">${q.doc.DocName || ''} · ${currency(q.doc.SubTotal || 0)}</span>
+        </div>
+      `;
+    });
+  }
+  document.getElementById("panelLeft").innerHTML = html;
 }
 
-if(currentTab==="Views"){
-
-const unique=[...new Set(thisMonthData.map(r=>r.DocNo))].length;
-createSimpleCard("🔎 Unique Quotes",unique,"viewed this month");
-
-const viewed=list.filter(q=>q.views>0);
-renderViewed(viewed);
-
-renderActivity("QuoteValet.ViewedExternal","📡 Live Views");
-
+// Render quotes that may need attention.  Quotes with >=3 views, not accepted, and high value (>£3000).
+function renderAttentionQuotes() {
+  const attention = Object.values(quotes)
+    .filter(q => q.views >= 3 && !q.accepted && parseFloat(q.doc.SubTotal || 0) > 3000)
+    .sort((a, b) => b.views - a.views)
+    .slice(0, 8);
+  let html = "<h3>🚨 Quotes Needing Attention</h3>";
+  if (attention.length === 0) {
+    html += `<div class="empty-note">Nothing urgent right now.</div>`;
+  } else {
+    attention.forEach(q => {
+      html += `
+        <div class="panel-item clickable" onclick="openQuote('${q.doc.SalesRepFacingUrl || ''}')">
+          <strong>${q.doc.DocNo}</strong> <span class="attention">⚠</span>
+          <span class="panel-sub">${currency(q.doc.SubTotal || 0)} · ${q.views} views · last ${timeAgo(q.latestView)}</span>
+        </div>
+      `;
+    });
+  }
+  document.getElementById("attentionQuotes").innerHTML = html;
 }
 
-if(currentTab==="NotViewed"){
-
-const notViewed=list.filter(q=>q.created && q.views===0);
-createSimpleCard("📭 Never Viewed",notViewed.length,"quotes");
-
-renderNotViewed(notViewed);
-
+// Render a simple activity feed for the latest events of a given type
+function renderActivity(eventName, title) {
+  const rows = allData
+    .filter(r => r.EventFullName === eventName)
+    .sort((a, b) => new Date(b.EventDateTime) - new Date(a.EventDateTime))
+    .slice(0, 8);
+  let html = `<h3>${title}</h3>`;
+  if (rows.length === 0) {
+    html += `<div class="empty-note">No activity to show.</div>`;
+  } else {
+    rows.forEach(r => {
+      const time = new Date(r.EventDateTime).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+      html += `
+        <div class="panel-item">
+          ${time} - ${r.DocNo} - ${currency(r.SubTotal || 0)}
+        </div>
+      `;
+    });
+  }
+  document.getElementById("activityFeed").innerHTML = html;
 }
 
-renderAttentionQuotes();
-
+// Show a drill-down view for a summary card.  Hides the main view and displays
+// a list of records related to the selected summary card.
+function showDrill(dataset, title) {
+  currentDataset = dataset || [];
+  document.getElementById("mainView").style.display = "none";
+  document.getElementById("drillView").style.display = "block";
+  document.getElementById("drillTitle").textContent = `${title} details`;
+  renderDrill();
 }
 
-function createStatCard(title,data){
-
-const count=data.length;
-const value=data.reduce((s,r)=>s+parseFloat(r.SubTotal||0),0);
-
-const card=document.createElement("div");
-card.className="stat-card";
-
-card.innerHTML=`
-<div class="stat-title">${title}</div>
-<div class="stat-number">${count}</div>
-<div class="stat-sub">${currentTab==="Accepted"?"accepted · "+currency(value):"events"}</div>
-`;
-
-document.getElementById("statsContainer").appendChild(card);
-
+// Render the drill-down list.  Sorts by event time descending.
+function renderDrill() {
+  const container = document.getElementById("drillContent");
+  container.innerHTML = "";
+  if (!currentDataset || currentDataset.length === 0) {
+    container.innerHTML = `<div class="empty-note">No data to display.</div>`;
+    return;
+  }
+  // Sort by event time descending
+  const sorted = currentDataset.sort((a, b) => new Date(b.EventDateTime) - new Date(a.EventDateTime));
+  sorted.forEach(r => {
+    const doc = r.DocNo || "UNKNOWN";
+    const name = r.DocName || "";
+    const value = currency(r.SubTotal || 0);
+    const time = new Date(r.EventDateTime).toLocaleString("en-GB");
+    container.innerHTML += `
+      <div class="drill-item">
+        <div class="drill-doc"><strong>${doc}</strong> ${name}</div>
+        <div class="drill-meta">${value}<br/><span style="font-size:0.8rem;opacity:0.7;">${time}</span></div>
+      </div>
+    `;
+  });
 }
 
-function createSimpleCard(title,value,sub){
-
-const card=document.createElement("div");
-card.className="stat-card";
-
-card.innerHTML=`
-<div class="stat-title">${title}</div>
-<div class="stat-number">${value}</div>
-<div class="stat-sub">${sub}</div>
-`;
-
-document.getElementById("statsContainer").appendChild(card);
-
+// Return to the main view from the drill-down screen
+function goBack() {
+  document.getElementById("drillView").style.display = "none";
+  document.getElementById("mainView").style.display = "block";
 }
 
-function renderAccepted(data){
-
-let html="<h3>💎 Largest Accepted Deals</h3>";
-
-data.sort((a,b)=>parseFloat(b.doc.SubTotal)-parseFloat(a.doc.SubTotal))
-.slice(0,8)
-.forEach(q=>{
-
-html+=`
-<div class="panel-item clickable" onclick="openQuote('${q.doc.SalesRepFacingUrl}')">
-<strong>${q.doc.DocNo}</strong>
-<span class="panel-sub">${q.doc.DocName||""} · ${currency(q.doc.SubTotal)}</span>
-</div>
-`;
-
-});
-
-document.getElementById("panelLeft").innerHTML=html;
-
+// Open a quote URL in a new tab if provided
+function openQuote(url) {
+  if (url) window.open(url, "_blank");
 }
 
-function renderViewed(data){
-
-let html="<h3>👀 Most Viewed Quotes</h3>";
-
-data.sort((a,b)=>b.views-a.views)
-.slice(0,8)
-.forEach(q=>{
-
-html+=`
-<div class="panel-item clickable" onclick="openQuote('${q.doc.SalesRepFacingUrl}')">
-<strong>${q.doc.DocNo}</strong>
-<span class="panel-sub">${q.doc.DocName||""} · ${q.views} views · ${timeAgo(q.latestView)}</span>
-</div>
-`;
-
-});
-
-document.getElementById("panelLeft").innerHTML=html;
-
-}
-
-function renderNotViewed(data){
-
-let html="<h3>📭 Quotes Not Viewed Yet</h3>";
-
-data.sort((a,b)=>parseFloat(b.doc.SubTotal)-parseFloat(a.doc.SubTotal))
-.slice(0,8)
-.forEach(q=>{
-
-html+=`
-<div class="panel-item clickable" onclick="openQuote('${q.doc.SalesRepFacingUrl}')">
-<strong>${q.doc.DocNo}</strong>
-<span class="panel-sub">${q.doc.DocName||""} · ${currency(q.doc.SubTotal)}</span>
-</div>
-`;
-
-});
-
-document.getElementById("panelLeft").innerHTML=html;
-
-}
-
-function renderAttentionQuotes(){
-
-const attention=Object.values(quotes)
-.filter(q=>q.views>=3 && !q.accepted && parseFloat(q.doc.SubTotal||0)>3000)
-.sort((a,b)=>b.views-a.views)
-.slice(0,8);
-
-let html="<h3>🚨 Quotes Needing Attention</h3>";
-
-if(attention.length===0){
-html+="<div class='empty-note'>Nothing urgent right now.</div>";
-}else{
-
-attention.forEach(q=>{
-
-html+=`
-<div class="panel-item clickable" onclick="openQuote('${q.doc.SalesRepFacingUrl}')">
-<strong>${q.doc.DocNo}</strong> <span class="attention">⚠</span>
-<span class="panel-sub">${currency(q.doc.SubTotal)} · ${q.views} views · last ${timeAgo(q.latestView)}</span>
-</div>
-`;
-
-});
-
-}
-
-document.getElementById("attentionQuotes").innerHTML=html;
-
-}
-
-function renderActivity(event,title){
-
-const rows=allData
-.filter(r=>r.EventFullName===event)
-.sort((a,b)=>new Date(b.EventDateTime)-new Date(a.EventDateTime))
-.slice(0,8);
-
-let html=`<h3>${title}</h3>`;
-
-rows.forEach(r=>{
-
-const time=new Date(r.EventDateTime).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
-
-html+=`
-<div class="panel-item">
-${time} - ${r.DocNo} - ${currency(r.SubTotal)}
-</div>
-`;
-
-});
-
-document.getElementById("activityFeed").innerHTML=html;
-
-}
-
-function openQuote(url){
-if(url)window.open(url,"_blank");
-}
-
-setInterval(loadData,60000);
+// Initial load and periodic refresh
+setInterval(loadData, 60000);
 loadData();
-
 </script>
 
 </body>
