@@ -171,10 +171,18 @@ const APPS_SCRIPT_BASE =
 let allData = [];
 let currentTab = "Accepted";
 let currentDataset = [];
+let currentScript;
 
 function loadData() {
+
+  if(currentScript){
+    currentScript.remove();
+  }
+
   const script = document.createElement("script");
   script.src = APPS_SCRIPT_BASE + "?callback=handleData&ts=" + new Date().getTime();
+
+  currentScript = script;
   document.body.appendChild(script);
 }
 
@@ -351,8 +359,8 @@ function renderDrill() {
     row.className = "doc-row";
 
     row.onclick = () => {
-      if(r.QuoteValetURL){
-        window.open(r.QuoteValetURL,"_blank");
+      if(r.SalesRepFacingURL){
+        window.open(r.SalesRepFacingURL,"_blank");
       }
     };
 
@@ -360,7 +368,7 @@ function renderDrill() {
 
       row.innerHTML = `
         <div>
-          <strong>${r.DocNo}</strong> ${r.DocName || ""}
+          <strong>${r.DocNo}</strong> ↗ ${r.DocName || ""}
           <div>Value: ${parseFloat(r.SubTotal||0).toLocaleString("en-GB",{style:"currency",currency:"GBP"})}</div>
           <div>Latest: ${new Date(r.latestView).toLocaleString("en-GB")}</div>
         </div>
@@ -371,7 +379,7 @@ function renderDrill() {
 
       row.innerHTML = `
         <div>
-          <strong>${r.DocNo}</strong> ${r.DocName || ""}
+          <strong>${r.DocNo}</strong> ↗ ${r.DocName || ""}
           <div>${new Date(r.EventDateTime).toLocaleString("en-GB")}</div>
         </div>
         <div class="view-count">
