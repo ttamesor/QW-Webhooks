@@ -515,7 +515,7 @@ function renderMostViewedQuotes(data) {
     html += `<div class="empty-note">No views this month yet.</div>`;
   } else {
     top.forEach(r => {
-      const hot = r.viewCount >= 3 ? ' <span class="hot-flag">🔥 Hot</span>' : '';
+      const hot = r.viewCount >= 5 ? ' <span class="hot-flag">🔥 Hot</span>' : '';
       html += `
         <div class="panel-item clickable" onclick="openSalesRepUrlByDocNo('${escapeJs(r.DocNo || "")}')">
           <strong>${r.DocNo || "UNKNOWN"} ↗</strong>${hot}
