@@ -5,420 +5,418 @@
 <title>QuoteValet Dashboard</title>
 
 <link rel="icon" type="image/x-icon" href="favicon.ico">
-
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <style>
-
-body{
-margin:0;
-font-family:"Roboto",sans-serif;
-background:#f4f6f9;
-color:#333;
+body {
+  margin: 0;
+  font-family: "Roboto", sans-serif;
+  background: linear-gradient(140deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+  color: white;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
 }
 
-.wrapper{
-max-width:1400px;
-margin:auto;
-padding:40px;
+.wrapper {
+  width: 95%;
+  max-width: 1300px;
+  padding: 60px 20px;
 }
 
-.header{
-display:flex;
-justify-content:space-between;
-align-items:center;
-margin-bottom:30px;
+h1 {
+  text-align: center;
+  font-weight: 400;
+  margin-bottom: 10px;
 }
 
-.header h1{
-margin:0;
-font-weight:500;
+#lastUpdated {
+  text-align: center;
+  font-size: 0.85rem;
+  opacity: 0.6;
+  margin-bottom: 30px;
 }
 
-.live-indicator{
-background:#e9f7ef;
-padding:6px 12px;
-border-radius:20px;
-font-size:0.8rem;
-color:#1e8449;
+.tab-container {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin-bottom: 40px;
 }
 
-.card-grid{
-display:grid;
-grid-template-columns:repeat(4,1fr);
-gap:20px;
-margin-bottom:30px;
+.tab-btn {
+  padding: 10px 26px;
+  border-radius: 30px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.05);
+  cursor: pointer;
+  transition: 0.2s ease;
+  font-weight: 500;
 }
 
-.card{
-background:white;
-border-radius:14px;
-padding:22px;
-box-shadow:0 4px 10px rgba(0,0,0,0.06);
+.tab-btn:hover { background: rgba(255,255,255,0.15); }
+
+.tab-btn.active {
+  background: white;
+  color: #203a43;
 }
 
-.card-title{
-font-size:0.8rem;
-color:#7f8c8d;
-margin-bottom:8px;
+.stats-container {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  flex-wrap: wrap;
+  margin-bottom: 40px;
 }
 
-.card-number{
-font-size:1.9rem;
-font-weight:600;
+.stat-card {
+  background: rgba(255,255,255,0.07);
+  backdrop-filter: blur(10px);
+  padding: 30px 40px;
+  border-radius: 18px;
+  min-width: 260px;
+  transition: 0.25s ease;
 }
 
-.chart-grid{
-display:grid;
-grid-template-columns:2fr 1fr;
-gap:20px;
-margin-bottom:30px;
+.stat-card.clickable { cursor: pointer; }
+
+.stat-card.clickable:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.5);
 }
 
-.chart-card{
-background:white;
-border-radius:14px;
-padding:20px;
-box-shadow:0 4px 10px rgba(0,0,0,0.06);
+.stat-title { font-size: 0.9rem; opacity: 0.7; margin-bottom: 8px; }
+.stat-number { font-size: 2.6rem; font-weight: 600; }
+.stat-sub { font-size: 0.85rem; opacity: 0.7; margin-top: 4px; }
+
+#drillView { display:none; margin-top:30px; }
+
+.doc-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255,255,255,0.08);
+  padding: 22px 26px;
+  border-radius: 14px;
+  margin-bottom: 14px;
+  cursor: pointer;
 }
 
-.table-grid{
-display:grid;
-grid-template-columns:2fr 1fr;
-gap:20px;
+.doc-row:hover { background: rgba(255,255,255,0.18); }
+
+.view-count {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #00e0ff;
 }
 
-.table-card{
-background:white;
-border-radius:14px;
-padding:20px;
-box-shadow:0 4px 10px rgba(0,0,0,0.06);
+.back-btn {
+  margin-bottom: 20px;
+  padding: 6px 16px;
+  border-radius: 18px;
+  border: none;
+  background: rgba(255,255,255,0.1);
+  color: white;
+  cursor: pointer;
 }
 
-table{
-width:100%;
-border-collapse:collapse;
+.activity-feed { margin-top: 40px; }
+
+.activity-item {
+  padding: 6px 0;
+  font-size: 0.9rem;
+  opacity: 0.85;
 }
 
-th{
-text-align:left;
-font-size:0.8rem;
-color:#7f8c8d;
-padding-bottom:10px;
+.leaderboard {
+  margin-top: 40px;
 }
 
-td{
-padding:10px 0;
-border-top:1px solid #eee;
+.leaderboard-item {
+  padding: 6px 0;
+  font-size: 0.95rem;
 }
-
-.status{
-padding:3px 10px;
-border-radius:12px;
-font-size:0.75rem;
-}
-
-.status-accepted{
-background:#d4efdf;
-color:#1e8449;
-}
-
-.activity-item{
-font-size:0.9rem;
-padding:8px 0;
-border-bottom:1px solid #eee;
-}
-
-.quote-row{
-cursor:pointer;
-}
-
-.quote-row:hover{
-background:#fafafa;
-}
-
 </style>
 </head>
 
 <body>
-
 <div class="wrapper">
 
-<div class="header">
-<h1>QuoteValet Dashboard</h1>
-<div class="live-indicator">● Live data from webhooks</div>
+<h1>🚀 QuoteValet Live Dashboard</h1>
+<div id="lastUpdated"></div>
+
+<div class="tab-container">
+  <div class="tab-btn active" onclick="switchTab(event,'Accepted')">💰 Accepted</div>
+  <div class="tab-btn" onclick="switchTab(event,'Views')">👀 Views</div>
 </div>
 
-<div class="card-grid">
-
-<div class="card">
-<div class="card-title">TOTAL QUOTES</div>
-<div id="totalQuotes" class="card-number">0</div>
+<div id="mainView">
+  <div class="stats-container" id="statsContainer"></div>
+  <div id="leaderboard" class="leaderboard"></div>
+  <div id="activityFeed" class="activity-feed"></div>
 </div>
 
-<div class="card">
-<div class="card-title">TOTAL VIEWS</div>
-<div id="totalViews" class="card-number">0</div>
-</div>
-
-<div class="card">
-<div class="card-title">ACCEPTANCES</div>
-<div id="totalAccepted" class="card-number">0</div>
-</div>
-
-<div class="card">
-<div class="card-title">CONVERSION RATE</div>
-<div id="conversionRate" class="card-number">0%</div>
-</div>
-
-<div class="card">
-<div class="card-title">PIPELINE VALUE</div>
-<div id="pipelineValue" class="card-number">£0</div>
-</div>
-
-<div class="card">
-<div class="card-title">AVG QUOTE VALUE</div>
-<div id="avgQuoteValue" class="card-number">£0</div>
-</div>
-
-<div class="card">
-<div class="card-title">ACCEPTED VALUE</div>
-<div id="acceptedValue" class="card-number">£0</div>
-</div>
-
-<div class="card">
-<div class="card-title">OPTIONS CHANGED</div>
-<div id="optionsChanged" class="card-number">0</div>
-</div>
-
-</div>
-
-<div class="chart-grid">
-
-<div class="chart-card">
-<h3>Views Over Time</h3>
-<canvas id="viewsChart"></canvas>
-</div>
-
-<div class="chart-card">
-<h3>Event Breakdown</h3>
-<canvas id="eventChart"></canvas>
-</div>
-
-</div>
-
-<div class="table-grid">
-
-<div class="table-card">
-
-<h3>Quote Overview</h3>
-
-<table id="quoteTable">
-
-<thead>
-
-<tr>
-<th>Quote</th>
-<th>Company</th>
-<th>Value</th>
-<th>Status</th>
-<th>Last Activity</th>
-</tr>
-
-</thead>
-
-<tbody></tbody>
-
-</table>
-
-</div>
-
-<div class="table-card">
-
-<h3>Recent Activity</h3>
-
-<div id="activityFeed"></div>
-
-</div>
-
+<div id="drillView">
+  <button class="back-btn" onclick="goBack()">← Back</button>
+  <div id="drillContent"></div>
 </div>
 
 </div>
 
 <script>
 
-const APPS_SCRIPT_BASE="https://script.google.com/macros/s/AKfycbzzQtKk_VCtHwYjhmC1f32dNPMXDb5CWa2jE7Sg2rMwVHY_HUvmijH9SnMUQjSTTG3ubw/exec";
+const APPS_SCRIPT_BASE =
+"https://script.google.com/macros/s/AKfycbzzQtKk_VCtHwYjhmC1f32dNPMXDb5CWa2jE7Sg2rMwVHY_HUvmijH9SnMUQjSTTG3ubw/exec";
 
-let allData=[];
+let allData = [];
+let currentTab = "Accepted";
+let currentDataset = [];
 
-function loadData(){
+function loadData() {
+  const script = document.createElement("script");
+  script.src = APPS_SCRIPT_BASE + "?callback=handleData&ts=" + new Date().getTime();
+  document.body.appendChild(script);
+}
 
-const script=document.createElement("script");
+function handleData(data) {
+  allData = data || [];
+  document.getElementById("lastUpdated").innerText =
+    "Last updated " + new Date().toLocaleTimeString("en-GB");
+  renderDashboard();
+}
 
-script.src=APPS_SCRIPT_BASE+"?callback=handleData&ts="+new Date().getTime();
+function switchTab(e, tab) {
+  currentTab = tab;
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  e.target.classList.add("active");
+  goBack();
+  renderDashboard();
+}
 
-document.body.appendChild(script);
+function renderDashboard() {
+
+  document.getElementById("statsContainer").innerHTML = "";
+  document.getElementById("activityFeed").innerHTML = "";
+  document.getElementById("leaderboard").innerHTML = "";
+
+  const now = new Date();
+
+  const eventFilter = currentTab === "Accepted"
+    ? "QuoteValet.Accepted"
+    : "QuoteValet.ViewedExternal";
+
+  const filtered = allData.filter(r => r.EventFullName === eventFilter);
+
+  const todayUK = now.toLocaleDateString("en-GB");
+
+  const todayData = filtered.filter(r => {
+    const d = new Date(r.EventDateTime);
+    return d.toLocaleDateString("en-GB") === todayUK;
+  });
+
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayUK = yesterday.toLocaleDateString("en-GB");
+
+  const yesterdayData = filtered.filter(r => {
+    const d = new Date(r.EventDateTime);
+    return d.toLocaleDateString("en-GB") === yesterdayUK;
+  });
+
+  const thisMonth = now.getMonth();
+  const thisYear = now.getFullYear();
+
+  const thisMonthData = filtered.filter(r => {
+    const d = new Date(r.EventDateTime);
+    return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
+  });
+
+  createCard("📆 Today", todayData);
+  createCard("📅 Yesterday", yesterdayData);
+  createCard("📅 This Month", thisMonthData);
+
+  if (currentTab === "Accepted") {
+    renderLeaderboard(thisMonthData);
+    createActivityFeed(filtered, "Most Recent Acceptances");
+  } else {
+    createActivityFeed(filtered, "Live Views");
+  }
+}
+
+function createCard(title, dataset) {
+
+  const count = dataset.length;
+  const value = dataset.reduce((s, r) => s + parseFloat(r.SubTotal || 0), 0);
+
+  const card = document.createElement("div");
+  card.className = "stat-card";
+
+  if (count > 0) {
+    card.classList.add("clickable");
+    card.onclick = () => showDrill(dataset);
+  }
+
+  card.innerHTML = `
+    <div class="stat-title">${title}</div>
+    <div class="stat-number">${count}</div>
+    <div class="stat-sub">
+      ${currentTab === "Accepted"
+        ? "accepted · " + value.toLocaleString("en-GB",{style:"currency",currency:"GBP"})
+        : "events"}
+    </div>
+  `;
+
+  document.getElementById("statsContainer").appendChild(card);
+}
+
+function renderLeaderboard(data) {
+
+  const totals = {};
+
+  data.forEach(r => {
+
+    const rep = r.SalesRep || "Unknown";
+
+    if (!totals[rep]) totals[rep] = {value:0,deals:0};
+
+    totals[rep].value += parseFloat(r.SubTotal || 0);
+    totals[rep].deals++;
+
+  });
+
+  const sorted = Object.entries(totals)
+    .sort((a,b) => b[1].value - a[1].value);
+
+  let html = "<h3>🏆 Top Performers This Month</h3>";
+
+  sorted.forEach(([rep,stats],i) => {
+
+    html += `<div class="leaderboard-item">
+      ${i+1}. ${rep} - ${stats.value.toLocaleString("en-GB",{style:"currency",currency:"GBP"})}
+      (${stats.deals} deals)
+    </div>`;
+
+  });
+
+  document.getElementById("leaderboard").innerHTML = html;
+}
+
+function showDrill(dataset) {
+
+  document.getElementById("mainView").style.display = "none";
+  document.getElementById("drillView").style.display = "block";
+
+  if (currentTab === "Views") {
+
+    const grouped = {};
+
+    dataset.forEach(r => {
+
+      const key = r.DocNo || "UNKNOWN";
+
+      if (!grouped[key]) {
+        grouped[key] = {...r, viewCount:1, latestView:r.EventDateTime};
+      } else {
+        grouped[key].viewCount++;
+        if (new Date(r.EventDateTime) > new Date(grouped[key].latestView)) {
+          grouped[key].latestView = r.EventDateTime;
+        }
+      }
+
+    });
+
+    currentDataset = Object.values(grouped);
+
+  } else {
+    currentDataset = dataset;
+  }
+
+  renderDrill();
+}
+
+function renderDrill() {
+
+  const container = document.getElementById("drillContent");
+  container.innerHTML = "";
+
+  if(currentTab==="Views"){
+    currentDataset.sort((a,b)=>b.viewCount-a.viewCount);
+  }else{
+    currentDataset.sort((a,b)=>new Date(b.EventDateTime)-new Date(a.EventDateTime));
+  }
+
+  currentDataset.forEach(r => {
+
+    const row = document.createElement("div");
+    row.className = "doc-row";
+
+    row.onclick = () => {
+      if(r.QuoteValetURL){
+        window.open(r.QuoteValetURL,"_blank");
+      }
+    };
+
+    if (currentTab === "Views") {
+
+      row.innerHTML = `
+        <div>
+          <strong>${r.DocNo}</strong> ${r.DocName || ""}
+          <div>Value: ${parseFloat(r.SubTotal||0).toLocaleString("en-GB",{style:"currency",currency:"GBP"})}</div>
+          <div>Latest: ${new Date(r.latestView).toLocaleString("en-GB")}</div>
+        </div>
+        <div class="view-count">${r.viewCount}</div>
+      `;
+
+    } else {
+
+      row.innerHTML = `
+        <div>
+          <strong>${r.DocNo}</strong> ${r.DocName || ""}
+          <div>${new Date(r.EventDateTime).toLocaleString("en-GB")}</div>
+        </div>
+        <div class="view-count">
+          ${parseFloat(r.SubTotal||0).toLocaleString("en-GB",{style:"currency",currency:"GBP"})}
+        </div>
+      `;
+
+    }
+
+    container.appendChild(row);
+
+  });
 
 }
 
-function handleData(data){
+function createActivityFeed(data, title) {
 
-allData=data||[];
+  const latest = [...data]
+    .sort((a,b)=>new Date(b.EventDateTime)-new Date(a.EventDateTime))
+    .slice(0,6);
 
-renderDashboard();
+  let html = `<h3>📡 ${title}</h3>`;
 
+  latest.forEach(r => {
+
+    const emoji = r.EventFullName.includes("Accepted") ? "💰" : "👀";
+
+    const time = new Date(r.EventDateTime)
+      .toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
+
+    html += `<div class="activity-item">
+      ${emoji} ${time} - ${r.DocNo} ${r.DocName||""}
+    </div>`;
+
+  });
+
+  document.getElementById("activityFeed").innerHTML = html;
 }
 
-function renderDashboard(){
-
-const views=allData.filter(r=>r.EventFullName==="QuoteValet.ViewedExternal");
-
-const accepted=allData.filter(r=>r.EventFullName==="QuoteValet.Accepted");
-
-const options=allData.filter(r=>r.EventFullName==="QuoteValet.OptionChanged");
-
-document.getElementById("totalQuotes").innerText=[...new Set(allData.map(r=>r.DocNo))].length;
-
-document.getElementById("totalViews").innerText=views.length;
-
-document.getElementById("totalAccepted").innerText=accepted.length;
-
-const conversion=views.length>0?(accepted.length/views.length*100).toFixed(1):0;
-
-document.getElementById("conversionRate").innerText=conversion+"%";
-
-const pipeline=views.reduce((s,r)=>s+parseFloat(r.SubTotal||0),0);
-
-document.getElementById("pipelineValue").innerText=pipeline.toLocaleString("en-GB",{style:"currency",currency:"GBP"});
-
-const acceptedValue=accepted.reduce((s,r)=>s+parseFloat(r.SubTotal||0),0);
-
-document.getElementById("acceptedValue").innerText=acceptedValue.toLocaleString("en-GB",{style:"currency",currency:"GBP"});
-
-const avgQuote=accepted.length>0?acceptedValue/accepted.length:0;
-
-document.getElementById("avgQuoteValue").innerText=avgQuote.toLocaleString("en-GB",{style:"currency",currency:"GBP"});
-
-document.getElementById("optionsChanged").innerText=options.length;
-
-renderCharts(views,accepted,options);
-
-renderQuoteTable();
-
-renderActivity();
-
+function goBack() {
+  document.getElementById("drillView").style.display = "none";
+  document.getElementById("mainView").style.display = "block";
 }
 
-function renderCharts(views,accepted,options){
-
-const hours={};
-
-views.forEach(v=>{
-
-const d=new Date(v.EventDateTime);
-
-const key=d.getHours()+":00";
-
-hours[key]=(hours[key]||0)+1;
-
-});
-
-const labels=Object.keys(hours);
-
-const data=Object.values(hours);
-
-new Chart(document.getElementById("viewsChart"),{
-
-type:"bar",
-
-data:{labels:labels,datasets:[{data:data,backgroundColor:"#3b82f6"}]},
-
-options:{plugins:{legend:{display:false}}}
-
-});
-
-new Chart(document.getElementById("eventChart"),{
-
-type:"doughnut",
-
-data:{labels:["Views","Accepted","Options"],datasets:[{data:[views.length,accepted.length,options.length],backgroundColor:["#3b82f6","#2ecc71","#f39c12"]}]},
-
-});
-
-}
-
-function renderQuoteTable(){
-
-const tbody=document.querySelector("#quoteTable tbody");
-
-tbody.innerHTML="";
-
-const grouped={};
-
-allData.forEach(r=>{
-
-const key=r.DocNo;
-
-if(!grouped[key])grouped[key]=r;
-
-});
-
-Object.values(grouped).forEach(r=>{
-
-const tr=document.createElement("tr");
-
-tr.className="quote-row";
-
-tr.onclick=()=>{
-
-if(r.QuoteValetURL)window.open(r.QuoteValetURL,"_blank");
-
-};
-
-tr.innerHTML=`
-
-<td>${r.DocNo}</td>
-<td>${r.DocName||""}</td>
-<td>${parseFloat(r.SubTotal||0).toLocaleString("en-GB",{style:"currency",currency:"GBP"})}</td>
-<td><span class="status status-accepted">Accepted</span></td>
-<td>${new Date(r.EventDateTime).toLocaleString("en-GB")}</td>
-
-`;
-
-tbody.appendChild(tr);
-
-});
-
-}
-
-function renderActivity(){
-
-const feed=document.getElementById("activityFeed");
-
-feed.innerHTML="";
-
-const latest=[...allData].sort((a,b)=>new Date(b.EventDateTime)-new Date(a.EventDateTime)).slice(0,8);
-
-latest.forEach(r=>{
-
-const div=document.createElement("div");
-
-div.className="activity-item";
-
-const emoji=r.EventFullName.includes("Accepted")?"✔":"👁";
-
-div.innerText=emoji+" "+r.DocNo+" "+(r.DocName||"");
-
-feed.appendChild(div);
-
-});
-
-}
-
-setInterval(loadData,60000);
-
+setInterval(loadData, 60000);
 loadData();
 
 </script>
