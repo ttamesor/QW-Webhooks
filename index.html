@@ -863,7 +863,35 @@ body::after {
   font-weight: 500;
 }
 
-.modal-timeline {
+.modal-quote-link {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 14px;
+  background: rgba(79,142,247,0.08);
+  border: 1px solid rgba(79,142,247,0.2);
+  border-radius: 10px;
+  text-decoration: none;
+  margin-bottom: 16px;
+  transition: all 0.15s;
+}
+
+.modal-quote-link:hover {
+  background: rgba(79,142,247,0.15);
+  border-color: rgba(79,142,247,0.4);
+}
+
+.modal-quote-link span:first-child {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--blue);
+}
+
+.modal-quote-url {
+  font-size: 0.7rem;
+  font-family: var(--font-mono);
+  color: var(--muted);
+}
   border-top: 1px solid var(--border);
   padding-top: 16px;
 }
@@ -2425,6 +2453,11 @@ function showDetail(docId) {
 
   document.getElementById("mBody").innerHTML = `
     <div class="modal-amount">${gbp(doc.SubTotal)}</div>
+    ${doc.SalesRepFacingUrl ? `
+    <a class="modal-quote-link" href="${doc.SalesRepFacingUrl}" target="_blank">
+      <span>↗ Open quote in QuoteValet</span>
+      <span class="modal-quote-url">${doc.SalesRepFacingUrl.replace(/^https?:\/\//, '').slice(0, 55)}…</span>
+    </a>` : ''}
     <div class="detail-grid">
       <div class="detail-cell">
         <div class="detail-cell-label">Company</div>
