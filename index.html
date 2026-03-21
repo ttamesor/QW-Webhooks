@@ -1040,11 +1040,24 @@ function handleData(data) {
 function buildQuotes() {
   quotes = {};
   allData.forEach(r => {
-    const id = r.DocNo;
+    // Group by QuoteValetDocumentID so revisions follow the same quote
+    const id = r.QuoteValetDocumentID || r.DocNo;
     if (!quotes[id]) {
-      quotes[id] = { doc:r, views:0, accepted:false, created:false, expiredView:false, events:[], lastActivity:null, lastActivityType:null, createdAt:null };
+      quotes[id] = { doc:r, docNos:[], views:0, accepted:false, created:false, expiredView:false, events:[], lastActivity:null, lastActivityType:null, createdAt:null };
     }
     const q = quotes[id];
+
+    // Track all DocNos seen for this document (revisions get new DocNos)
+    if (r.DocNo && !q.docNos.includes(r.DocNo)) {
+      q.docNos.push(r.DocNo);
+      // Use the most recent doc row as the display doc
+      const t = parseTs(r.Timestamp || r.Created);
+      if (t && (!q.lastDocTs || t > q.lastDocTs)) {
+        q.lastDocTs = t;
+        q.doc = r;
+      }
+    }
+
     const evtTime = r.Timestamp || r.Created;
 
     q.events.push({ type: r.EventFullName, ts: evtTime });
@@ -1079,7 +1092,7 @@ function filtered() {
   if (searchQuery) {
     const q = searchQuery.toLowerCase();
     list = list.filter(x => {
-      return (x.doc.DocNo||"").toLowerCase().includes(q)
+      return (x.docNos.join(" ")||"").toLowerCase().includes(q)
           || (x.doc.SoldToCompany||"").toLowerCase().includes(q)
           || (x.doc.SoldToContact||"").toLowerCase().includes(q)
           || (x.doc.DocName||"").toLowerCase().includes(q)
@@ -1187,15 +1200,18 @@ function renderQuotes() {
     const lastEvtLabel = eventLabel(q.lastActivityType);
     const lastEvtDate  = shortDate(q.lastActivity);
     const createdDate  = shortDate(q.createdAt);
-
-    // Don't show last activity if it's the same as created
     const showLastActivity = q.lastActivityType && q.lastActivityType !== "QuoteValet.CreatedForCustomer";
+    const docId = q.doc.QuoteValetDocumentID || q.doc.DocNo;
+    // Show all revision DocNos, most recent last
+    const docNoDisplay = q.docNos.length > 1
+      ? q.docNos[0] + ' → ' + q.docNos[q.docNos.length-1]
+      : (q.docNos[0] || q.doc.DocNo);
 
     return `
-      <div class="quote-row" onclick="showDetail('${q.doc.DocNo}')">
+      <div class="quote-row" onclick="showDetail('${docId}')">
         <div class="q-main">
           <div class="q-top">
-            <span class="q-docno">${q.doc.DocNo}</span>
+            <span class="q-docno">${docNoDisplay}</span>
             ${docname ? `<span class="q-docname">${docname}</span>` : ''}
           </div>
           <div class="q-customer">${customerLine}</div>
@@ -1304,13 +1320,13 @@ function renderActivity() {
 }
 
 /* ── Modal ── */
-function showDetail(docNo) {
-  const q = quotes[docNo];
+function showDetail(docId) {
+  const q = quotes[docId];
   if (!q) return;
   const doc = q.doc;
 
-  document.getElementById("mDoc").textContent     = docNo;
-  document.getElementById("mName").textContent    = doc.DocName || docNo;
+  document.getElementById("mDoc").textContent     = q.docNos.length > 1 ? q.docNos.join(" → ") : (q.docNos[0] || doc.DocNo);
+  document.getElementById("mName").textContent    = doc.DocName || doc.DocNo;
   document.getElementById("mCompany").textContent = customerLabel(doc);
 
   const statusLabel = q.accepted ? "✓ Accepted"
@@ -1383,9 +1399,13 @@ function closeModal(e) {
 
 /* ── Debug ── */
 function debugQuote(docNo) {
-  const q = quotes[docNo];
+  // Try direct key first, then search all quotes for matching DocNo
+  let q = quotes[docNo];
+  if (!q) q = Object.values(quotes).find(x => x.docNos.includes(docNo));
   if (!q) { console.log("Quote not found:", docNo); return; }
   console.log("=== " + docNo + " ===");
+  console.log("QuoteValetDocumentID key:", q.doc.QuoteValetDocumentID);
+  console.log("All DocNos:", q.docNos);
   console.log("expiredView:", q.expiredView);
   console.log("accepted:", q.accepted);
   console.log("lastActivityType:", q.lastActivityType);
