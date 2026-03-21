@@ -1255,8 +1255,119 @@ body::after {
   text-align: right;
 }
 
-/* AI panel takes full width */
-.content.ai-mode {
+/* ── Light mode ── */
+body.light {
+  --bg:      #f0f4f8;
+  --bg2:     #e4eaf2;
+  --bg3:     #d8e0ec;
+  --border:  rgba(0,0,0,0.08);
+  --border2: rgba(0,0,0,0.14);
+  --text:    #1a202c;
+  --muted:   #a0aec0;
+  --dim:     #4a5568;
+  --surface: rgba(255,255,255,0.7);
+}
+
+body.light .sidebar,
+body.light .topbar,
+body.light .col-header,
+body.light .ticker-bar {
+  background: var(--bg2);
+}
+
+body.light .search-input,
+body.light .date-filter-input {
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ── Ticker ── */
+.ticker-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 20px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+  height: 34px;
+}
+
+.ticker-label {
+  font-size: 0.62rem;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  color: var(--green);
+  background: rgba(34,211,160,0.12);
+  border: 1px solid rgba(34,211,160,0.25);
+  border-radius: 4px;
+  padding: 2px 6px;
+  flex-shrink: 0;
+}
+
+.ticker-track {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.ticker-inner {
+  white-space: nowrap;
+  font-size: 0.78rem;
+  color: var(--dim);
+  font-family: var(--font-mono);
+  animation: tickerScroll 30s linear infinite;
+}
+
+.ticker-inner .ticker-event { margin-right: 60px; }
+.ticker-inner .ticker-accept { color: var(--green); font-weight: 500; }
+.ticker-inner .ticker-view   { color: var(--purple); }
+.ticker-inner .ticker-expire { color: var(--amber); }
+
+@keyframes tickerScroll {
+  0%   { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+/* ── Topbar buttons ── */
+.topbar-btn {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  color: var(--dim);
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  padding: 7px 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.topbar-btn:hover { background: var(--bg3); color: var(--text); }
+
+.demo-btn {
+  background: rgba(167,139,250,0.12);
+  border-color: rgba(167,139,250,0.3);
+  color: var(--purple);
+  font-weight: 500;
+}
+
+.demo-btn.running {
+  background: rgba(245,166,35,0.12);
+  border-color: rgba(245,166,35,0.3);
+  color: var(--amber);
+  animation: demoPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes demoPulse {
+  0%,100% { opacity: 1; }
+  50%      { opacity: 0.7; }
+}
+
+/* ── Animated counters ── */
+.stat-val { transition: color 0.3s; }
+.stat-val.counting { opacity: 0.7; }
   grid-template-columns: 1fr;
 }
 
@@ -1376,6 +1487,14 @@ body::after {
   <!-- MAIN -->
   <div class="main">
 
+    <!-- Live Ticker -->
+    <div class="ticker-bar" id="tickerBar">
+      <span class="ticker-label">LIVE</span>
+      <div class="ticker-track" id="tickerTrack">
+        <div class="ticker-inner" id="tickerInner">Waiting for activity…</div>
+      </div>
+    </div>
+
     <!-- Topbar -->
     <div class="topbar">
       <div class="search-wrap">
@@ -1385,6 +1504,10 @@ body::after {
       <div class="date-filter-wrap">
         <label class="date-filter-label">Ignore anything older than</label>
         <input type="date" class="date-filter-input" id="dateFrom" value="2026-01-01" onchange="handleDateFilter()">
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+        <button class="topbar-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle light/dark mode">☀️</button>
+        <button class="topbar-btn demo-btn" id="demoBtn" onclick="toggleDemo()" title="Demo mode">▶ Demo</button>
       </div>
       <div class="page-title" id="pageTitle">All Quotes</div>
     </div>
@@ -1651,6 +1774,7 @@ function handleData(data) {
   buildQuotes();
   checkForNewEvents(quotes);
   render();
+  seedTicker();
   debugQuote('PREQ61284');
 }
 
@@ -1770,15 +1894,15 @@ function renderStats() {
   const unseen  = list.filter(q => q.created && !q.accepted && q.views === 0).length;
   const expired = list.filter(q => q.expiredView && !q.accepted && q.lastActivityType === "QuoteValet.ExpiredQuoteWasViewedByCustomer").length;
 
-  document.getElementById("sPipeline").textContent    = gbp(pipeV);
+  animateCurrency(document.getElementById("sPipeline"), pipeV, 800);
   document.getElementById("sPipelineSub").textContent = open.length + " open quotes";
-  document.getElementById("sWon").textContent         = gbp(wonV);
+  animateCurrency(document.getElementById("sWon"), wonV, 800);
   document.getElementById("sWonSub").textContent      = won.length + " accepted";
-  document.getElementById("sViews").textContent       = views;
+  animateCounter(document.getElementById("sViews"), views, "", "", 600);
   document.getElementById("sViewsSub").textContent    = list.length + " quotes tracked";
-  document.getElementById("sHot").textContent         = hot;
-  document.getElementById("sUnseen").textContent      = unseen;
-  document.getElementById("sExpired").textContent     = expired;
+  animateCounter(document.getElementById("sHot"), hot, "", "", 500);
+  animateCounter(document.getElementById("sUnseen"), unseen, "", "", 500);
+  animateCounter(document.getElementById("sExpired"), expired, "", "", 500);
 }
 
 function updateCounts() {
@@ -2523,6 +2647,144 @@ function handleDateFilter() {
   dateFrom = val ? new Date(val + "T00:00:00Z") : null;
   buildQuotes();
   render();
+}
+
+/* ── Theme Toggle ── */
+function toggleTheme() {
+  document.body.classList.toggle("light");
+  document.getElementById("themeBtn").textContent =
+    document.body.classList.contains("light") ? "🌙" : "☀️";
+}
+
+/* ── Animated Counters ── */
+function animateCounter(el, target, prefix, suffix, duration) {
+  if (!el) return;
+  const start  = 0;
+  const step   = Math.ceil(target / (duration / 16));
+  let   current = start;
+  el.classList.add("counting");
+  const tick = () => {
+    current = Math.min(current + step, target);
+    el.textContent = prefix + current.toLocaleString("en-GB") + suffix;
+    if (current < target) requestAnimationFrame(tick);
+    else el.classList.remove("counting");
+  };
+  requestAnimationFrame(tick);
+}
+
+function animateCurrency(el, target, duration) {
+  if (!el) return;
+  const step = Math.ceil(target / (duration / 16));
+  let current = 0;
+  el.classList.add("counting");
+  const tick = () => {
+    current = Math.min(current + step, target);
+    el.textContent = current.toLocaleString("en-GB", { style:"currency", currency:"GBP", maximumFractionDigits:0 });
+    if (current < target) requestAnimationFrame(tick);
+    else el.classList.remove("counting");
+  };
+  requestAnimationFrame(tick);
+}
+
+/* ── Live Ticker ── */
+const tickerEvents = [];
+
+function addTickerEvent(html) {
+  tickerEvents.unshift(html);
+  if (tickerEvents.length > 20) tickerEvents.pop();
+  renderTicker();
+}
+
+function renderTicker() {
+  const inner = document.getElementById("tickerInner");
+  if (!inner) return;
+  if (!tickerEvents.length) { inner.innerHTML = "Waiting for activity…"; return; }
+  inner.innerHTML = tickerEvents.map(e => `<span class="ticker-event">${e}</span>`).join(" · ");
+  // Reset animation
+  inner.style.animation = "none";
+  void inner.offsetHeight;
+  inner.style.animation = "";
+}
+
+function seedTicker() {
+  const list = Object.values(quotes);
+  const events = [];
+  list.forEach(q => {
+    q.events.forEach(e => {
+      const company = q.doc.SoldToCompany || "Unknown";
+      const docNo   = q.docNos[q.docNos.length-1] || q.doc.DocNo;
+      const val     = gbp(q.doc.SubTotal);
+      let html = "";
+      if (e.type === "QuoteValet.Accepted")
+        html = `<span class="ticker-accept">✓ ${docNo} accepted by ${company} — ${val}</span>`;
+      else if (e.type === "QuoteValet.ViewedExternal" || e.type === "QuoteValet.ViewedExternalFirstView")
+        html = `<span class="ticker-view">👁 ${docNo} viewed by ${company}</span>`;
+      else if (e.type === "QuoteValet.ExpiredQuoteWasViewedByCustomer")
+        html = `<span class="ticker-expire">⏰ ${docNo} expired view — ${company}</span>`;
+      if (html) events.push({ html, ts: parseTs(e.ts) || new Date(0) });
+    });
+  });
+  events.sort((a,b) => b.ts - a.ts);
+  events.slice(0, 15).reverse().forEach(e => tickerEvents.push(e.html));
+  renderTicker();
+}
+
+/* ── Demo Mode ── */
+let demoInterval = null;
+const demoCompanies = ["Acme Corp","BrightWave IT","Cobalt Energy","Vertex Medical","Sterling Engineering","Prime Education","Northside Logistics","Horizon Retail"];
+const demoReps      = ["Alice Morgan","Emma Patel","Ben Clarke","David Wilson","Sarah Brown"];
+const demoEvents    = [
+  { type:"view",   label:"viewed", tickerClass:"ticker-view",   icon:"👁" },
+  { type:"view",   label:"viewed", tickerClass:"ticker-view",   icon:"👁" },
+  { type:"view",   label:"viewed", tickerClass:"ticker-view",   icon:"👁" },
+  { type:"accept", label:"ACCEPTED", tickerClass:"ticker-accept", icon:"✅" },
+];
+
+function toggleDemo() {
+  const btn = document.getElementById("demoBtn");
+  if (demoInterval) {
+    clearInterval(demoInterval);
+    demoInterval = null;
+    btn.textContent = "▶ Demo";
+    btn.classList.remove("running");
+    return;
+  }
+  btn.textContent = "■ Stop demo";
+  btn.classList.add("running");
+  runDemoEvent();
+  demoInterval = setInterval(runDemoEvent, 3500);
+}
+
+function runDemoEvent() {
+  const company = demoCompanies[Math.floor(Math.random() * demoCompanies.length)];
+  const rep     = demoReps[Math.floor(Math.random() * demoReps.length)];
+  const docNo   = "Q" + (10000 + Math.floor(Math.random() * 500));
+  const value   = Math.floor(Math.random() * 40000) + 1000;
+  const evt     = demoEvents[Math.floor(Math.random() * demoEvents.length)];
+  const valStr  = value.toLocaleString("en-GB", {style:"currency",currency:"GBP",maximumFractionDigits:0});
+
+  // Add to ticker
+  addTickerEvent(`<span class="${evt.tickerClass}">${evt.icon} ${docNo} ${evt.label} by ${company} — ${valStr}</span>`);
+
+  // Show toast
+  const toast = document.createElement("div");
+  toast.innerHTML = evt.type === "accept"
+    ? `🎉 <strong>${company}</strong> accepted ${docNo} for ${valStr}`
+    : `👁 <strong>${company}</strong> just viewed ${docNo} (${valStr})`;
+  toast.style.cssText = `
+    position:fixed;bottom:24px;right:24px;
+    background:${evt.type==="accept" ? "linear-gradient(135deg,#22d3a0,#4f8ef7)" : "var(--bg2)"};
+    color:${evt.type==="accept" ? "white" : "var(--text)"};
+    border:1px solid ${evt.type==="accept" ? "transparent" : "var(--border2)"};
+    font-family:Inter,sans-serif;font-size:0.85rem;
+    padding:12px 20px;border-radius:12px;
+    box-shadow:0 8px 32px rgba(0,0,0,0.3);
+    z-index:10000;animation:toastIn 0.3s ease;
+    max-width:320px;line-height:1.5;
+  `;
+  document.body.appendChild(toast);
+  if (evt.type === "accept") launchConfetti();
+  setTimeout(() => { toast.style.opacity="0"; toast.style.transition="opacity 0.4s"; setTimeout(()=>toast.remove(),400); }, 3000);
 }
 
 function jumpToTab(tab) {
