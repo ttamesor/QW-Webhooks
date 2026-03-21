@@ -417,13 +417,11 @@ body::after {
 }
 
 /* Date filter */
-.date-filter-wrap {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.date-filter-label {
   font-size: 0.72rem;
   font-family: var(--font-mono);
   text-transform: uppercase;
@@ -432,7 +430,6 @@ body::after {
   white-space: nowrap;
 }
 
-.date-filter-input {
   background: var(--bg2);
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -446,8 +443,6 @@ body::after {
   color-scheme: dark;
 }
 
-.date-filter-input:focus,
-.date-filter-input:hover { border-color: var(--blue); }
 
 /* Quote rows */
 .quote-row {
@@ -1389,7 +1384,6 @@ body.light .ticker-bar {
 }
 
 body.light .search-input,
-body.light .date-filter-input {
   background: var(--bg);
   color: var(--text);
 }
@@ -1970,9 +1964,6 @@ body.light .date-filter-input {
         <input class="search-input" id="searchInput" placeholder="Search… or double-click for command palette" oninput="handleSearch(this.value)" onfocus="showSearchPreview(this.value)" onblur="hideSearchPreview()" ondblclick="openCmd()">
         <div class="search-preview" id="searchPreview"></div>
       </div>
-      <div class="date-filter-wrap">
-        <label class="date-filter-label">Ignore anything older than</label>
-        <input type="date" class="date-filter-input" id="dateFrom" value="2026-01-01" onchange="handleDateFilter()">
       </div>
       <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
         <button class="topbar-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle light/dark mode">☀️ Light mode</button>
@@ -2197,7 +2188,6 @@ let allData = [];
 let quotes  = {};
 let currentTab = "all";
 let searchQuery = "";
-let dateFrom = new Date("2026-01-01T00:00:00Z");
 let seenEventKeys = new Set();
 let notificationsReady = false;
 let isFirstLoad = true;
@@ -2314,11 +2304,6 @@ function handleData(data) {
 function buildQuotes() {
   quotes = {};
   allData.forEach(r => {
-    // Skip rows before dateFrom cutoff (based on EventDateTime)
-    if (dateFrom) {
-      const t = parseTs(r.EventDateTime || r.Timestamp || r.Created);
-      if (t && t < dateFrom) return;
-    }
     // Group by QuoteValetDocumentID so revisions follow the same quote
     const id = r.QuoteValetDocumentID || r.DocNo;
     if (!quotes[id]) {
@@ -2410,10 +2395,10 @@ function filtered() {
   switch(currentTab) {
     case "hot":           list = list.filter(x => !x.accepted && x.views >= 3); break;
     case "accepted":      list = list.filter(x => x.accepted); break;
-    case "stale":         list = list.filter(x => x.created && !x.accepted && x.views === 0); break;
+    case "stale":         list = list.filter(x => !x.accepted && x.views === 0); break;
     case "expired":       list = list.filter(x => x.expiredView && !x.accepted); break;
     case "highvalue":     list = list.filter(x => !x.accepted && parseFloat(x.doc.SubTotal||0) >= 10000); break;
-    case "chasing":       list = list.filter(x => x.created && !x.accepted && x.views === 0 && parseTs(x.createdAt) && (Date.now() - parseTs(x.createdAt)) > 3 * 86400000); break;
+    case "chasing":       list = list.filter(x => !x.accepted && x.views === 0 && parseTs(x.createdAt) && (Date.now() - parseTs(x.createdAt)) > 3 * 86400000); break;
     case "gonecold":      list = list.filter(x => !x.accepted && x.views > 0 && parseTs(x.lastActivity) && (Date.now() - parseTs(x.lastActivity)) > 14 * 86400000); break;
     case "viewedtoday":   list = list.filter(x => parseTs(x.lastActivity) && (Date.now() - parseTs(x.lastActivity)) < 86400000 && (x.lastActivityType === "QuoteValet.ViewedExternal" || x.lastActivityType === "QuoteValet.ViewedExternalFirstView")); break;
     case "senttoday":     list = list.filter(x => parseTs(x.createdAt) && (Date.now() - parseTs(x.createdAt)) < 86400000); break;
@@ -2452,7 +2437,7 @@ function renderStats() {
   const wonV   = won.reduce((s,q)  => s + parseFloat(q.doc.SubTotal||0), 0);
   const views  = list.reduce((s,q) => s + q.views, 0);
   const hot    = list.filter(q => !q.accepted && q.views >= 3).length;
-  const unseen  = list.filter(q => q.created && !q.accepted && q.views === 0).length;
+  const unseen  = list.filter(q => !q.accepted && q.views === 0).length;
   const expired = list.filter(q => q.expiredView && !q.accepted).length;
 
   animateCurrency(document.getElementById("sPipeline"), pipeV, 800);
@@ -2471,10 +2456,10 @@ function updateCounts() {
   document.getElementById("countAll").textContent          = list.length;
   document.getElementById("countHot").textContent          = list.filter(q => !q.accepted && q.views >= 3).length;
   document.getElementById("countAccepted").textContent     = list.filter(q => q.accepted).length;
-  document.getElementById("countStale").textContent        = list.filter(q => q.created && !q.accepted && q.views === 0).length;
+  document.getElementById("countStale").textContent        = list.filter(q => !q.accepted && q.views === 0).length;
   document.getElementById("countExpired").textContent      = list.filter(q => q.expiredView && !q.accepted).length;
   document.getElementById("countHighValue").textContent    = list.filter(q => !q.accepted && parseFloat(q.doc.SubTotal||0) >= 10000).length;
-  document.getElementById("countChasing").textContent      = list.filter(q => q.created && !q.accepted && q.views === 0 && parseTs(q.createdAt) && (Date.now() - parseTs(q.createdAt)) > 3 * 86400000).length;
+  document.getElementById("countChasing").textContent      = list.filter(q => !q.accepted && q.views === 0 && parseTs(q.createdAt) && (Date.now() - parseTs(q.createdAt)) > 3 * 86400000).length;
   document.getElementById("countGoneCold").textContent     = list.filter(q => !q.accepted && q.views > 0 && parseTs(q.lastActivity) && (Date.now() - parseTs(q.lastActivity)) > 14 * 86400000).length;
   document.getElementById("countViewedToday").textContent  = list.filter(q => parseTs(q.lastActivity) && (Date.now() - parseTs(q.lastActivity)) < 86400000 && (q.lastActivityType === "QuoteValet.ViewedExternal" || q.lastActivityType === "QuoteValet.ViewedExternalFirstView")).length;
   document.getElementById("countSentToday").textContent    = list.filter(q => parseTs(q.createdAt) && (Date.now() - parseTs(q.createdAt)) < 86400000).length;
@@ -2827,7 +2812,7 @@ function showRepScorecard(repName) {
   const accepted  = repQuotes.filter(q => q.accepted);
   const open      = repQuotes.filter(q => q.created && !q.accepted);
   const hot       = repQuotes.filter(q => !q.accepted && q.views >= 3);
-  const unseen    = repQuotes.filter(q => q.created && !q.accepted && q.views === 0);
+  const unseen    = repQuotes.filter(q => !q.accepted && q.views === 0);
   const wonVal    = accepted.reduce((s,q) => s + parseFloat(q.doc.SubTotal||0), 0);
   const pipeVal   = open.reduce((s,q) => s + parseFloat(q.doc.SubTotal||0), 0);
   const convRate  = repQuotes.length ? Math.round((accepted.length / repQuotes.length) * 100) : 0;
@@ -3037,9 +3022,9 @@ function buildDataSummary() {
   const accepted  = list.filter(q => q.accepted);
   const open      = list.filter(q => q.created && !q.accepted);
   const hot       = list.filter(q => !q.accepted && q.views >= 3);
-  const stale     = list.filter(q => q.created && !q.accepted && q.views === 0);
+  const stale     = list.filter(q => !q.accepted && q.views === 0);
   const expired   = list.filter(q => q.expiredView && !q.accepted);
-  const chasing   = list.filter(q => q.created && !q.accepted && q.views === 0 && parseTs(q.createdAt) && (now - parseTs(q.createdAt)) > 3 * 86400000);
+  const chasing   = list.filter(q => !q.accepted && q.views === 0 && parseTs(q.createdAt) && (now - parseTs(q.createdAt)) > 3 * 86400000);
   const highval   = list.filter(q => !q.accepted && parseFloat(q.doc.SubTotal||0) >= 10000);
 
   const pipeVal   = open.reduce((s,q) => s + parseFloat(q.doc.SubTotal||0), 0);
@@ -3122,7 +3107,7 @@ function generateCSV(type) {
     rows = list.filter(q => !q.accepted && q.views >= 3);
     filename = "hot-prospects.csv";
   } else if (type === "chasing") {
-    rows = list.filter(q => q.created && !q.accepted && q.views === 0 && parseTs(q.createdAt) && (now - parseTs(q.createdAt)) > 3 * 86400000);
+    rows = list.filter(q => !q.accepted && q.views === 0 && parseTs(q.createdAt) && (now - parseTs(q.createdAt)) > 3 * 86400000);
     filename = "quotes-needing-chase.csv";
   } else {
     rows = list;
@@ -3295,12 +3280,6 @@ Respond ONLY with a JSON array of exactly 6 objects, each with "label" and "cont
   btn.textContent = "Analyse now";
 }
 
-function handleDateFilter() {
-  const val = document.getElementById("dateFrom").value;
-  dateFrom = val ? new Date(val + "T00:00:00Z") : null;
-  buildQuotes();
-  render();
-}
 
 /* ── Theme Toggle ── */
 function toggleTheme() {
