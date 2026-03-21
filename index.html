@@ -1692,19 +1692,6 @@ body.light .date-filter-input {
 .roulette-result-stat-val   { font-family: var(--font-mono); font-size: 0.9rem; font-weight: 600; }
 .roulette-result-stat-label { font-size: 0.62rem; color: var(--muted); margin-top: 2px; }
 
-/* Race Track */
-.race-wrap { display: flex; flex-direction: column; gap: 14px; }
-.race-controls { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
-.race-btn { background: linear-gradient(135deg, var(--amber), #f97316); border: none; border-radius: 8px; color: white; font-family: var(--font-body); font-size: 0.85rem; font-weight: 700; padding: 9px 24px; cursor: pointer; transition: opacity 0.15s; }
-.race-btn:hover { opacity: 0.85; }
-.race-period-info { font-size: 0.75rem; color: var(--dim); font-family: var(--font-mono); }
-.race-track-board { background: var(--bg2); border: 1px solid var(--border); border-radius: 14px; padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; }
-.race-lane { display: grid; grid-template-columns: 110px 1fr auto; gap: 12px; align-items: center; }
-.race-rep-name { font-size: 0.82rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.race-bar-wrap { height: 26px; background: var(--bg3); border-radius: 6px; overflow: visible; position: relative; }
-.race-bar { height: 100%; border-radius: 6px; display: flex; align-items: center; padding-left: 8px; font-size: 0.65rem; font-weight: 600; color: white; white-space: nowrap; overflow: hidden; transition: width 0.8s cubic-bezier(0.34,1.3,0.64,1); min-width: 30px; }
-.race-car { position: absolute; right: -18px; top: 50%; transform: translateY(-50%); font-size: 1rem; transition: right 0.8s cubic-bezier(0.34,1.3,0.64,1); }
-.race-val { font-family: var(--font-mono); font-size: 0.8rem; color: var(--green); font-weight: 500; text-align: right; white-space: nowrap; }
 
 .map-col {
   grid-column: 1 / -1;
@@ -1942,9 +1929,6 @@ body.light .date-filter-input {
       <button class="nav-btn" data-tab="roulette" onclick="switchTab(this,'roulette')">
         <span class="nav-icon">🎰</span> Deal Roulette
       </button>
-      <button class="nav-btn" data-tab="racetrack" onclick="switchTab(this,'racetrack')">
-        <span class="nav-icon">🏎️</span> Race Track
-      </button>
 
     </div>
 
@@ -2143,14 +2127,6 @@ body.light .date-filter-input {
           <span class="col-title">🎰 Deal Roulette</span>
         </div>
         <div id="rouletteContent"></div>
-      </div>
-
-      <!-- Race Track -->
-      <div class="intel-col" id="racetrackCol" style="display:none">
-        <div class="col-header" style="margin-bottom:24px">
-          <span class="col-title">🏎️ Race Track</span>
-        </div>
-        <div id="racetrackContent"></div>
       </div>
 
     </div>
@@ -2924,7 +2900,7 @@ function switchTab(btn, tab) {
     thisweek:"🗓️ This Week", trending:"📈 Trending",
     revised:"🔄 Revised", map:"🗺️ Territory Map",
     funnel:"📊 Conversion Funnel", trend:"📅 Monthly Trend",
-    roulette:"🎰 Deal Roulette", racetrack:"🏎️ Race Track",
+    roulette:"🎰 Deal Roulette",
     ai:"✦ AI Insights"
   };
   document.getElementById("pageTitle").textContent = labels[tab] || "Quotes";
@@ -2935,12 +2911,11 @@ function switchTab(btn, tab) {
   const funnelCol  = document.getElementById("funnelCol");
   const trendCol   = document.getElementById("trendCol");
   const rouletteCol= document.getElementById("rouletteCol");
-  const raceCol    = document.getElementById("racetrackCol");
   const rightCol   = document.querySelector(".right-col");
   const content    = document.querySelector(".content");
 
   // Hide everything first
-  [quotesCol, aiCol, mapCol, funnelCol, trendCol, rouletteCol, raceCol].forEach(el => { if(el) el.style.display = "none"; });
+  [quotesCol, aiCol, mapCol, funnelCol, trendCol, rouletteCol].forEach(el => { if(el) el.style.display = "none"; });
   rightCol.style.display = "";
   content.style.gridTemplateColumns = "";
 
@@ -2992,11 +2967,6 @@ function switchTab(btn, tab) {
     rightCol.style.display = "none";
     content.style.gridTemplateColumns = "1fr";
     renderRoulette();
-  } else if (tab === "racetrack") {
-    raceCol.style.display = "block";
-    rightCol.style.display = "none";
-    content.style.gridTemplateColumns = "1fr";
-    renderRaceTrack();
   } else {
     quotesCol.style.display = "";
     renderQuotes();
@@ -3866,9 +3836,11 @@ function renderTrend() {
 
 /* ── Deal Roulette ── */
 let rouletteSpinning = false;
+let rouletteQuotes   = [];
 
 function renderRoulette() {
-  const hotQuotes = Object.values(quotes).filter(q => !q.accepted && q.views >= 1)
+  const hotQuotes = Object.values(quotes)
+    .filter(q => !q.accepted && q.created)
     .sort((a,b) => parseFloat(b.doc.SubTotal||0) - parseFloat(a.doc.SubTotal||0));
 
   if (!hotQuotes.length) {
@@ -3876,158 +3848,117 @@ function renderRoulette() {
     return;
   }
 
-  const items = [...hotQuotes, ...hotQuotes, ...hotQuotes].slice(0, 30); // triple for scroll effect
+  rouletteQuotes = hotQuotes;
+
+  // Build a long list of items for scrolling (repeat x5)
+  const items = [];
+  for (let i = 0; i < 5; i++) items.push(...hotQuotes);
 
   document.getElementById("rouletteContent").innerHTML = `
     <div class="roulette-wrap">
-      <div style="text-align:center;color:var(--dim);font-size:0.85rem;max-width:480px">
-        Spin to randomly pick a hot prospect to focus on today. Let fate decide your next call.
+      <div style="text-align:center;color:var(--dim);font-size:0.85rem;max-width:480px;line-height:1.6">
+        Spin the wheel and let fate pick your next quote to focus on.
       </div>
-      <div class="roulette-drum">
+      <div class="roulette-drum" id="rouletteDrum">
         <div class="roulette-window"><div class="roulette-highlight"></div></div>
-        <div class="roulette-strip" id="rouletteStrip">
+        <div id="rouletteStrip" style="position:relative;z-index:1">
           ${items.map(q => `
             <div class="roulette-item">
               <div>
-                <div class="roulette-item-main">${q.doc.DocName || q.docNos[0]}</div>
-                <div class="roulette-item-sub">${q.doc.SoldToCompany || ""} · ${q.docNos[0]}</div>
+                <div class="roulette-item-main">${q.doc.DocName || q.docNos[0] || q.doc.DocNo}</div>
+                <div class="roulette-item-sub">${q.doc.SoldToCompany || ""} · ${q.docNos[0] || q.doc.DocNo}</div>
               </div>
               <div class="roulette-item-val">${gbp(q.doc.SubTotal)}</div>
             </div>`).join("")}
         </div>
       </div>
-      <button class="roulette-spin-btn" id="rouletteBtn" onclick="spinRoulette(${JSON.stringify(hotQuotes.map(q=>q.doc.QuoteValetDocumentID||q.doc.DocNo))})">
+      <button class="roulette-spin-btn" id="rouletteBtn" onclick="spinRoulette()">
         🎰 Spin
       </button>
       <div class="roulette-result" id="rouletteResult"></div>
     </div>`;
 }
 
-function spinRoulette(ids) {
-  if (rouletteSpinning) return;
+function spinRoulette() {
+  if (rouletteSpinning || !rouletteQuotes.length) return;
   rouletteSpinning = true;
-  const btn   = document.getElementById("rouletteBtn");
-  const strip = document.getElementById("rouletteStrip");
-  const result= document.getElementById("rouletteResult");
+
+  const btn    = document.getElementById("rouletteBtn");
+  const strip  = document.getElementById("rouletteStrip");
+  const result = document.getElementById("rouletteResult");
+  const itemH  = 58;
+
   btn.disabled = true;
   btn.textContent = "Spinning…";
   result.classList.remove("visible");
 
-  const itemH  = 58;
-  const picked = Math.floor(Math.random() * ids.length);
-  const spins  = 3; // full loops
-  const target = spins * ids.length * itemH + picked * itemH;
+  // Pick a random quote from the middle repeat (index 2 of 5 repeats)
+  const picked   = Math.floor(Math.random() * rouletteQuotes.length);
+  const targetIdx = rouletteQuotes.length * 2 + picked; // land in 3rd repeat
+  const targetY   = targetIdx * itemH;
 
-  let pos = 0;
-  const duration = 2800;
-  const start = performance.now();
+  // Start from top
+  strip.style.transition = "none";
+  strip.style.transform  = "translateY(0px)";
 
-  function ease(t) { return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2; }
+  // Force reflow then animate
+  void strip.offsetHeight;
 
-  function tick(now) {
-    const t   = Math.min((now - start) / duration, 1);
-    pos       = ease(t) * target;
-    strip.style.transform = `translateY(-${pos}px)`;
-    if (t < 1) {
-      requestAnimationFrame(tick);
-    } else {
-      rouletteSpinning = false;
-      btn.disabled = false;
-      btn.textContent = "🎰 Spin again";
-      const q = quotes[ids[picked]];
-      if (q) showRouletteResult(q);
-    }
-  }
-  requestAnimationFrame(tick);
+  const duration = 3000;
+  strip.style.transition = `transform ${duration}ms cubic-bezier(0.25, 0.1, 0.1, 1)`;
+  strip.style.transform  = `translateY(-${targetY}px)`;
+
+  setTimeout(() => {
+    rouletteSpinning = false;
+    btn.disabled     = false;
+    btn.textContent  = "🎰 Spin again";
+    showRouletteResult(rouletteQuotes[picked]);
+  }, duration + 100);
 }
 
 function showRouletteResult(q) {
-  const result = document.getElementById("rouletteResult");
+  const result   = document.getElementById("rouletteResult");
+  const doc      = q.doc;
   const daysOpen = parseTs(q.createdAt) ? Math.round((Date.now() - parseTs(q.createdAt)) / 86400000) : "—";
-  const url = q.doc.SalesRepFacingUrl;
+  const url      = doc.SalesRepFacingUrl;
+
+  const statusLabel = q.accepted ? "✅ Accepted"
+    : q.views >= 3 ? `🔥 Hot (${q.views} views)`
+    : q.views > 0  ? `👁 Viewed (${q.views}×)`
+    : "📭 Not yet viewed";
+
+  const timelineHtml = q.events
+    .sort((a,b) => (parseTs(b.ts)||0) - (parseTs(a.ts)||0))
+    .slice(0, 6)
+    .map(e => {
+      let dot = "tl-dot-create", label = "Created";
+      if (e.type === "QuoteValet.ViewedExternal" || e.type === "QuoteValet.ViewedExternalFirstView") { dot="tl-dot-view"; label="Viewed"; }
+      if (e.type === "QuoteValet.Accepted")                        { dot="tl-dot-accept"; label="Accepted"; }
+      if (e.type === "QuoteValet.ExpiredQuoteWasViewedByCustomer") { dot="tl-dot-view";   label="Viewed (expired)"; }
+      if (e.type === "QuoteValet.UpdatedForCustomer")              { dot="tl-dot-create"; label="Updated"; }
+      return `<div class="timeline-item"><div class="tl-dot ${dot}"></div><div><div class="tl-text">${label}</div><div class="tl-time">${timeAgo(e.ts)}</div></div></div>`;
+    }).join("");
+
   result.innerHTML = `
     <div class="roulette-result-title">🎯 Today's focus quote</div>
-    <div class="roulette-result-name">${q.doc.DocName || q.docNos[0]}</div>
-    <div class="roulette-result-co">${q.doc.SoldToCompany || ""} · ${q.doc.SalesRep || ""}</div>
-    <div class="roulette-result-grid">
-      <div class="roulette-result-stat"><div class="roulette-result-stat-val">${gbp(q.doc.SubTotal)}</div><div class="roulette-result-stat-label">Value</div></div>
-      <div class="roulette-result-stat"><div class="roulette-result-stat-val">${q.views}</div><div class="roulette-result-stat-label">Views</div></div>
-      <div class="roulette-result-stat"><div class="roulette-result-stat-val">${daysOpen}d</div><div class="roulette-result-stat-label">Days open</div></div>
+    <div class="roulette-result-name">${doc.DocName || q.docNos[0] || doc.DocNo}</div>
+    <div class="roulette-result-co">${doc.SoldToCompany || ""} · ${doc.SoldToContact || ""}</div>
+
+    <div class="roulette-result-grid" style="margin-bottom:12px">
+      <div class="roulette-result-stat"><div class="roulette-result-stat-val" style="color:var(--green)">${gbp(doc.SubTotal)}</div><div class="roulette-result-stat-label">Value</div></div>
+      <div class="roulette-result-stat"><div class="roulette-result-stat-val" style="color:var(--purple)">${q.views}</div><div class="roulette-result-stat-label">Total views</div></div>
+      <div class="roulette-result-stat"><div class="roulette-result-stat-val" style="color:var(--amber)">${daysOpen}d</div><div class="roulette-result-stat-label">Days open</div></div>
+      <div class="roulette-result-stat"><div class="roulette-result-stat-val">${doc.SalesRep || "—"}</div><div class="roulette-result-stat-label">Sales rep</div></div>
+      <div class="roulette-result-stat"><div class="roulette-result-stat-val">${statusLabel}</div><div class="roulette-result-stat-label">Status</div></div>
+      <div class="roulette-result-stat"><div class="roulette-result-stat-val">${timeAgo(q.lastActivity)}</div><div class="roulette-result-stat-label">Last activity</div></div>
     </div>
-    ${url ? `<a href="${url}" target="_blank" class="modal-quote-link" style="margin-top:12px">↗ Open quote in QuoteValet</a>` : ''}`;
+
+    ${url ? `<a href="${url}" target="_blank" class="modal-quote-link" style="margin-bottom:12px">↗ Open quote in QuoteValet</a>` : ''}
+
+    <div style="font-size:0.68rem;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px">Event history</div>
+    <div class="modal-timeline" style="border-top:none;padding-top:0">${timelineHtml || '<div class="empty">No events</div>'}</div>`;
+
   result.classList.add("visible");
-}
-
-/* ── Race Track ── */
-const raceColors = ["#4f8ef7","#22d3a0","#a78bfa","#f5a623","#f25c5c","#2dd4bf","#fb923c","#e879f9"];
-let raceAnimating = false;
-
-function renderRaceTrack() {
-  document.getElementById("racetrackContent").innerHTML = `
-    <div class="race-wrap">
-      <div class="race-controls">
-        <button class="race-btn" onclick="startRace()">🏁 Start Race</button>
-        <div class="race-period-info">Ranked by accepted value — watch the bars animate in</div>
-      </div>
-      <div class="race-track-board" id="raceBoard"></div>
-    </div>`;
-  buildRaceBoard(false);
-}
-
-function buildRaceBoard(animate) {
-  const board = document.getElementById("raceBoard");
-  if (!board) return;
-
-  const reps = {};
-  Object.values(quotes).forEach(q => {
-    if (!q.accepted) return;
-    const rep = q.doc.SalesRep || "Unknown";
-    if (!reps[rep]) reps[rep] = { won:0, count:0 };
-    reps[rep].won   += parseFloat(q.doc.SubTotal||0);
-    reps[rep].count++;
-  });
-
-  const sorted = Object.entries(reps).sort((a,b) => b[1].won - a[1].won).slice(0,8);
-  if (!sorted.length) { board.innerHTML = `<div class="empty">No accepted quotes yet</div>`; return; }
-  const maxWon = sorted[0][1].won || 1;
-
-  board.innerHTML = sorted.map(([rep, d], i) => {
-    const pct = Math.round((d.won / maxWon) * 100);
-    const color = raceColors[i % raceColors.length];
-    const initials = rep.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2);
-    return `
-      <div class="race-lane">
-        <div class="race-rep-name">${rep}</div>
-        <div class="race-bar-wrap">
-          <div class="race-bar" id="racebar-${i}" style="width:${animate?'0%':pct+'%'};background:${color}">
-            ${animate ? '' : initials}
-          </div>
-          <span class="race-car" id="racecar-${i}" style="right:calc(${animate?'0%':pct+'%'} - 18px)">🏎️</span>
-        </div>
-        <div class="race-val">${gbp(d.won)}</div>
-      </div>`;
-  }).join("");
-
-  if (animate) {
-    setTimeout(() => {
-      sorted.forEach(([rep, d], i) => {
-        const pct = Math.round((d.won / maxWon) * 100);
-        const bar = document.getElementById(`racebar-${i}`);
-        const car = document.getElementById(`racecar-${i}`);
-        const color = raceColors[i % raceColors.length];
-        const initials = rep.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2);
-        const delay = i * 120;
-        setTimeout(() => {
-          if (bar) { bar.style.width = pct + "%"; bar.style.transition = "width 1.2s cubic-bezier(0.34,1.3,0.64,1)"; bar.textContent = initials; }
-          if (car) { car.style.right = `calc(${pct}% - 18px)`; car.style.transition = "right 1.2s cubic-bezier(0.34,1.3,0.64,1)"; }
-        }, delay);
-      });
-    }, 100);
-  }
-}
-
-function startRace() {
-  buildRaceBoard(true);
 }
 
 
