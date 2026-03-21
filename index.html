@@ -1506,7 +1506,7 @@ body.light .date-filter-input {
         <input type="date" class="date-filter-input" id="dateFrom" value="2026-01-01" onchange="handleDateFilter()">
       </div>
       <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
-        <button class="topbar-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle light/dark mode">☀️</button>
+        <button class="topbar-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle light/dark mode">☀️ Light mode</button>
         <button class="topbar-btn demo-btn" id="demoBtn" onclick="toggleDemo()" title="Demo mode">▶ Demo</button>
       </div>
       <div class="page-title" id="pageTitle">All Quotes</div>
@@ -2653,7 +2653,7 @@ function handleDateFilter() {
 function toggleTheme() {
   document.body.classList.toggle("light");
   document.getElementById("themeBtn").textContent =
-    document.body.classList.contains("light") ? "🌙" : "☀️";
+    document.body.classList.contains("light") ? "🌙 Dark mode" : "☀️ Light mode";
 }
 
 /* ── Animated Counters ── */
