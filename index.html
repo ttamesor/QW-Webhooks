@@ -1034,6 +1034,7 @@ function handleData(data) {
   allData = data || [];
   buildQuotes();
   render();
+  debugQuote('PREQ61284');
 }
 
 function buildQuotes() {
@@ -1380,7 +1381,22 @@ function closeModal(e) {
   }
 }
 
-/* ── Nav ── */
+/* ── Debug ── */
+function debugQuote(docNo) {
+  const q = quotes[docNo];
+  if (!q) { console.log("Quote not found:", docNo); return; }
+  console.log("=== " + docNo + " ===");
+  console.log("expiredView:", q.expiredView);
+  console.log("accepted:", q.accepted);
+  console.log("lastActivityType:", q.lastActivityType);
+  console.log("lastActivity:", q.lastActivity, "→", parseTs(q.lastActivity));
+  console.log("views:", q.views);
+  console.log("events:");
+  q.events.forEach(e => console.log(" ", e.type, "|", e.ts, "→", parseTs(e.ts)));
+}
+// Call after data loads: debugQuote('PREQ61284')
+
+
 function switchTab(btn, tab) {
   currentTab = tab;
   document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
