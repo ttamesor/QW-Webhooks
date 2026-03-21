@@ -471,7 +471,7 @@ body::after {
 .pill-accepted { background: rgba(34,211,160,0.12); color: var(--green); border: 1px solid rgba(34,211,160,0.2); }
 .pill-hot      { background: rgba(245,166,35,0.12);  color: var(--amber); border: 1px solid rgba(245,166,35,0.2); }
 .pill-viewed   { background: rgba(167,139,250,0.12); color: var(--purple); border: 1px solid rgba(167,139,250,0.2); }
-.pill-unseen   { background: rgba(74,85,104,0.2);    color: var(--muted); border: 1px solid rgba(74,85,104,0.3); }
+.pill-unseen   { background: rgba(242,92,92,0.12);   color: var(--red);    border: 1px solid rgba(242,92,92,0.25); }
 .pill-expired  { background: rgba(251,146,60,0.12);  color: var(--orange); border: 1px solid rgba(251,146,60,0.2); }
 
 /* ─── RIGHT SIDEBAR ─── */
@@ -822,6 +822,176 @@ body::after {
 .tl-text { font-size: 0.8rem; color: var(--dim); flex: 1; }
 .tl-time { font-size: 0.68rem; font-family: var(--font-mono); color: var(--muted); margin-top: 2px; }
 
+/* ─── AI TAB ─── */
+.nav-btn-ai {
+  background: linear-gradient(135deg, rgba(79,142,247,0.1), rgba(167,139,250,0.1));
+  border: 1px solid rgba(167,139,250,0.2) !important;
+  color: var(--purple) !important;
+}
+
+.nav-btn-ai:hover, .nav-btn-ai.active {
+  background: linear-gradient(135deg, rgba(79,142,247,0.2), rgba(167,139,250,0.2)) !important;
+  color: var(--purple) !important;
+  border-color: rgba(167,139,250,0.4) !important;
+}
+
+.ai-col {
+  grid-column: 1 / -1;
+  border-right: none;
+  padding: 0;
+}
+
+.ai-refresh-btn {
+  background: rgba(167,139,250,0.15);
+  border: 1px solid rgba(167,139,250,0.3);
+  border-radius: 6px;
+  color: var(--purple);
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 500;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.ai-refresh-btn:hover { background: rgba(167,139,250,0.25); }
+.ai-refresh-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.ai-body {
+  padding: 32px;
+  min-height: 300px;
+}
+
+.ai-idle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 60px 20px;
+  gap: 12px;
+}
+
+.ai-idle-icon {
+  font-size: 2.5rem;
+  color: var(--purple);
+  opacity: 0.5;
+  margin-bottom: 8px;
+}
+
+.ai-idle-title {
+  font-family: var(--font-head);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.ai-idle-sub {
+  font-size: 0.85rem;
+  color: var(--dim);
+  max-width: 380px;
+  line-height: 1.6;
+}
+
+.ai-run-btn {
+  margin-top: 8px;
+  background: linear-gradient(135deg, var(--blue), var(--purple));
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 10px 24px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.ai-run-btn:hover { opacity: 0.85; }
+
+.ai-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.ai-loading-text {
+  font-size: 0.85rem;
+  color: var(--dim);
+  animation: fadetext 1.5s infinite;
+}
+
+@keyframes fadetext { 0%,100%{opacity:0.5} 50%{opacity:1} }
+
+.ai-spinner {
+  width: 36px;
+  height: 36px;
+  border: 2px solid rgba(167,139,250,0.2);
+  border-top-color: var(--purple);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.ai-results {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 20px;
+}
+
+.ai-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 22px;
+  position: relative;
+  overflow: hidden;
+}
+
+.ai-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--purple), var(--blue));
+}
+
+.ai-card-label {
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--purple);
+  margin-bottom: 10px;
+}
+
+.ai-card-content {
+  font-size: 0.875rem;
+  color: var(--dim);
+  line-height: 1.7;
+}
+
+.ai-card-content strong { color: var(--text); font-weight: 600; }
+.ai-card-content .highlight { color: var(--green); font-family: var(--font-mono); font-weight: 500; }
+.ai-card-content .warn { color: var(--amber); }
+.ai-card-content .danger { color: var(--red); }
+
+.ai-timestamp {
+  margin-top: 24px;
+  font-size: 0.7rem;
+  font-family: var(--font-mono);
+  color: var(--muted);
+  text-align: right;
+}
+
+/* AI panel takes full width */
+.content.ai-mode {
+  grid-template-columns: 1fr;
+}
+
 /* Responsive */
 @media (max-width: 1100px) {
   .layout { grid-template-columns: 200px 1fr; }
@@ -886,6 +1056,11 @@ body::after {
         <span class="nav-icon">🕐</span> Chasing Needed
         <span class="nav-count" id="countChasing">0</span>
       </button>
+
+      <div class="nav-label" style="margin-top:16px">Intelligence</div>
+      <button class="nav-btn nav-btn-ai" data-tab="ai" onclick="switchTab(this,'ai')">
+        <span class="nav-icon">✦</span> AI Insights
+      </button>
     </div>
 
     <div class="sidebar-footer">
@@ -949,7 +1124,7 @@ body::after {
     <div class="content">
 
       <!-- Quotes list -->
-      <div class="quotes-col">
+      <div class="quotes-col" id="quotesCol">
         <div class="col-header">
           <span class="col-title">Quotes</span>
           <span class="col-count" id="quoteCount"></span>
@@ -957,6 +1132,22 @@ body::after {
         <div class="filter-summary" id="filterSummary"></div>
         <div class="quotes-scroll" id="quotesList">
           <div class="loader"><div class="spinner"></div></div>
+        </div>
+      </div>
+
+      <!-- AI Insights panel -->
+      <div class="ai-col" id="aiCol" style="display:none">
+        <div class="col-header">
+          <span class="col-title">✦ AI Insights</span>
+          <button class="ai-refresh-btn" id="aiRefreshBtn" onclick="runAIAnalysis()">Analyse now</button>
+        </div>
+        <div class="ai-body" id="aiBody">
+          <div class="ai-idle">
+            <div class="ai-idle-icon">✦</div>
+            <div class="ai-idle-title">Sales Intelligence</div>
+            <div class="ai-idle-sub">Click "Analyse now" to get AI-powered insights from your quote activity data.</div>
+            <button class="ai-run-btn" onclick="runAIAnalysis()">Analyse my pipeline</button>
+          </div>
         </div>
       </div>
 
@@ -1471,9 +1662,175 @@ function switchTab(btn, tab) {
   currentTab = tab;
   document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
   btn.classList.add("active");
-  const labels = { all:"All Quotes", hot:"🔥 Hot Prospects", accepted:"✓ Accepted", stale:"❄ Stale", expired:"⏰ Expired Views", highvalue:"💰 High Value", chasing:"🕐 Chasing Needed" };
+  const labels = { all:"All Quotes", hot:"🔥 Hot Prospects", accepted:"✓ Accepted", stale:"❄ Stale", expired:"⏰ Expired Views", highvalue:"💰 High Value", chasing:"🕐 Chasing Needed", ai:"✦ AI Insights" };
   document.getElementById("pageTitle").textContent = labels[tab] || "Quotes";
-  renderQuotes();
+
+  const quotesCol = document.getElementById("quotesCol");
+  const aiCol     = document.getElementById("aiCol");
+  const rightCol  = document.querySelector(".right-col");
+  const content   = document.querySelector(".content");
+
+  if (tab === "ai") {
+    quotesCol.style.display = "none";
+    rightCol.style.display  = "none";
+    aiCol.style.display     = "block";
+    content.style.gridTemplateColumns = "1fr";
+  } else {
+    quotesCol.style.display = "";
+    rightCol.style.display  = "";
+    aiCol.style.display     = "none";
+    content.style.gridTemplateColumns = "";
+    renderQuotes();
+  }
+}
+
+/* ── AI Analysis ── */
+function buildDataSummary() {
+  const list = Object.values(quotes);
+  const now  = Date.now();
+
+  const total     = list.length;
+  const accepted  = list.filter(q => q.accepted);
+  const open      = list.filter(q => q.created && !q.accepted);
+  const hot       = list.filter(q => !q.accepted && q.views >= 3);
+  const stale     = list.filter(q => q.created && !q.accepted && q.views === 0);
+  const expired   = list.filter(q => q.expiredView && !q.accepted && q.lastActivityType === "QuoteValet.ExpiredQuoteWasViewedByCustomer");
+  const chasing   = list.filter(q => q.created && !q.accepted && q.views === 0 && parseTs(q.createdAt) && (now - parseTs(q.createdAt)) > 3 * 86400000);
+  const highval   = list.filter(q => !q.accepted && parseFloat(q.doc.SubTotal||0) >= 10000);
+
+  const pipeVal   = open.reduce((s,q) => s + parseFloat(q.doc.SubTotal||0), 0);
+  const wonVal    = accepted.reduce((s,q) => s + parseFloat(q.doc.SubTotal||0), 0);
+  const totalViews = list.reduce((s,q) => s + q.views, 0);
+
+  // Rep stats
+  const reps = {};
+  list.forEach(q => {
+    const rep = q.doc.SalesRep || "Unknown";
+    if (!reps[rep]) reps[rep] = { sent:0, accepted:0, wonVal:0, views:0 };
+    reps[rep].sent++;
+    reps[rep].views += q.views;
+    if (q.accepted) { reps[rep].accepted++; reps[rep].wonVal += parseFloat(q.doc.SubTotal||0); }
+  });
+  const repSummary = Object.entries(reps).map(([name, d]) => ({
+    name,
+    sent: d.sent,
+    accepted: d.accepted,
+    convRate: d.sent > 0 ? Math.round((d.accepted/d.sent)*100) : 0,
+    wonVal: Math.round(d.wonVal),
+    avgViews: d.sent > 0 ? Math.round((d.views/d.sent)*10)/10 : 0
+  })).sort((a,b) => b.wonVal - a.wonVal);
+
+  // Time to accept (days)
+  const acceptTimes = accepted.map(q => {
+    const created = parseTs(q.createdAt);
+    const lastEvt = parseTs(q.lastActivity);
+    return (created && lastEvt) ? (lastEvt - created) / 86400000 : null;
+  }).filter(Boolean);
+  const avgAcceptDays = acceptTimes.length ? Math.round((acceptTimes.reduce((a,b)=>a+b,0)/acceptTimes.length)*10)/10 : null;
+
+  // View velocity — quotes with 3+ views in under 48hrs
+  const velocityQuotes = list.filter(q => {
+    if (q.views < 3) return false;
+    const viewEvents = q.events.filter(e => e.type === "QuoteValet.ViewedExternal" || e.type === "QuoteValet.ViewedExternalFirstView");
+    if (viewEvents.length < 2) return false;
+    const times = viewEvents.map(e => parseTs(e.ts)).filter(Boolean).sort((a,b)=>a-b);
+    return (times[times.length-1] - times[0]) < 48*3600000;
+  });
+
+  // Top open quotes by value
+  const topOpen = open.sort((a,b) => parseFloat(b.doc.SubTotal||0) - parseFloat(a.doc.SubTotal||0)).slice(0,5).map(q => ({
+    doc: q.docNos[q.docNos.length-1] || q.doc.DocNo,
+    company: q.doc.SoldToCompany || "Unknown",
+    value: parseFloat(q.doc.SubTotal||0),
+    views: q.views,
+    daysSinceSent: parseTs(q.createdAt) ? Math.round((now - parseTs(q.createdAt))/86400000) : null
+  }));
+
+  return {
+    summary: { total, pipeVal: Math.round(pipeVal), wonVal: Math.round(wonVal), totalViews,
+      openCount: open.length, acceptedCount: accepted.length, hotCount: hot.length,
+      staleCount: stale.length, expiredCount: expired.length, chasingCount: chasing.length,
+      highValCount: highval.length, avgAcceptDays },
+    reps: repSummary,
+    velocityQuotes: velocityQuotes.slice(0,3).map(q => ({ doc: q.docNos[0]||q.doc.DocNo, company: q.doc.SoldToCompany||"Unknown", views: q.views, value: parseFloat(q.doc.SubTotal||0) })),
+    topOpen,
+    chasingList: chasing.slice(0,5).map(q => ({ doc: q.docNos[0]||q.doc.DocNo, company: q.doc.SoldToCompany||"Unknown", value: parseFloat(q.doc.SubTotal||0), daysSinceSent: parseTs(q.createdAt) ? Math.round((now-parseTs(q.createdAt))/86400000) : null })),
+    expiredList: expired.slice(0,5).map(q => ({ doc: q.docNos[0]||q.doc.DocNo, company: q.doc.SoldToCompany||"Unknown", value: parseFloat(q.doc.SubTotal||0) }))
+  };
+}
+
+async function runAIAnalysis() {
+  const btn  = document.getElementById("aiRefreshBtn");
+  const body = document.getElementById("aiBody");
+  btn.disabled = true;
+  btn.textContent = "Analysing…";
+
+  body.innerHTML = `
+    <div class="ai-loading">
+      <div class="ai-spinner"></div>
+      <div class="ai-loading-text">Analysing your pipeline…</div>
+    </div>`;
+
+  const data = buildDataSummary();
+
+  const prompt = `You are a sharp, experienced sales manager analysing QuoteValet data for a UK B2B business. 
+You have access to the following pipeline summary data (values in GBP):
+
+${JSON.stringify(data, null, 2)}
+
+Provide a concise, insightful analysis across these 6 areas. Be specific — use the actual numbers. Be direct and actionable. Write for a sales manager who wants to know what to do, not just what's happening. UK English throughout.
+
+Respond ONLY with a valid JSON array of exactly 6 objects. Each object must have:
+- "label": short title (e.g. "Pipeline Health")  
+- "content": 2-4 sentences of insight using the data. Use ** around key figures or company names for emphasis.
+
+The 6 areas must be:
+1. Pipeline Health — overall state, conversion rate, pipeline vs won value
+2. Immediate Opportunities — hot prospects and velocity quotes that need attention now
+3. Rep Performance — who's performing, conversion rates, any standout patterns
+4. At Risk — stale, chasing needed, expired views — money at risk and what to do
+5. Timing Insights — how long quotes take to close, any patterns worth noting
+6. One Big Recommendation — the single most impactful action to take this week
+
+Return only the JSON array, no markdown, no preamble.`;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+
+    const json = await res.json();
+    const text = json.content?.map(c => c.text||"").join("") || "";
+    const clean = text.replace(/```json|```/g, "").trim();
+    const cards = JSON.parse(clean);
+
+    const html = cards.map(card => {
+      const content = card.content
+        .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+        .replace(/£([\d,]+)/g, '<span class="highlight">£$1</span>');
+      return `
+        <div class="ai-card">
+          <div class="ai-card-label">${card.label}</div>
+          <div class="ai-card-content">${content}</div>
+        </div>`;
+    }).join("");
+
+    body.innerHTML = `
+      <div class="ai-results">${html}</div>
+      <div class="ai-timestamp">Analysis run at ${new Date().toLocaleTimeString("en-GB", {hour:"2-digit",minute:"2-digit"})} · Based on ${data.summary.total} quotes</div>`;
+
+  } catch(err) {
+    body.innerHTML = `<div class="ai-idle"><div class="ai-idle-icon">⚠</div><div class="ai-idle-title">Analysis failed</div><div class="ai-idle-sub">${err.message}</div><button class="ai-run-btn" onclick="runAIAnalysis()">Try again</button></div>`;
+  }
+
+  btn.disabled = false;
+  btn.textContent = "Analyse now";
 }
 
 function handleSearch(val) {
