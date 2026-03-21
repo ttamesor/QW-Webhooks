@@ -1204,6 +1204,22 @@ body::after {
         <span class="nav-icon">🎉</span> This Month's Wins
         <span class="nav-count" id="countThisMonthWins">0</span>
       </button>
+      <button class="nav-btn" data-tab="thisweek" onclick="switchTab(this,'thisweek')">
+        <span class="nav-icon">🗓️</span> This Week
+        <span class="nav-count" id="countThisWeek">0</span>
+      </button>
+      <button class="nav-btn" data-tab="trending" onclick="switchTab(this,'trending')">
+        <span class="nav-icon">📈</span> Trending
+        <span class="nav-count" id="countTrending">0</span>
+      </button>
+      <button class="nav-btn" data-tab="revised" onclick="switchTab(this,'revised')">
+        <span class="nav-icon">🔄</span> Revised
+        <span class="nav-count" id="countRevised">0</span>
+      </button>
+      <button class="nav-btn" data-tab="nearlythere" onclick="switchTab(this,'nearlythere')">
+        <span class="nav-icon">🎯</span> Nearly There
+        <span class="nav-count" id="countNearlyThere">0</span>
+      </button>
 
       <div class="nav-label" style="margin-top:16px">Intelligence</div>
       <button class="nav-btn nav-btn-ai" data-tab="ai" onclick="switchTab(this,'ai')">
@@ -1226,7 +1242,7 @@ body::after {
         <input class="search-input" id="searchInput" placeholder="Search by doc, company, contact…" oninput="handleSearch(this.value)">
       </div>
       <div class="date-filter-wrap">
-        <label class="date-filter-label">From</label>
+        <label class="date-filter-label">Ignore anything older than</label>
         <input type="date" class="date-filter-input" id="dateFrom" value="2026-01-01" onchange="handleDateFilter()">
       </div>
       <div class="page-title" id="pageTitle">All Quotes</div>
@@ -1501,6 +1517,16 @@ function filtered() {
     case "senttoday":     list = list.filter(x => parseTs(x.createdAt) && (Date.now() - parseTs(x.createdAt)) < 86400000); break;
     case "fastwins":      list = list.filter(x => { if (!x.accepted || !x.createdAt || !x.lastActivity) return false; return (parseTs(x.lastActivity) - parseTs(x.createdAt)) < 86400000; }); break;
     case "thismonthwins": list = list.filter(x => { if (!x.accepted || !x.lastActivity) return false; const d = parseTs(x.lastActivity); const n = new Date(); return d && d.getMonth() === n.getMonth() && d.getFullYear() === n.getFullYear(); }); break;
+    case "thisweek":      list = list.filter(x => parseTs(x.lastActivity) && (Date.now() - parseTs(x.lastActivity)) < 7 * 86400000); break;
+    case "trending":      list = list.filter(x => {
+      if (x.accepted || x.views < 2) return false;
+      const now = Date.now(); const week = 7 * 86400000;
+      const recentViews = x.events.filter(e => (e.type === "QuoteValet.ViewedExternal" || e.type === "QuoteValet.ViewedExternalFirstView") && parseTs(e.ts) && (now - parseTs(e.ts)) < week).length;
+      const olderViews  = x.events.filter(e => (e.type === "QuoteValet.ViewedExternal" || e.type === "QuoteValet.ViewedExternalFirstView") && parseTs(e.ts) && (now - parseTs(e.ts)) >= week && (now - parseTs(e.ts)) < week * 2).length;
+      return recentViews > olderViews && recentViews >= 1;
+    }); break;
+    case "revised":       list = list.filter(x => x.events.some(e => e.type === "QuoteValet.UpdatedForCustomer") && !x.accepted); break;
+    case "nearlythere":   list = list.filter(x => !x.accepted && (x.views === 1 || x.views === 2)); break;
   }
 
   list.sort((a,b) => parseFloat(b.doc.SubTotal||0) - parseFloat(a.doc.SubTotal||0));
@@ -1552,6 +1578,16 @@ function updateCounts() {
   document.getElementById("countSentToday").textContent    = list.filter(q => parseTs(q.createdAt) && (Date.now() - parseTs(q.createdAt)) < 86400000).length;
   document.getElementById("countFastWins").textContent     = list.filter(q => { if (!q.accepted || !q.createdAt || !q.lastActivity) return false; return (parseTs(q.lastActivity) - parseTs(q.createdAt)) < 86400000; }).length;
   document.getElementById("countThisMonthWins").textContent= list.filter(q => { if (!q.accepted || !q.lastActivity) return false; const d = parseTs(q.lastActivity); const n = new Date(); return d && d.getMonth() === n.getMonth() && d.getFullYear() === n.getFullYear(); }).length;
+  document.getElementById("countThisWeek").textContent     = list.filter(q => parseTs(q.lastActivity) && (Date.now() - parseTs(q.lastActivity)) < 7 * 86400000).length;
+  document.getElementById("countTrending").textContent     = list.filter(q => {
+    if (q.accepted || q.views < 2) return false;
+    const now = Date.now(); const week = 7 * 86400000;
+    const rv = q.events.filter(e => (e.type === "QuoteValet.ViewedExternal" || e.type === "QuoteValet.ViewedExternalFirstView") && parseTs(e.ts) && (now - parseTs(e.ts)) < week).length;
+    const ov = q.events.filter(e => (e.type === "QuoteValet.ViewedExternal" || e.type === "QuoteValet.ViewedExternalFirstView") && parseTs(e.ts) && (now - parseTs(e.ts)) >= week && (now - parseTs(e.ts)) < week * 2).length;
+    return rv > ov && rv >= 1;
+  }).length;
+  document.getElementById("countRevised").textContent      = list.filter(q => q.events.some(e => e.type === "QuoteValet.UpdatedForCustomer") && !q.accepted).length;
+  document.getElementById("countNearlyThere").textContent  = list.filter(q => !q.accepted && (q.views === 1 || q.views === 2)).length;
 }
 
 function eventLabel(type) {
@@ -1591,6 +1627,10 @@ function renderSummary(list) {
     senttoday:     `<strong>${list.length}</strong> quotes sent today · <span class="fs-val">${gbp(totalVal)}</span> in fresh pipeline`,
     fastwins:      `<strong>${list.length}</strong> quotes accepted within 24 hours of being sent · <span class="fs-val">${gbp(wonVal)}</span> won — fast decisions from engaged buyers`,
     thismonthwins: `<strong>${list.length}</strong> quotes accepted this month · <span class="fs-val">${gbp(wonVal)}</span> won so far this month`,
+    thisweek:      `<strong>${list.length}</strong> quotes with activity in the last 7 days · <span class="fs-val">${gbp(totalVal)}</span> in motion`,
+    trending:      `<strong>${list.length}</strong> quotes being viewed more frequently this week than last — momentum is building on these`,
+    revised:       `<strong>${list.length}</strong> open quotes that have been updated and resent · <span class="fs-val">${gbp(totalVal)}</span> — customer asked for changes, worth a follow-up`,
+    nearlythere:   `<strong>${list.length}</strong> quotes with 1-2 views · <span class="fs-val">${gbp(totalVal)}</span> — showing early intent, one more touchpoint could convert these`,
   };
 
   el.innerHTML = summaries[currentTab] || "";
@@ -1857,6 +1897,8 @@ function switchTab(btn, tab) {
     chasing:"🕐 Chasing Needed", gonecold:"👻 Gone Cold",
     viewedtoday:"👀 Viewed Today", senttoday:"🆕 Sent Today",
     fastwins:"⚡ Fast Wins", thismonthwins:"🎉 This Month's Wins",
+    thisweek:"🗓️ This Week", trending:"📈 Trending",
+    revised:"🔄 Revised", nearlythere:"🎯 Nearly There",
     ai:"✦ AI Insights"
   };
   document.getElementById("pageTitle").textContent = labels[tab] || "Quotes";
