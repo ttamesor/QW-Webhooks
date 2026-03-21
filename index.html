@@ -1795,18 +1795,10 @@ The 6 areas must be:
 Return only the JSON array, no markdown, no preamble.`;
 
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 1000,
-        messages: [{ role: "user", content: prompt }]
-      })
-    });
-
+    const params = new URLSearchParams({ ai: "1", prompt, ts: Date.now() });
+    const res = await fetch(APPS_SCRIPT_BASE + "?" + params.toString());
     const json = await res.json();
-    const text = json.content?.map(c => c.text||"").join("") || "";
+    const text = json.text || "";
     const clean = text.replace(/```json|```/g, "").trim();
     const cards = JSON.parse(clean);
 
