@@ -2070,7 +2070,8 @@ function buildQuotes() {
       }
     }
     if (r.EventFullName === "QuoteValet.ViewedExternal" ||
-        r.EventFullName === "QuoteValet.ViewedExternalFirstView")      q.views++;
+        r.EventFullName === "QuoteValet.ViewedExternalFirstView" ||
+        r.EventFullName === "QuoteValet.ExpiredQuoteWasViewedByCustomer") q.views++;
     if (r.EventFullName === "QuoteValet.Accepted")                     q.accepted = true;
     if (r.EventFullName === "QuoteValet.ExpiredQuoteWasViewedByCustomer") {
       q.expiredView = true;
