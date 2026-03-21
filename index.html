@@ -1045,7 +1045,88 @@ body::after {
 .ai-card-content .warn { color: var(--amber); }
 .ai-card-content .danger { color: var(--red); }
 
-.ai-suggestions {
+.q-open-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  background: rgba(79,142,247,0.15);
+  border: 1px solid rgba(79,142,247,0.3);
+  border-radius: 6px;
+  color: var(--blue);
+  font-size: 0.8rem;
+  text-decoration: none;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.q-open-btn:hover {
+  background: rgba(79,142,247,0.3);
+  transform: translateY(-1px);
+}
+
+.modal-wide { max-width: 700px; }
+
+.rep-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.rep-stat {
+  background: var(--bg3);
+  border-radius: 10px;
+  padding: 12px 14px;
+  text-align: center;
+}
+
+.rep-stat-val {
+  font-family: var(--font-head);
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.rep-stat-val.green { color: var(--green); }
+.rep-stat-val.blue  { color: var(--blue); }
+.rep-stat-val.amber { color: var(--amber); }
+.rep-stat-val.purple{ color: var(--purple); }
+
+.rep-stat-label {
+  font-size: 0.68rem;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.rep-quote-list { margin-top: 16px; }
+.rep-quote-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  gap: 12px;
+  align-items: center;
+}
+.rep-quote-row:last-child { border-bottom: none; }
+.rep-quote-doc { font-family: var(--font-mono); font-size: 0.75rem; color: var(--blue); }
+.rep-quote-name { font-size: 0.85rem; font-weight: 500; }
+.rep-quote-co { font-size: 0.75rem; color: var(--dim); }
+.rep-quote-val { font-family: var(--font-mono); font-size: 0.85rem; font-weight: 500; text-align: right; }
+.rep-section-title {
+  font-size: 0.68rem;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+  margin: 16px 0 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -1411,6 +1492,20 @@ body::after {
   </div>
 </div>
 
+<!-- Rep Scorecard Modal -->
+<div class="overlay" id="repOverlay" onclick="closeRepModal(event)">
+  <div class="modal modal-wide" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <div>
+        <div class="modal-doc">Rep Scorecard</div>
+        <div class="modal-name" id="repName"></div>
+      </div>
+      <button class="modal-close" onclick="closeRepModal()">✕</button>
+    </div>
+    <div class="modal-body" id="repBody"></div>
+  </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/canvas-confetti/1.9.2/confetti.browser.min.js"></script>
 <script>
 const APPS_SCRIPT_BASE = "https://script.google.com/macros/s/AKfycbzzQtKk_VCtHwYjhmC1f32dNPMXDb5CWa2jE7Sg2rMwVHY_HUvmijH9SnMUQjSTTG3ubw/exec";
@@ -1772,6 +1867,8 @@ function renderQuotes() {
       ? q.docNos[0] + ' → ' + q.docNos[q.docNos.length-1]
       : (q.docNos[0] || q.doc.DocNo);
 
+    const quoteUrl = q.doc.SalesRepFacingUrl || "";
+
     return `
       <div class="quote-row" onclick="showDetail('${docId}')">
         <div class="q-main">
@@ -1788,6 +1885,7 @@ function renderQuotes() {
         <div class="q-right">
           <span class="q-amount">${gbp(amount)}</span>
           ${pill}
+          ${quoteUrl ? `<a class="q-open-btn" href="${quoteUrl}" target="_blank" onclick="event.stopPropagation()" title="Open quote">↗</a>` : ''}
         </div>
       </div>
     `;
@@ -1822,7 +1920,7 @@ function renderLeaderboard() {
     const pct = (d.won / maxWon) * 100;
     const rankClass = i===0?"rank-1":i===1?"rank-2":i===2?"rank-3":"rank-n";
     return `
-      <div class="rep-row">
+      <div class="rep-row" onclick="showRepScorecard('${rep.replace(/'/g,"\\'")}'" style="cursor:pointer">
         <div class="rep-rank ${rankClass}">${i+1}</div>
         <div class="rep-info">
           <div class="rep-name">${rep}</div>
@@ -1956,9 +2054,101 @@ function showDetail(docId) {
   document.getElementById("overlay").classList.add("open");
 }
 
+function showRepScorecard(repName) {
+  const all       = Object.values(quotes);
+  const repQuotes = all.filter(q => (q.doc.SalesRep || "Unknown") === repName);
+  const accepted  = repQuotes.filter(q => q.accepted);
+  const open      = repQuotes.filter(q => q.created && !q.accepted);
+  const hot       = repQuotes.filter(q => !q.accepted && q.views >= 3);
+  const unseen    = repQuotes.filter(q => q.created && !q.accepted && q.views === 0);
+  const wonVal    = accepted.reduce((s,q) => s + parseFloat(q.doc.SubTotal||0), 0);
+  const pipeVal   = open.reduce((s,q) => s + parseFloat(q.doc.SubTotal||0), 0);
+  const convRate  = repQuotes.length ? Math.round((accepted.length / repQuotes.length) * 100) : 0;
+
+  // Avg days to close
+  const closeTimes = accepted.map(q => {
+    const c = parseTs(q.createdAt), l = parseTs(q.lastActivity);
+    return (c && l) ? (l - c) / 86400000 : null;
+  }).filter(Boolean);
+  const avgClose = closeTimes.length ? Math.round(closeTimes.reduce((a,b)=>a+b,0) / closeTimes.length) : null;
+
+  // Needs attention
+  const needsChase = open.filter(q => q.views === 0 && parseTs(q.createdAt) && (Date.now() - parseTs(q.createdAt)) > 3 * 86400000);
+  const goneCold   = open.filter(q => q.views > 0 && parseTs(q.lastActivity) && (Date.now() - parseTs(q.lastActivity)) > 14 * 86400000);
+
+  const repInitials = repName.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2);
+  const colours = ["#4f8ef7","#22d3a0","#a78bfa","#f5a623","#f25c5c","#2dd4bf"];
+  const colour  = colours[repName.charCodeAt(0) % colours.length];
+
+  const quoteRows = (list, emptyMsg) => !list.length
+    ? `<div class="empty" style="padding:16px">${emptyMsg}</div>`
+    : list.slice(0,8).map(q => {
+        const url = q.doc.SalesRepFacingUrl;
+        return `
+          <div class="rep-quote-row">
+            <div>
+              <div class="rep-quote-doc">${q.docNos.join(" → ")}</div>
+              <div class="rep-quote-name">${q.doc.DocName || q.doc.DocNo}</div>
+              <div class="rep-quote-co">${q.doc.SoldToCompany || ""} ${q.views > 0 ? `· 👁 ${q.views}` : "· unseen"}</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+              <div class="rep-quote-val">${gbp(q.doc.SubTotal)}</div>
+              ${url ? `<a class="q-open-btn" href="${url}" target="_blank" title="Open quote">↗</a>` : ""}
+            </div>
+          </div>`;
+      }).join("");
+
+  document.getElementById("repName").textContent = repName;
+  document.getElementById("repBody").innerHTML = `
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
+      <div style="width:52px;height:52px;border-radius:12px;background:${colour};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.1rem;color:white;flex-shrink:0">${repInitials}</div>
+      <div>
+        <div style="font-size:1rem;font-weight:600">${repName}</div>
+        <div style="font-size:0.8rem;color:var(--dim)">${repQuotes.length} quotes tracked</div>
+      </div>
+    </div>
+
+    <div class="rep-stats-grid">
+      <div class="rep-stat"><div class="rep-stat-val green">${gbp(wonVal)}</div><div class="rep-stat-label">Won Value</div></div>
+      <div class="rep-stat"><div class="rep-stat-val blue">${gbp(pipeVal)}</div><div class="rep-stat-label">Pipeline</div></div>
+      <div class="rep-stat"><div class="rep-stat-val amber">${convRate}%</div><div class="rep-stat-label">Conversion</div></div>
+      <div class="rep-stat"><div class="rep-stat-val purple">${avgClose !== null ? avgClose + "d" : "—"}</div><div class="rep-stat-label">Avg to Close</div></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px">
+      <div class="rep-stat"><div class="rep-stat-val" style="color:var(--amber)">${hot.length}</div><div class="rep-stat-label">Hot Prospects</div></div>
+      <div class="rep-stat"><div class="rep-stat-val" style="color:var(--red)">${unseen.length}</div><div class="rep-stat-label">Unseen Quotes</div></div>
+    </div>
+
+    ${needsChase.length ? `
+      <div class="rep-section-title">🕐 Needs chasing (3+ days, not viewed)</div>
+      <div class="rep-quote-list">${quoteRows(needsChase, "None")}</div>
+    ` : ""}
+
+    ${goneCold.length ? `
+      <div class="rep-section-title">👻 Gone cold (viewed, silent 14+ days)</div>
+      <div class="rep-quote-list">${quoteRows(goneCold, "None")}</div>
+    ` : ""}
+
+    <div class="rep-section-title">🔥 Hot prospects</div>
+    <div class="rep-quote-list">${quoteRows(hot, "No hot prospects yet")}</div>
+
+    <div class="rep-section-title">✓ Recent acceptances</div>
+    <div class="rep-quote-list">${quoteRows(accepted.sort((a,b) => (parseTs(b.lastActivity)||0) - (parseTs(a.lastActivity)||0)).slice(0,5), "No acceptances yet")}</div>
+  `;
+
+  document.getElementById("repOverlay").classList.add("open");
+}
+
 function closeModal(e) {
   if (!e || e.target === document.getElementById("overlay")) {
     document.getElementById("overlay").classList.remove("open");
+  }
+}
+
+function closeRepModal(e) {
+  if (!e || e.target === document.getElementById("repOverlay")) {
+    document.getElementById("repOverlay").classList.remove("open");
   }
 }
 
@@ -2382,6 +2572,7 @@ function updateNotifBtn() {
 }
 
 /* ── Init ── */
+document.addEventListener("keydown", e => { if (e.key === "Escape") { closeModal(); closeRepModal(); } });
 setInterval(loadData, 60000);
 requestNotifications();
 updateNotifBtn();
