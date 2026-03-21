@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>QuoteValet</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%234f8ef7'/><text x='50%' y='54%' dominant-baseline='middle' text-anchor='middle' font-size='18'>📊</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
@@ -22,6 +23,7 @@
   --green:     #22d3a0;
   --amber:     #f5a623;
   --red:       #f25c5c;
+  --orange:    #fb923c;
   --purple:    #a78bfa;
   --teal:      #2dd4bf;
   --font-head: 'Inter', sans-serif;
@@ -271,7 +273,7 @@ body::after {
 /* ─── STATS ─── */
 .stats-row {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 1px;
   background: var(--border);
   border-bottom: 1px solid var(--border);
@@ -299,6 +301,10 @@ body::after {
 .stat-block.s-green .stat-accent { background: linear-gradient(90deg, var(--green), transparent); }
 .stat-block.s-purple .stat-accent{ background: linear-gradient(90deg, var(--purple), transparent); }
 .stat-block.s-amber .stat-accent { background: linear-gradient(90deg, var(--amber), transparent); }
+.stat-block.s-red .stat-accent   { background: linear-gradient(90deg, var(--red), transparent); }
+.stat-block.s-red .stat-val      { color: var(--red); }
+.stat-block.s-orange .stat-accent{ background: linear-gradient(90deg, var(--orange), transparent); }
+.stat-block.s-orange .stat-val   { color: var(--orange); }
 
 .stat-label {
   font-size: 0.7rem;
@@ -466,6 +472,7 @@ body::after {
 .pill-hot      { background: rgba(245,166,35,0.12);  color: var(--amber); border: 1px solid rgba(245,166,35,0.2); }
 .pill-viewed   { background: rgba(167,139,250,0.12); color: var(--purple); border: 1px solid rgba(167,139,250,0.2); }
 .pill-unseen   { background: rgba(74,85,104,0.2);    color: var(--muted); border: 1px solid rgba(74,85,104,0.3); }
+.pill-expired  { background: rgba(251,146,60,0.12);  color: var(--orange); border: 1px solid rgba(251,146,60,0.2); }
 
 /* ─── RIGHT SIDEBAR ─── */
 .right-col {
@@ -852,6 +859,10 @@ body::after {
         <span class="nav-icon">❄</span> Stale
         <span class="nav-count" id="countStale">0</span>
       </button>
+      <button class="nav-btn" data-tab="expired" onclick="switchTab(this,'expired')">
+        <span class="nav-icon">⏰</span> Expired Views
+        <span class="nav-count" id="countExpired">0</span>
+      </button>
     </div>
 
     <div class="sidebar-footer">
@@ -895,6 +906,18 @@ body::after {
         <div class="stat-label">Hot Prospects</div>
         <div class="stat-val" id="sHot">—</div>
         <div class="stat-sub">3+ views, open</div>
+        <div class="stat-accent"></div>
+      </div>
+      <div class="stat-block s-red">
+        <div class="stat-label">Not Viewed</div>
+        <div class="stat-val" id="sUnseen">—</div>
+        <div class="stat-sub">sent, no views yet</div>
+        <div class="stat-accent"></div>
+      </div>
+      <div class="stat-block s-orange">
+        <div class="stat-label">Expired Views</div>
+        <div class="stat-val" id="sExpired">—</div>
+        <div class="stat-sub">last activity expired</div>
         <div class="stat-accent"></div>
       </div>
     </div>
@@ -1009,7 +1032,7 @@ function buildQuotes() {
   allData.forEach(r => {
     const id = r.DocNo;
     if (!quotes[id]) {
-      quotes[id] = { doc:r, views:0, accepted:false, created:false, events:[], lastActivity:null, lastActivityType:null, createdAt:null };
+      quotes[id] = { doc:r, views:0, accepted:false, created:false, expiredView:false, events:[], lastActivity:null, lastActivityType:null, createdAt:null };
     }
     const q = quotes[id];
     const evtTime = r.Timestamp || r.Created;
@@ -1022,8 +1045,9 @@ function buildQuotes() {
         q.createdAt = evtTime;
       }
     }
-    if (r.EventFullName === "QuoteValet.ViewedExternal") q.views++;
-    if (r.EventFullName === "QuoteValet.Accepted")       q.accepted = true;
+    if (r.EventFullName === "QuoteValet.ViewedExternal")               q.views++;
+    if (r.EventFullName === "QuoteValet.Accepted")                     q.accepted = true;
+    if (r.EventFullName === "QuoteValet.ExpiredQuoteWasViewedByCustomer") q.expiredView = true;
 
     if (evtTime && (!q.lastActivity || new Date(evtTime) > new Date(q.lastActivity))) {
       q.lastActivity     = evtTime;
@@ -1051,6 +1075,7 @@ function filtered() {
     case "hot":      list = list.filter(x => !x.accepted && x.views >= 3); break;
     case "accepted": list = list.filter(x => x.accepted); break;
     case "stale":    list = list.filter(x => x.created && !x.accepted && x.views === 0); break;
+    case "expired":  list = list.filter(x => x.expiredView && !x.accepted && x.lastActivityType === "QuoteValet.ExpiredQuoteWasViewedByCustomer"); break;
   }
 
   list.sort((a,b) => parseFloat(b.doc.SubTotal||0) - parseFloat(a.doc.SubTotal||0));
@@ -1074,6 +1099,8 @@ function renderStats() {
   const wonV   = won.reduce((s,q)  => s + parseFloat(q.doc.SubTotal||0), 0);
   const views  = list.reduce((s,q) => s + q.views, 0);
   const hot    = list.filter(q => !q.accepted && q.views >= 3).length;
+  const unseen  = list.filter(q => q.created && !q.accepted && q.views === 0).length;
+  const expired = list.filter(q => q.expiredView && !q.accepted && q.lastActivityType === "QuoteValet.ExpiredQuoteWasViewedByCustomer").length;
 
   document.getElementById("sPipeline").textContent    = gbp(pipeV);
   document.getElementById("sPipelineSub").textContent = open.length + " open quotes";
@@ -1082,6 +1109,8 @@ function renderStats() {
   document.getElementById("sViews").textContent       = views;
   document.getElementById("sViewsSub").textContent    = list.length + " quotes tracked";
   document.getElementById("sHot").textContent         = hot;
+  document.getElementById("sUnseen").textContent      = unseen;
+  document.getElementById("sExpired").textContent     = expired;
 }
 
 function updateCounts() {
@@ -1090,14 +1119,15 @@ function updateCounts() {
   document.getElementById("countHot").textContent      = list.filter(q => !q.accepted && q.views >= 3).length;
   document.getElementById("countAccepted").textContent = list.filter(q => q.accepted).length;
   document.getElementById("countStale").textContent    = list.filter(q => q.created && !q.accepted && q.views === 0).length;
+  document.getElementById("countExpired").textContent  = list.filter(q => q.expiredView && !q.accepted && q.lastActivityType === "QuoteValet.ExpiredQuoteWasViewedByCustomer").length;
 }
 
 function eventLabel(type) {
   if (!type) return "—";
-  if (type === "QuoteValet.CreatedForCustomer") return "Created";
-  if (type === "QuoteValet.ViewedExternal")     return "Viewed";
-  if (type === "QuoteValet.Accepted")           return "Accepted";
-  // Strip prefix for anything else
+  if (type === "QuoteValet.CreatedForCustomer")              return "Created";
+  if (type === "QuoteValet.ViewedExternal")                  return "Viewed";
+  if (type === "QuoteValet.Accepted")                        return "Accepted";
+  if (type === "QuoteValet.ExpiredQuoteWasViewedByCustomer") return "Expired view";
   return type.replace("QuoteValet.", "");
 }
 
@@ -1125,6 +1155,8 @@ function renderQuotes() {
     let pill = "";
     if (q.accepted) {
       pill = `<span class="pill pill-accepted">✓ Accepted</span>`;
+    } else if (q.lastActivityType === "QuoteValet.ExpiredQuoteWasViewedByCustomer") {
+      pill = `<span class="pill pill-expired">⏰ Expired view</span>`;
     } else if (q.views >= 3) {
       pill = `<span class="pill pill-hot">🔥 ${q.views} views</span>`;
     } else if (q.views > 0) {
@@ -1333,7 +1365,7 @@ function switchTab(btn, tab) {
   currentTab = tab;
   document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
   btn.classList.add("active");
-  const labels = { all:"All Quotes", hot:"🔥 Hot Prospects", accepted:"✓ Accepted", stale:"❄ Stale" };
+  const labels = { all:"All Quotes", hot:"🔥 Hot Prospects", accepted:"✓ Accepted", stale:"❄ Stale", expired:"⏰ Expired Views" };
   document.getElementById("pageTitle").textContent = labels[tab] || "Quotes";
   renderQuotes();
 }
