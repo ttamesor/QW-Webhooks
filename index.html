@@ -39,6 +39,7 @@ body {
   color: var(--text);
   min-height: 100vh;
   overflow-x: hidden;
+  font-size: 16.5px;
 }
 
 /* Subtle grid background */
@@ -1770,6 +1771,25 @@ function switchTab(btn, tab) {
     rightCol.style.display  = "none";
     aiCol.style.display     = "block";
     content.style.gridTemplateColumns = "1fr";
+    // Always reset to prompt screen when clicking AI tab
+    document.getElementById("aiBody").innerHTML = `
+      <div class="ai-idle">
+        <div class="ai-idle-icon">✦</div>
+        <div class="ai-idle-title">Ask anything about your pipeline</div>
+        <div class="ai-idle-sub">Choose a suggested question or type your own. The AI has full access to your live quote data.</div>
+        <div class="ai-suggestions">
+          <button class="ai-suggest-btn" onclick="setPrompt(this)">Give me a full pipeline health check</button>
+          <button class="ai-suggest-btn" onclick="setPrompt(this)">Which quotes should I chase today and why?</button>
+          <button class="ai-suggest-btn" onclick="setPrompt(this)">How are my reps performing compared to each other?</button>
+          <button class="ai-suggest-btn" onclick="setPrompt(this)">Where am I most at risk of losing deals?</button>
+          <button class="ai-suggest-btn" onclick="setPrompt(this)">Which customers are showing strong buying signals?</button>
+          <button class="ai-suggest-btn" onclick="setPrompt(this)">What's my conversion rate and how can I improve it?</button>
+        </div>
+        <div class="ai-input-wrap">
+          <textarea class="ai-input" id="aiPromptInput" placeholder="Or type your own question…" rows="2"></textarea>
+          <button class="ai-run-btn" onclick="runAIAnalysis(document.getElementById('aiPromptInput').value.trim())">✦ Analyse</button>
+        </div>
+      </div>`;
   } else {
     quotesCol.style.display = "";
     rightCol.style.display  = "";
