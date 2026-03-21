@@ -1624,6 +1624,88 @@ body.light .date-filter-input {
 .preview-val  { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text); }
 
 /* ── Map tab ── */
+/* ── Intel / Fun panels ── */
+.intel-col {
+  grid-column: 1 / -1;
+  padding: 28px 32px;
+}
+
+/* Funnel */
+.funnel-wrap { display: grid; grid-template-columns: 1fr 280px; gap: 32px; align-items: start; }
+.funnel-stages { display: flex; flex-direction: column; gap: 10px; }
+.funnel-stage {
+  position: relative; border-radius: 10px; overflow: hidden;
+  background: var(--bg2); border: 1px solid var(--border);
+  padding: 14px 18px; display: flex; align-items: center; gap: 14px;
+}
+.funnel-fill { position: absolute; inset: 0; opacity: 0.12; transition: width 0.8s ease; }
+.funnel-icon { font-size: 1.2rem; position: relative; z-index: 1; flex-shrink: 0; }
+.funnel-info { position: relative; z-index: 1; flex: 1; }
+.funnel-label { font-size: 0.68rem; color: var(--muted); font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.5px; }
+.funnel-count { font-family: var(--font-head); font-size: 1.5rem; font-weight: 700; letter-spacing: -1px; line-height: 1.1; }
+.funnel-val   { font-size: 0.8rem; color: var(--dim); }
+.funnel-right { position: relative; z-index: 1; text-align: right; }
+.funnel-pct   { font-family: var(--font-mono); font-size: 0.88rem; font-weight: 600; }
+.funnel-drop  { font-size: 0.68rem; color: var(--muted); margin-top: 2px; }
+.funnel-arrow { text-align: center; color: var(--muted); font-size: 0.9rem; margin: -2px 0; }
+.funnel-stats { display: flex; flex-direction: column; gap: 12px; }
+.fstat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+.fstat-label { font-size: 0.65rem; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 5px; }
+.fstat-val   { font-family: var(--font-head); font-size: 1.4rem; font-weight: 700; letter-spacing: -0.5px; }
+
+/* Trend */
+.trend-wrap { display: flex; flex-direction: column; gap: 20px; }
+.trend-chart-area { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+.trend-legend { display: flex; gap: 20px; margin-bottom: 12px; }
+.trend-legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--dim); }
+.trend-legend-dot  { width: 10px; height: 10px; border-radius: 2px; }
+.trend-bars { display: flex; align-items: flex-end; gap: 6px; height: 180px; }
+.trend-bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
+.trend-bar-pair { display: flex; gap: 2px; align-items: flex-end; width: 100%; justify-content: center; flex: 1; }
+.trend-bar { border-radius: 4px 4px 0 0; min-width: 8px; flex: 1; max-width: 20px; transition: height 0.7s ease; cursor: pointer; }
+.trend-bar.sent { background: rgba(79,142,247,0.4); border: 1px solid rgba(79,142,247,0.5); }
+.trend-bar.won  { background: rgba(34,211,160,0.55); border: 1px solid rgba(34,211,160,0.6); }
+.trend-bar:hover { filter: brightness(1.4); }
+.trend-month-label { font-size: 0.6rem; font-family: var(--font-mono); color: var(--muted); }
+
+/* Roulette */
+.roulette-wrap { display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 12px 0; }
+.roulette-drum { width: 100%; max-width: 560px; background: var(--bg2); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; position: relative; height: 120px; }
+.roulette-window { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: 2; }
+.roulette-highlight { width: calc(100% - 28px); height: 58px; border: 2px solid var(--purple); border-radius: 10px; background: rgba(167,139,250,0.06); box-shadow: 0 0 20px rgba(167,139,250,0.2); }
+.roulette-strip { display: flex; flex-direction: column; padding: 30px 14px; }
+.roulette-item { height: 58px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; padding: 0 6px; }
+.roulette-item-main { font-size: 0.85rem; font-weight: 500; }
+.roulette-item-sub  { font-size: 0.72rem; color: var(--dim); }
+.roulette-item-val  { font-family: var(--font-mono); font-size: 0.85rem; color: var(--green); font-weight: 500; }
+.roulette-spin-btn { background: linear-gradient(135deg, var(--purple), var(--blue)); border: none; border-radius: 50px; color: white; font-family: var(--font-body); font-size: 1rem; font-weight: 700; padding: 13px 44px; cursor: pointer; transition: opacity 0.15s, transform 0.15s; }
+.roulette-spin-btn:hover { opacity: 0.9; transform: scale(1.02); }
+.roulette-spin-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.roulette-result { width: 100%; max-width: 560px; background: linear-gradient(135deg, rgba(167,139,250,0.1), rgba(79,142,247,0.1)); border: 1px solid rgba(167,139,250,0.3); border-radius: 14px; padding: 18px 22px; display: none; }
+.roulette-result.visible { display: block; animation: fadeIn 0.4s ease; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+.roulette-result-title { font-size: 0.65rem; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 1px; color: var(--purple); margin-bottom: 8px; }
+.roulette-result-name  { font-family: var(--font-head); font-size: 1.25rem; font-weight: 700; margin-bottom: 2px; }
+.roulette-result-co    { font-size: 0.82rem; color: var(--dim); margin-bottom: 10px; }
+.roulette-result-grid  { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+.roulette-result-stat  { background: var(--bg3); border-radius: 8px; padding: 9px 11px; }
+.roulette-result-stat-val   { font-family: var(--font-mono); font-size: 0.9rem; font-weight: 600; }
+.roulette-result-stat-label { font-size: 0.62rem; color: var(--muted); margin-top: 2px; }
+
+/* Race Track */
+.race-wrap { display: flex; flex-direction: column; gap: 14px; }
+.race-controls { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
+.race-btn { background: linear-gradient(135deg, var(--amber), #f97316); border: none; border-radius: 8px; color: white; font-family: var(--font-body); font-size: 0.85rem; font-weight: 700; padding: 9px 24px; cursor: pointer; transition: opacity 0.15s; }
+.race-btn:hover { opacity: 0.85; }
+.race-period-info { font-size: 0.75rem; color: var(--dim); font-family: var(--font-mono); }
+.race-track-board { background: var(--bg2); border: 1px solid var(--border); border-radius: 14px; padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; }
+.race-lane { display: grid; grid-template-columns: 110px 1fr auto; gap: 12px; align-items: center; }
+.race-rep-name { font-size: 0.82rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.race-bar-wrap { height: 26px; background: var(--bg3); border-radius: 6px; overflow: visible; position: relative; }
+.race-bar { height: 100%; border-radius: 6px; display: flex; align-items: center; padding-left: 8px; font-size: 0.65rem; font-weight: 600; color: white; white-space: nowrap; overflow: hidden; transition: width 0.8s cubic-bezier(0.34,1.3,0.64,1); min-width: 30px; }
+.race-car { position: absolute; right: -18px; top: 50%; transform: translateY(-50%); font-size: 1rem; transition: right 0.8s cubic-bezier(0.34,1.3,0.64,1); }
+.race-val { font-family: var(--font-mono); font-size: 0.8rem; color: var(--green); font-weight: 500; text-align: right; white-space: nowrap; }
+
 .map-col {
   grid-column: 1 / -1;
   padding: 28px 32px;
@@ -1843,10 +1925,25 @@ body.light .date-filter-input {
         </div>
       </div>
 
-      <!-- Territory at bottom of nav -->
+      <!-- Intelligence -->
       <div class="nav-label" style="margin-top:8px">Intelligence</div>
       <button class="nav-btn" data-tab="map" onclick="switchTab(this,'map')">
         <span class="nav-icon">🗺️</span> Territory Map
+      </button>
+      <button class="nav-btn" data-tab="funnel" onclick="switchTab(this,'funnel')">
+        <span class="nav-icon">📊</span> Conversion Funnel
+      </button>
+      <button class="nav-btn" data-tab="trend" onclick="switchTab(this,'trend')">
+        <span class="nav-icon">📅</span> Monthly Trend
+      </button>
+
+      <!-- Fun -->
+      <div class="nav-label" style="margin-top:8px">Fun</div>
+      <button class="nav-btn" data-tab="roulette" onclick="switchTab(this,'roulette')">
+        <span class="nav-icon">🎰</span> Deal Roulette
+      </button>
+      <button class="nav-btn" data-tab="racetrack" onclick="switchTab(this,'racetrack')">
+        <span class="nav-icon">🏎️</span> Race Track
       </button>
 
     </div>
@@ -2022,6 +2119,38 @@ body.light .date-filter-input {
             <div class="bubble-chart" id="bubbleChart"></div>
           </div>
         </div>
+      </div>
+
+      <!-- Conversion Funnel -->
+      <div class="intel-col" id="funnelCol" style="display:none">
+        <div class="col-header" style="margin-bottom:24px">
+          <span class="col-title">📊 Conversion Funnel</span>
+        </div>
+        <div id="funnelContent"></div>
+      </div>
+
+      <!-- Monthly Trend -->
+      <div class="intel-col" id="trendCol" style="display:none">
+        <div class="col-header" style="margin-bottom:24px">
+          <span class="col-title">📅 Monthly Trend</span>
+        </div>
+        <div id="trendContent"></div>
+      </div>
+
+      <!-- Deal Roulette -->
+      <div class="intel-col" id="rouletteCol" style="display:none">
+        <div class="col-header" style="margin-bottom:24px">
+          <span class="col-title">🎰 Deal Roulette</span>
+        </div>
+        <div id="rouletteContent"></div>
+      </div>
+
+      <!-- Race Track -->
+      <div class="intel-col" id="racetrackCol" style="display:none">
+        <div class="col-header" style="margin-bottom:24px">
+          <span class="col-title">🏎️ Race Track</span>
+        </div>
+        <div id="racetrackContent"></div>
       </div>
 
     </div>
@@ -2794,27 +2923,30 @@ function switchTab(btn, tab) {
     fastwins:"⚡ Fast Wins", thismonthwins:"🎉 This Month's Wins",
     thisweek:"🗓️ This Week", trending:"📈 Trending",
     revised:"🔄 Revised", map:"🗺️ Territory Map",
+    funnel:"📊 Conversion Funnel", trend:"📅 Monthly Trend",
+    roulette:"🎰 Deal Roulette", racetrack:"🏎️ Race Track",
     ai:"✦ AI Insights"
   };
   document.getElementById("pageTitle").textContent = labels[tab] || "Quotes";
 
-  const quotesCol = document.getElementById("quotesCol");
-  const aiCol     = document.getElementById("aiCol");
-  const mapCol    = document.getElementById("mapCol");
-  const rightCol  = document.querySelector(".right-col");
-  const content   = document.querySelector(".content");
+  const quotesCol  = document.getElementById("quotesCol");
+  const aiCol      = document.getElementById("aiCol");
+  const mapCol     = document.getElementById("mapCol");
+  const funnelCol  = document.getElementById("funnelCol");
+  const trendCol   = document.getElementById("trendCol");
+  const rouletteCol= document.getElementById("rouletteCol");
+  const raceCol    = document.getElementById("racetrackCol");
+  const rightCol   = document.querySelector(".right-col");
+  const content    = document.querySelector(".content");
 
-  // Hide all special panels first
-  quotesCol.style.display = "";
-  aiCol.style.display     = "none";
-  mapCol.style.display    = "none";
-  rightCol.style.display  = "";
+  // Hide everything first
+  [quotesCol, aiCol, mapCol, funnelCol, trendCol, rouletteCol, raceCol].forEach(el => { if(el) el.style.display = "none"; });
+  rightCol.style.display = "";
   content.style.gridTemplateColumns = "";
 
   if (tab === "ai") {
-    quotesCol.style.display = "none";
-    rightCol.style.display  = "none";
-    aiCol.style.display     = "block";
+    aiCol.style.display = "block";
+    rightCol.style.display = "none";
     content.style.gridTemplateColumns = "1fr";
     const aiBody = document.getElementById("aiBody");
     if (!aiBody.querySelector(".ai-results")) {
@@ -2841,12 +2973,32 @@ function switchTab(btn, tab) {
         </div>`;
     }
   } else if (tab === "map") {
-    quotesCol.style.display = "none";
-    rightCol.style.display  = "none";
-    mapCol.style.display    = "block";
+    mapCol.style.display = "block";
+    rightCol.style.display = "none";
     content.style.gridTemplateColumns = "1fr";
     renderMap();
+  } else if (tab === "funnel") {
+    funnelCol.style.display = "block";
+    rightCol.style.display = "none";
+    content.style.gridTemplateColumns = "1fr";
+    renderFunnel();
+  } else if (tab === "trend") {
+    trendCol.style.display = "block";
+    rightCol.style.display = "none";
+    content.style.gridTemplateColumns = "1fr";
+    renderTrend();
+  } else if (tab === "roulette") {
+    rouletteCol.style.display = "block";
+    rightCol.style.display = "none";
+    content.style.gridTemplateColumns = "1fr";
+    renderRoulette();
+  } else if (tab === "racetrack") {
+    raceCol.style.display = "block";
+    rightCol.style.display = "none";
+    content.style.gridTemplateColumns = "1fr";
+    renderRaceTrack();
   } else {
+    quotesCol.style.display = "";
     renderQuotes();
   }
 }
@@ -3562,7 +3714,323 @@ function updateNotifBtn() {
   }
 }
 
-/* ── Init ── */
+/* ── Conversion Funnel ── */
+function renderFunnel() {
+  const list     = Object.values(quotes);
+  const sent     = list.filter(q => q.created);
+  const viewed   = list.filter(q => q.views > 0);
+  const hot      = list.filter(q => !q.accepted && q.views >= 3);
+  const accepted = list.filter(q => q.accepted);
+  const sentVal  = sent.reduce((s,q)     => s + parseFloat(q.doc.SubTotal||0), 0);
+  const wonVal   = accepted.reduce((s,q) => s + parseFloat(q.doc.SubTotal||0), 0);
+  const avgDays  = (() => {
+    const times = accepted.map(q => {
+      const c = parseTs(q.createdAt), l = parseTs(q.lastActivity);
+      return (c && l) ? (l-c)/86400000 : null;
+    }).filter(Boolean);
+    return times.length ? Math.round(times.reduce((a,b)=>a+b,0)/times.length) : null;
+  })();
+
+  const stages = [
+    { label:"Sent",     icon:"📤", count: sent.length,     val: sentVal, color:"#4f8ef7" },
+    { label:"Viewed",   icon:"👁",  count: viewed.length,   val: null,    color:"#a78bfa" },
+    { label:"Hot",      icon:"🔥", count: hot.length,      val: null,    color:"#f5a623" },
+    { label:"Accepted", icon:"✓",  count: accepted.length, val: wonVal,  color:"#22d3a0" },
+  ];
+
+  const maxCount = sent.length || 1;
+
+  const stagesHtml = stages.map((s, i) => {
+    const pct = Math.round((s.count / maxCount) * 100);
+    const prev = i > 0 ? stages[i-1].count : s.count;
+    const dropPct = prev > 0 ? Math.round(((prev - s.count) / prev) * 100) : 0;
+    const arrow = i < stages.length - 1 ? `<div class="funnel-arrow">↓ ${dropPct}% drop-off</div>` : "";
+    return `
+      <div class="funnel-stage">
+        <div class="funnel-fill" style="background:${s.color};width:${pct}%"></div>
+        <div class="funnel-icon">${s.icon}</div>
+        <div class="funnel-info">
+          <div class="funnel-label">${s.label}</div>
+          <div class="funnel-count" style="color:${s.color}">${s.count}</div>
+          ${s.val !== null ? `<div class="funnel-val">${gbp(s.val)}</div>` : ''}
+        </div>
+        <div class="funnel-right">
+          <div class="funnel-pct" style="color:${s.color}">${pct}%</div>
+          ${i > 0 ? `<div class="funnel-drop">of sent</div>` : ''}
+        </div>
+      </div>
+      ${arrow}`;
+  }).join("");
+
+  const overallConv = sent.length ? Math.round((accepted.length/sent.length)*100) : 0;
+
+  document.getElementById("funnelContent").innerHTML = `
+    <div class="funnel-wrap">
+      <div class="funnel-stages">${stagesHtml}</div>
+      <div class="funnel-stats">
+        <div class="fstat-card">
+          <div class="fstat-label">Overall conversion</div>
+          <div class="fstat-val" style="color:var(--green)">${overallConv}%</div>
+        </div>
+        <div class="fstat-card">
+          <div class="fstat-label">View-to-accept rate</div>
+          <div class="fstat-val" style="color:var(--purple)">${viewed.length ? Math.round((accepted.length/viewed.length)*100) : 0}%</div>
+        </div>
+        <div class="fstat-card">
+          <div class="fstat-label">Avg days to close</div>
+          <div class="fstat-val" style="color:var(--blue)">${avgDays !== null ? avgDays + 'd' : '—'}</div>
+        </div>
+        <div class="fstat-card">
+          <div class="fstat-label">Pipeline value</div>
+          <div class="fstat-val" style="color:var(--blue)">${gbp(sentVal)}</div>
+        </div>
+        <div class="fstat-card">
+          <div class="fstat-label">Won value</div>
+          <div class="fstat-val" style="color:var(--green)">${gbp(wonVal)}</div>
+        </div>
+        <div class="fstat-card">
+          <div class="fstat-label">Hot prospects</div>
+          <div class="fstat-val" style="color:var(--amber)">${hot.length}</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+/* ── Monthly Trend ── */
+function renderTrend() {
+  const list = Object.values(quotes);
+  const months = {};
+  const now = new Date();
+
+  // Build last 12 months
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    months[key] = { label: d.toLocaleDateString("en-GB",{month:"short",year:"2-digit"}), sent:0, won:0, wonVal:0, sentVal:0 };
+  }
+
+  list.forEach(q => {
+    const created = parseTs(q.createdAt);
+    if (created) {
+      const key = `${created.getFullYear()}-${String(created.getMonth()+1).padStart(2,'0')}`;
+      if (months[key]) { months[key].sent++; months[key].sentVal += parseFloat(q.doc.SubTotal||0); }
+    }
+    if (q.accepted) {
+      const accepted = parseTs(q.lastActivity);
+      if (accepted) {
+        const key = `${accepted.getFullYear()}-${String(accepted.getMonth()+1).padStart(2,'0')}`;
+        if (months[key]) { months[key].won++; months[key].wonVal += parseFloat(q.doc.SubTotal||0); }
+      }
+    }
+  });
+
+  const data    = Object.values(months);
+  const maxSent = Math.max(...data.map(m => m.sent), 1);
+
+  const barsHtml = data.map(m => {
+    const sentH = Math.round((m.sent / maxSent) * 160);
+    const wonH  = Math.round((m.won  / maxSent) * 160);
+    return `
+      <div class="trend-bar-group">
+        <div class="trend-bar-pair">
+          <div class="trend-bar sent" style="height:${sentH}px" title="${m.label}: ${m.sent} sent (${gbp(m.sentVal)})"></div>
+          <div class="trend-bar won"  style="height:${wonH}px"  title="${m.label}: ${m.won} won (${gbp(m.wonVal)})"></div>
+        </div>
+        <div class="trend-month-label">${m.label}</div>
+      </div>`;
+  }).join("");
+
+  // Summary table
+  const tableHtml = data.slice().reverse().slice(0,6).map(m => `
+    <div class="city-row">
+      <div><div class="city-name">${m.label}</div></div>
+      <div class="city-count">${m.sent} sent · ${m.won} won</div>
+      <div class="city-val">${gbp(m.wonVal)}</div>
+    </div>`).join("");
+
+  document.getElementById("trendContent").innerHTML = `
+    <div class="trend-wrap">
+      <div class="trend-chart-area">
+        <div class="trend-legend">
+          <div class="trend-legend-item"><div class="trend-legend-dot" style="background:rgba(79,142,247,0.5)"></div> Sent</div>
+          <div class="trend-legend-item"><div class="trend-legend-dot" style="background:rgba(34,211,160,0.6)"></div> Won</div>
+        </div>
+        <div class="trend-bars">${barsHtml}</div>
+      </div>
+      <div class="map-svg-wrap">
+        <div class="map-title">Last 6 months</div>
+        <div class="city-table">${tableHtml}</div>
+      </div>
+    </div>`;
+}
+
+/* ── Deal Roulette ── */
+let rouletteSpinning = false;
+
+function renderRoulette() {
+  const hotQuotes = Object.values(quotes).filter(q => !q.accepted && q.views >= 1)
+    .sort((a,b) => parseFloat(b.doc.SubTotal||0) - parseFloat(a.doc.SubTotal||0));
+
+  if (!hotQuotes.length) {
+    document.getElementById("rouletteContent").innerHTML = `<div class="empty" style="padding:60px">No open quotes to spin</div>`;
+    return;
+  }
+
+  const items = [...hotQuotes, ...hotQuotes, ...hotQuotes].slice(0, 30); // triple for scroll effect
+
+  document.getElementById("rouletteContent").innerHTML = `
+    <div class="roulette-wrap">
+      <div style="text-align:center;color:var(--dim);font-size:0.85rem;max-width:480px">
+        Spin to randomly pick a hot prospect to focus on today. Let fate decide your next call.
+      </div>
+      <div class="roulette-drum">
+        <div class="roulette-window"><div class="roulette-highlight"></div></div>
+        <div class="roulette-strip" id="rouletteStrip">
+          ${items.map(q => `
+            <div class="roulette-item">
+              <div>
+                <div class="roulette-item-main">${q.doc.DocName || q.docNos[0]}</div>
+                <div class="roulette-item-sub">${q.doc.SoldToCompany || ""} · ${q.docNos[0]}</div>
+              </div>
+              <div class="roulette-item-val">${gbp(q.doc.SubTotal)}</div>
+            </div>`).join("")}
+        </div>
+      </div>
+      <button class="roulette-spin-btn" id="rouletteBtn" onclick="spinRoulette(${JSON.stringify(hotQuotes.map(q=>q.doc.QuoteValetDocumentID||q.doc.DocNo))})">
+        🎰 Spin
+      </button>
+      <div class="roulette-result" id="rouletteResult"></div>
+    </div>`;
+}
+
+function spinRoulette(ids) {
+  if (rouletteSpinning) return;
+  rouletteSpinning = true;
+  const btn   = document.getElementById("rouletteBtn");
+  const strip = document.getElementById("rouletteStrip");
+  const result= document.getElementById("rouletteResult");
+  btn.disabled = true;
+  btn.textContent = "Spinning…";
+  result.classList.remove("visible");
+
+  const itemH  = 58;
+  const picked = Math.floor(Math.random() * ids.length);
+  const spins  = 3; // full loops
+  const target = spins * ids.length * itemH + picked * itemH;
+
+  let pos = 0;
+  const duration = 2800;
+  const start = performance.now();
+
+  function ease(t) { return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2; }
+
+  function tick(now) {
+    const t   = Math.min((now - start) / duration, 1);
+    pos       = ease(t) * target;
+    strip.style.transform = `translateY(-${pos}px)`;
+    if (t < 1) {
+      requestAnimationFrame(tick);
+    } else {
+      rouletteSpinning = false;
+      btn.disabled = false;
+      btn.textContent = "🎰 Spin again";
+      const q = quotes[ids[picked]];
+      if (q) showRouletteResult(q);
+    }
+  }
+  requestAnimationFrame(tick);
+}
+
+function showRouletteResult(q) {
+  const result = document.getElementById("rouletteResult");
+  const daysOpen = parseTs(q.createdAt) ? Math.round((Date.now() - parseTs(q.createdAt)) / 86400000) : "—";
+  const url = q.doc.SalesRepFacingUrl;
+  result.innerHTML = `
+    <div class="roulette-result-title">🎯 Today's focus quote</div>
+    <div class="roulette-result-name">${q.doc.DocName || q.docNos[0]}</div>
+    <div class="roulette-result-co">${q.doc.SoldToCompany || ""} · ${q.doc.SalesRep || ""}</div>
+    <div class="roulette-result-grid">
+      <div class="roulette-result-stat"><div class="roulette-result-stat-val">${gbp(q.doc.SubTotal)}</div><div class="roulette-result-stat-label">Value</div></div>
+      <div class="roulette-result-stat"><div class="roulette-result-stat-val">${q.views}</div><div class="roulette-result-stat-label">Views</div></div>
+      <div class="roulette-result-stat"><div class="roulette-result-stat-val">${daysOpen}d</div><div class="roulette-result-stat-label">Days open</div></div>
+    </div>
+    ${url ? `<a href="${url}" target="_blank" class="modal-quote-link" style="margin-top:12px">↗ Open quote in QuoteValet</a>` : ''}`;
+  result.classList.add("visible");
+}
+
+/* ── Race Track ── */
+const raceColors = ["#4f8ef7","#22d3a0","#a78bfa","#f5a623","#f25c5c","#2dd4bf","#fb923c","#e879f9"];
+let raceAnimating = false;
+
+function renderRaceTrack() {
+  document.getElementById("racetrackContent").innerHTML = `
+    <div class="race-wrap">
+      <div class="race-controls">
+        <button class="race-btn" onclick="startRace()">🏁 Start Race</button>
+        <div class="race-period-info">Ranked by accepted value — watch the bars animate in</div>
+      </div>
+      <div class="race-track-board" id="raceBoard"></div>
+    </div>`;
+  buildRaceBoard(false);
+}
+
+function buildRaceBoard(animate) {
+  const board = document.getElementById("raceBoard");
+  if (!board) return;
+
+  const reps = {};
+  Object.values(quotes).forEach(q => {
+    if (!q.accepted) return;
+    const rep = q.doc.SalesRep || "Unknown";
+    if (!reps[rep]) reps[rep] = { won:0, count:0 };
+    reps[rep].won   += parseFloat(q.doc.SubTotal||0);
+    reps[rep].count++;
+  });
+
+  const sorted = Object.entries(reps).sort((a,b) => b[1].won - a[1].won).slice(0,8);
+  if (!sorted.length) { board.innerHTML = `<div class="empty">No accepted quotes yet</div>`; return; }
+  const maxWon = sorted[0][1].won || 1;
+
+  board.innerHTML = sorted.map(([rep, d], i) => {
+    const pct = Math.round((d.won / maxWon) * 100);
+    const color = raceColors[i % raceColors.length];
+    const initials = rep.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2);
+    return `
+      <div class="race-lane">
+        <div class="race-rep-name">${rep}</div>
+        <div class="race-bar-wrap">
+          <div class="race-bar" id="racebar-${i}" style="width:${animate?'0%':pct+'%'};background:${color}">
+            ${animate ? '' : initials}
+          </div>
+          <span class="race-car" id="racecar-${i}" style="right:calc(${animate?'0%':pct+'%'} - 18px)">🏎️</span>
+        </div>
+        <div class="race-val">${gbp(d.won)}</div>
+      </div>`;
+  }).join("");
+
+  if (animate) {
+    setTimeout(() => {
+      sorted.forEach(([rep, d], i) => {
+        const pct = Math.round((d.won / maxWon) * 100);
+        const bar = document.getElementById(`racebar-${i}`);
+        const car = document.getElementById(`racecar-${i}`);
+        const color = raceColors[i % raceColors.length];
+        const initials = rep.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2);
+        const delay = i * 120;
+        setTimeout(() => {
+          if (bar) { bar.style.width = pct + "%"; bar.style.transition = "width 1.2s cubic-bezier(0.34,1.3,0.64,1)"; bar.textContent = initials; }
+          if (car) { car.style.right = `calc(${pct}% - 18px)`; car.style.transition = "right 1.2s cubic-bezier(0.34,1.3,0.64,1)"; }
+        }, delay);
+      });
+    }, 100);
+  }
+}
+
+function startRace() {
+  buildRaceBoard(true);
+}
+
+
 document.addEventListener("keydown", e => {
   if (e.key === "Escape") { closeModal(); closeRepModal(); closeCmd(); }
   if (e.key === "/" && !["INPUT","TEXTAREA"].includes(document.activeElement.tagName)) {
