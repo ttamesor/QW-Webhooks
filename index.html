@@ -1207,7 +1207,14 @@ body::after {
 }
 
 /* ── Nav Groups ── */
-.nav-group { margin-top: 4px; }
+.nav-label-section {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.5px;
+  padding: 0 8px;
+  opacity: 0.9;
+}
 
 .nav-group-header {
   display: flex;
@@ -1807,7 +1814,7 @@ body.light .date-filter-input {
 
       <!-- AI Insights at top -->
       <button class="nav-btn nav-btn-ai" data-tab="ai" onclick="switchTab(this,'ai')">
-        <span class="nav-icon">✦</span> AI Insights
+        <span class="nav-icon">✦</span> Launch AI Insights
       </button>
 
       <!-- All Quotes always visible -->
@@ -1850,11 +1857,11 @@ body.light .date-filter-input {
         </div>
         <div class="nav-group-body" id="grp-action">
           <button class="nav-btn" data-tab="chasing" onclick="switchTab(this,'chasing')">
-            <span class="nav-icon">🕐</span> Chasing Needed
+            <span class="nav-icon">🕐</span> Chasing — 3+ days old
             <span class="nav-count" id="countChasing">0</span>
           </button>
           <button class="nav-btn" data-tab="stale" onclick="switchTab(this,'stale')">
-            <span class="nav-icon">❄</span> Stale
+            <span class="nav-icon">❄</span> Stale — never viewed
             <span class="nav-count" id="countStale">0</span>
           </button>
           <button class="nav-btn" data-tab="gonecold" onclick="switchTab(this,'gonecold')">
@@ -1913,7 +1920,7 @@ body.light .date-filter-input {
       </div>
 
       <!-- Intelligence -->
-      <div class="nav-label" style="margin-top:8px">Intelligence</div>
+      <div class="nav-label nav-label-section" style="margin-top:8px">Intelligence</div>
       <button class="nav-btn" data-tab="map" onclick="switchTab(this,'map')">
         <span class="nav-icon">🗺️</span> Territory Map
       </button>
@@ -1925,7 +1932,7 @@ body.light .date-filter-input {
       </button>
 
       <!-- Fun -->
-      <div class="nav-label" style="margin-top:8px">Fun</div>
+      <div class="nav-label nav-label-section" style="margin-top:8px">Fun</div>
       <button class="nav-btn" data-tab="roulette" onclick="switchTab(this,'roulette')">
         <span class="nav-icon">🎰</span> Deal Roulette
       </button>
@@ -1953,7 +1960,7 @@ body.light .date-filter-input {
     <div class="topbar">
       <div class="search-wrap">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <input class="search-input" id="searchInput" placeholder="Search… or press / for command palette" oninput="handleSearch(this.value)" onfocus="showSearchPreview(this.value)" onblur="hideSearchPreview()">
+        <input class="search-input" id="searchInput" placeholder="Search… or double-click for command palette" oninput="handleSearch(this.value)" onfocus="showSearchPreview(this.value)" onblur="hideSearchPreview()" ondblclick="openCmd()">
         <div class="search-preview" id="searchPreview"></div>
       </div>
       <div class="date-filter-wrap">
@@ -2479,10 +2486,10 @@ function renderSummary(list) {
     all:           `<strong>${list.length}</strong> quotes tracked · total value <span class="fs-val">${gbp(totalVal)}</span> · <strong>${accepted}</strong> accepted worth <span class="fs-val">${gbp(wonVal)}</span>`,
     hot:           `<strong>${list.length}</strong> hot prospects with 3+ views · combined value <span class="fs-val">${gbp(totalVal)}</span> — these are your best opportunities right now`,
     accepted:      `<strong>${list.length}</strong> quotes accepted · total won value <span class="fs-val">${gbp(wonVal)}</span>`,
-    stale:         `<strong>${list.length}</strong> quotes sent but never opened · <span class="fs-val">${gbp(totalVal)}</span> waiting — a well-timed follow-up could unlock these`,
+    stale:         `<strong>${list.length}</strong> quotes sent but <strong>never opened</strong> by the customer · <span class="fs-val">${gbp(totalVal)}</span> — includes all unsent views, even recent ones. A subset (Chasing Needed) flags those sitting 3+ days`,
     expired:       `<strong>${list.length}</strong> quotes where the customer viewed an expired quote · worth <span class="fs-val">${gbp(totalVal)}</span> — they're still interested, a resend could close these`,
     highvalue:     `<strong>${list.length}</strong> open quotes worth £10k+ · combined value <span class="fs-val">${gbp(totalVal)}</span>`,
-    chasing:       `<strong>${list.length}</strong> quotes sent 3+ days ago with no view · <span class="fs-val">${gbp(totalVal)}</span> — a quick nudge could get these moving`,
+    chasing:       `<strong>${list.length}</strong> of your stale quotes have been waiting <strong>3+ days</strong> with no view · <span class="fs-val">${gbp(totalVal)}</span> — these are overdue a follow-up call or email`,
     gonecold:      `<strong>${list.length}</strong> quotes viewed at least once but silent for 14+ days · <span class="fs-val">${gbp(totalVal)}</span> — worth a re-engagement`,
     viewedtoday:   `<strong>${list.length}</strong> quotes viewed in the last 24 hours · <span class="fs-val">${gbp(totalVal)}</span> — buyers are active right now`,
     senttoday:     `<strong>${list.length}</strong> quotes sent today · <span class="fs-val">${gbp(totalVal)}</span> in fresh pipeline`,
@@ -3964,9 +3971,7 @@ function showRouletteResult(q) {
 
 document.addEventListener("keydown", e => {
   if (e.key === "Escape") { closeModal(); closeRepModal(); closeCmd(); }
-  if (e.key === "/" && !["INPUT","TEXTAREA"].includes(document.activeElement.tagName)) {
-    e.preventDefault(); openCmd();
-  }
+  if ((e.metaKey || e.ctrlKey) && e.key === "k") { e.preventDefault(); openCmd(); }
 });
 // Collapse all groups except Opportunities on load
 ["grp-action","grp-won","grp-recent"].forEach(id => {
