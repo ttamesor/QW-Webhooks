@@ -1051,14 +1051,14 @@ function buildQuotes() {
     if (r.DocNo && !q.docNos.includes(r.DocNo)) {
       q.docNos.push(r.DocNo);
       // Use the most recent doc row as the display doc
-      const t = parseTs(r.Timestamp || r.Created);
+      const t = parseTs(r.EventDateTime || r.Timestamp || r.Created);
       if (t && (!q.lastDocTs || t > q.lastDocTs)) {
         q.lastDocTs = t;
         q.doc = r;
       }
     }
 
-    const evtTime = r.Timestamp || r.Created;
+    const evtTime = r.EventDateTime || r.Timestamp || r.Created || "";
 
     q.events.push({ type: r.EventFullName, ts: evtTime });
 
