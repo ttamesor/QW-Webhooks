@@ -1811,6 +1811,7 @@ Respond ONLY with a JSON array of exactly 6 objects, each with "label" and "cont
     console.log("Raw response:", rawText.substring(0, 500));
 
     const json = JSON.parse(rawText);
+    if (json.error) throw new Error("Apps Script error: " + json.error);
     const text = json.text || "";
     const clean = text.replace(/```json|```/g, "").trim();
     const cards = JSON.parse(clean);
