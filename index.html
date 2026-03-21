@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>QuoteValet Dashboard</title>
+<title>QuoteValet</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%234f8ef7'/><text x='50%' y='54%' dominant-baseline='middle' text-anchor='middle' font-size='18'>📊</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -1810,7 +1810,7 @@ body.light .date-filter-input {
         <div class="brand-icon">📊</div>
         QuoteValet
       </div>
-      <div class="brand-sub">Sales Intelligence</div>
+      <div class="brand-sub">Sales Intelligence by Prestige Quoting</div>
       <div class="live-pill">
         <span class="live-dot"></span>
         Live feed
@@ -2363,6 +2363,33 @@ function buildQuotes() {
       q.lastActivityType = r.EventFullName;
     }
   });
+
+  // Synthesise a CreatedForCustomer for any quote missing one,
+  // dated 1 minute before the earliest view (or earliest event)
+  Object.values(quotes).forEach(q => {
+    if (q.created) return;
+
+    const viewEvents = q.events.filter(e =>
+      e.type === "QuoteValet.ViewedExternal" ||
+      e.type === "QuoteValet.ViewedExternalFirstView" ||
+      e.type === "QuoteValet.ExpiredQuoteWasViewedByCustomer"
+    );
+
+    const pool    = viewEvents.length ? viewEvents : q.events;
+    const earliest = pool.map(e => parseTs(e.ts)).filter(Boolean).sort((a,b) => a-b)[0];
+    if (!earliest) return;
+
+    const syntheticTs  = new Date(earliest.getTime() - 60000).toISOString();
+    q.events.push({ type:"QuoteValet.CreatedForCustomer", ts: syntheticTs, synthetic: true });
+    q.created   = true;
+    q.createdAt = syntheticTs;
+
+    // Update lastActivity if this synthetic date is the only activity
+    if (!q.lastActivity) {
+      q.lastActivity     = syntheticTs;
+      q.lastActivityType = "QuoteValet.CreatedForCustomer";
+    }
+  });
 }
 
 /* ── Filtering ── */
@@ -2738,6 +2765,12 @@ function showDetail(docId) {
       `;
     }).join("");
 
+  const createdDate = parseTs(q.createdAt);
+  const expiryDate  = createdDate ? new Date(createdDate.getTime() + 30 * 86400000) : null;
+  const expiryStr   = expiryDate ? expiryDate.toLocaleDateString("en-GB", {day:"numeric", month:"short", year:"numeric"}) : "—";
+  const isExpired   = expiryDate && expiryDate < new Date() && !q.accepted;
+  const expiryStyle = isExpired ? "color:var(--red)" : expiryDate && (expiryDate - Date.now()) < 7*86400000 ? "color:var(--amber)" : "";
+
   document.getElementById("mBody").innerHTML = `
     <div class="modal-amount">${gbp(doc.SubTotal)}</div>
     ${doc.SalesRepFacingUrl ? `
@@ -2769,6 +2802,14 @@ function showDetail(docId) {
       <div class="detail-cell">
         <div class="detail-cell-label">Total Views</div>
         <div class="detail-cell-val">${q.views}</div>
+      </div>
+      <div class="detail-cell">
+        <div class="detail-cell-label">Created</div>
+        <div class="detail-cell-val">${shortDate(q.createdAt)}</div>
+      </div>
+      <div class="detail-cell">
+        <div class="detail-cell-label">Expires</div>
+        <div class="detail-cell-val" style="${expiryStyle}">${expiryStr}${isExpired ? " ⚠" : ""}</div>
       </div>
     </div>
     <div class="modal-timeline">
@@ -3090,22 +3131,27 @@ function generateCSV(type) {
 
   rows.sort((a,b) => parseFloat(b.doc.SubTotal||0) - parseFloat(a.doc.SubTotal||0));
 
-  const headers = ["Doc No","Doc Name","Company","Contact","Sales Rep","Value","Views","Status","Created","Last Activity","Last Event"];
+  const headers = ["Doc No","Doc Name","Company","Contact","Sales Rep","Value","Views","Status","Created","Expires","Last Activity","Last Event"];
   const escape  = v => `"${String(v||"").replace(/"/g,'""')}"`;
 
-  const csvRows = rows.map(q => [
-    q.docNos.join(" → "),
-    q.doc.DocName || "",
-    q.doc.SoldToCompany || "",
-    q.doc.SoldToContact || "",
-    q.doc.SalesRep || "",
-    parseFloat(q.doc.SubTotal||0).toFixed(2),
-    q.views,
-    q.accepted ? "Accepted" : q.views > 0 ? "Viewed" : "Unseen",
-    shortDate(q.createdAt),
-    shortDate(q.lastActivity),
-    eventLabel(q.lastActivityType)
-  ].map(escape).join(","));
+  const csvRows = rows.map(q => {
+    const expiry    = parseTs(q.createdAt) ? new Date(parseTs(q.createdAt).getTime() + 30*86400000) : null;
+    const expiryStr = expiry ? expiry.toLocaleDateString("en-GB", {day:"numeric", month:"short", year:"numeric"}) : "—";
+    return [
+      q.docNos.join(" → "),
+      q.doc.DocName || "",
+      q.doc.SoldToCompany || "",
+      q.doc.SoldToContact || "",
+      q.doc.SalesRep || "",
+      parseFloat(q.doc.SubTotal||0).toFixed(2),
+      q.views,
+      q.accepted ? "Accepted" : q.views > 0 ? "Viewed" : "Unseen",
+      shortDate(q.createdAt),
+      expiryStr,
+      shortDate(q.lastActivity),
+      eventLabel(q.lastActivityType)
+    ].map(escape).join(",");
+  });
 
   const csv  = [headers.map(escape).join(","), ...csvRows].join("\n");
   const blob = new Blob([csv], { type: "text/csv" });
@@ -3724,11 +3770,8 @@ function renderFunnel() {
 
   const maxCount = sent.length || 1;
 
-  const stagesHtml = stages.map((s, i) => {
+    const stagesHtml = stages.map((s, i) => {
     const pct = Math.round((s.count / maxCount) * 100);
-    const prev = i > 0 ? stages[i-1].count : s.count;
-    const dropPct = prev > 0 ? Math.round(((prev - s.count) / prev) * 100) : 0;
-    const arrow = i < stages.length - 1 ? `<div class="funnel-arrow">↓ ${dropPct}% drop-off</div>` : "";
     return `
       <div class="funnel-stage">
         <div class="funnel-fill" style="background:${s.color};width:${pct}%"></div>
@@ -3742,8 +3785,7 @@ function renderFunnel() {
           <div class="funnel-pct" style="color:${s.color}">${pct}%</div>
           ${i > 0 ? `<div class="funnel-drop">of sent</div>` : ''}
         </div>
-      </div>
-      ${arrow}`;
+      </div>`; 
   }).join("");
 
   const overallConv = sent.length ? Math.round((accepted.length/sent.length)*100) : 0;
@@ -3765,8 +3807,12 @@ function renderFunnel() {
           <div class="fstat-val" style="color:var(--blue)">${avgDays !== null ? avgDays + 'd' : '—'}</div>
         </div>
         <div class="fstat-card">
-          <div class="fstat-label">Pipeline value</div>
+          <div class="fstat-label">Total sent value</div>
           <div class="fstat-val" style="color:var(--blue)">${gbp(sentVal)}</div>
+        </div>
+        <div class="fstat-card">
+          <div class="fstat-label">Open pipeline</div>
+          <div class="fstat-val" style="color:var(--blue)">${gbp(sent.filter(q=>!q.accepted).reduce((s,q)=>s+parseFloat(q.doc.SubTotal||0),0))}</div>
         </div>
         <div class="fstat-card">
           <div class="fstat-label">Won value</div>
