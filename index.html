@@ -1206,6 +1206,49 @@ body::after {
   margin: 4px 0 16px;
 }
 
+/* ── Nav Groups ── */
+.nav-group { margin-top: 4px; }
+
+.nav-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 12px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.15s;
+  user-select: none;
+}
+
+.nav-group-header:hover { background: rgba(255,255,255,0.04); }
+
+.nav-group-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--dim);
+}
+
+.nav-group-arrow {
+  font-size: 0.65rem;
+  color: var(--muted);
+  transition: transform 0.2s;
+}
+
+.nav-group-arrow.collapsed { transform: rotate(-90deg); }
+
+.nav-group-body {
+  overflow: hidden;
+  max-height: 300px;
+  transition: max-height 0.25s ease, opacity 0.2s;
+  opacity: 1;
+  padding-left: 8px;
+}
+
+.nav-group-body.collapsed {
+  max-height: 0;
+  opacity: 0;
+}
+
 .ai-suggest-btn {
   background: var(--bg3);
   border: 1px solid var(--border2);
@@ -1673,74 +1716,120 @@ body.light .date-filter-input {
     </div>
 
     <div class="nav-section">
-      <div class="nav-label">Filter</div>
-      <button class="nav-btn active" data-tab="all" onclick="switchTab(this,'all')">
-        <span class="nav-icon">◈</span> All Quotes
-        <span class="nav-count" id="countAll">0</span>
-      </button>
-      <button class="nav-btn" data-tab="hot" onclick="switchTab(this,'hot')">
-        <span class="nav-icon">🔥</span> Hot
-        <span class="nav-count" id="countHot">0</span>
-      </button>
-      <button class="nav-btn" data-tab="accepted" onclick="switchTab(this,'accepted')">
-        <span class="nav-icon">✓</span> Accepted
-        <span class="nav-count" id="countAccepted">0</span>
-      </button>
-      <button class="nav-btn" data-tab="stale" onclick="switchTab(this,'stale')">
-        <span class="nav-icon">❄</span> Stale
-        <span class="nav-count" id="countStale">0</span>
-      </button>
-      <button class="nav-btn" data-tab="expired" onclick="switchTab(this,'expired')">
-        <span class="nav-icon">⏰</span> Expired Views
-        <span class="nav-count" id="countExpired">0</span>
-      </button>
-      <button class="nav-btn" data-tab="highvalue" onclick="switchTab(this,'highvalue')">
-        <span class="nav-icon">💰</span> High Value
-        <span class="nav-count" id="countHighValue">0</span>
-      </button>
-      <button class="nav-btn" data-tab="chasing" onclick="switchTab(this,'chasing')">
-        <span class="nav-icon">🕐</span> Chasing Needed
-        <span class="nav-count" id="countChasing">0</span>
-      </button>
-      <button class="nav-btn" data-tab="gonecold" onclick="switchTab(this,'gonecold')">
-        <span class="nav-icon">👻</span> Gone Cold
-        <span class="nav-count" id="countGoneCold">0</span>
-      </button>
-      <button class="nav-btn" data-tab="viewedtoday" onclick="switchTab(this,'viewedtoday')">
-        <span class="nav-icon">👀</span> Viewed Today
-        <span class="nav-count" id="countViewedToday">0</span>
-      </button>
-      <button class="nav-btn" data-tab="senttoday" onclick="switchTab(this,'senttoday')">
-        <span class="nav-icon">🆕</span> Sent Today
-        <span class="nav-count" id="countSentToday">0</span>
-      </button>
-      <button class="nav-btn" data-tab="fastwins" onclick="switchTab(this,'fastwins')">
-        <span class="nav-icon">⚡</span> Fast Wins
-        <span class="nav-count" id="countFastWins">0</span>
-      </button>
-      <button class="nav-btn" data-tab="thismonthwins" onclick="switchTab(this,'thismonthwins')">
-        <span class="nav-icon">🎉</span> This Month's Wins
-        <span class="nav-count" id="countThisMonthWins">0</span>
-      </button>
-      <button class="nav-btn" data-tab="thisweek" onclick="switchTab(this,'thisweek')">
-        <span class="nav-icon">🗓️</span> This Week
-        <span class="nav-count" id="countThisWeek">0</span>
-      </button>
-      <button class="nav-btn" data-tab="trending" onclick="switchTab(this,'trending')">
-        <span class="nav-icon">📈</span> Trending
-        <span class="nav-count" id="countTrending">0</span>
-      </button>
-      <button class="nav-btn" data-tab="revised" onclick="switchTab(this,'revised')">
-        <span class="nav-icon">🔄</span> Revised
-        <span class="nav-count" id="countRevised">0</span>
-      </button>
-      <div class="nav-label" style="margin-top:16px">Intelligence</div>
-      <button class="nav-btn" data-tab="map" onclick="switchTab(this,'map')">
-        <span class="nav-icon">🗺️</span> Territory Map
-      </button>
+
+      <!-- AI Insights at top -->
       <button class="nav-btn nav-btn-ai" data-tab="ai" onclick="switchTab(this,'ai')">
         <span class="nav-icon">✦</span> AI Insights
       </button>
+
+      <!-- All Quotes always visible -->
+      <button class="nav-btn active" data-tab="all" onclick="switchTab(this,'all')" style="margin-top:8px">
+        <span class="nav-icon">◈</span> All Quotes
+        <span class="nav-count" id="countAll">0</span>
+      </button>
+
+      <!-- Group: Opportunities -->
+      <div class="nav-group">
+        <div class="nav-group-header" onclick="toggleGroup('grp-opportunities')">
+          <span class="nav-group-label">🔥 Opportunities</span>
+          <span class="nav-group-arrow" id="arr-grp-opportunities">▾</span>
+        </div>
+        <div class="nav-group-body" id="grp-opportunities">
+          <button class="nav-btn" data-tab="hot" onclick="switchTab(this,'hot')">
+            <span class="nav-icon">🔥</span> Hot
+            <span class="nav-count" id="countHot">0</span>
+          </button>
+          <button class="nav-btn" data-tab="highvalue" onclick="switchTab(this,'highvalue')">
+            <span class="nav-icon">💰</span> High Value
+            <span class="nav-count" id="countHighValue">0</span>
+          </button>
+          <button class="nav-btn" data-tab="trending" onclick="switchTab(this,'trending')">
+            <span class="nav-icon">📈</span> Trending
+            <span class="nav-count" id="countTrending">0</span>
+          </button>
+          <button class="nav-btn" data-tab="viewedtoday" onclick="switchTab(this,'viewedtoday')">
+            <span class="nav-icon">👀</span> Viewed Today
+            <span class="nav-count" id="countViewedToday">0</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Group: Action Needed -->
+      <div class="nav-group">
+        <div class="nav-group-header" onclick="toggleGroup('grp-action')">
+          <span class="nav-group-label">🕐 Action Needed</span>
+          <span class="nav-group-arrow" id="arr-grp-action">▾</span>
+        </div>
+        <div class="nav-group-body" id="grp-action">
+          <button class="nav-btn" data-tab="chasing" onclick="switchTab(this,'chasing')">
+            <span class="nav-icon">🕐</span> Chasing Needed
+            <span class="nav-count" id="countChasing">0</span>
+          </button>
+          <button class="nav-btn" data-tab="stale" onclick="switchTab(this,'stale')">
+            <span class="nav-icon">❄</span> Stale
+            <span class="nav-count" id="countStale">0</span>
+          </button>
+          <button class="nav-btn" data-tab="gonecold" onclick="switchTab(this,'gonecold')">
+            <span class="nav-icon">👻</span> Gone Cold
+            <span class="nav-count" id="countGoneCold">0</span>
+          </button>
+          <button class="nav-btn" data-tab="expired" onclick="switchTab(this,'expired')">
+            <span class="nav-icon">⏰</span> Expired Views
+            <span class="nav-count" id="countExpired">0</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Group: Won -->
+      <div class="nav-group">
+        <div class="nav-group-header" onclick="toggleGroup('grp-won')">
+          <span class="nav-group-label">✓ Won</span>
+          <span class="nav-group-arrow" id="arr-grp-won">▾</span>
+        </div>
+        <div class="nav-group-body" id="grp-won">
+          <button class="nav-btn" data-tab="accepted" onclick="switchTab(this,'accepted')">
+            <span class="nav-icon">✓</span> Accepted
+            <span class="nav-count" id="countAccepted">0</span>
+          </button>
+          <button class="nav-btn" data-tab="fastwins" onclick="switchTab(this,'fastwins')">
+            <span class="nav-icon">⚡</span> Fast Wins
+            <span class="nav-count" id="countFastWins">0</span>
+          </button>
+          <button class="nav-btn" data-tab="thismonthwins" onclick="switchTab(this,'thismonthwins')">
+            <span class="nav-icon">🎉</span> This Month's Wins
+            <span class="nav-count" id="countThisMonthWins">0</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Group: Recent -->
+      <div class="nav-group">
+        <div class="nav-group-header" onclick="toggleGroup('grp-recent')">
+          <span class="nav-group-label">🗓️ Recent</span>
+          <span class="nav-group-arrow" id="arr-grp-recent">▾</span>
+        </div>
+        <div class="nav-group-body" id="grp-recent">
+          <button class="nav-btn" data-tab="senttoday" onclick="switchTab(this,'senttoday')">
+            <span class="nav-icon">🆕</span> Sent Today
+            <span class="nav-count" id="countSentToday">0</span>
+          </button>
+          <button class="nav-btn" data-tab="thisweek" onclick="switchTab(this,'thisweek')">
+            <span class="nav-icon">🗓️</span> This Week
+            <span class="nav-count" id="countThisWeek">0</span>
+          </button>
+          <button class="nav-btn" data-tab="revised" onclick="switchTab(this,'revised')">
+            <span class="nav-icon">🔄</span> Revised
+            <span class="nav-count" id="countRevised">0</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Territory at bottom of nav -->
+      <div class="nav-label" style="margin-top:8px">Intelligence</div>
+      <button class="nav-btn" data-tab="map" onclick="switchTab(this,'map')">
+        <span class="nav-icon">🗺️</span> Territory Map
+      </button>
+
     </div>
 
     <div class="sidebar-footer">
@@ -1764,7 +1853,7 @@ body.light .date-filter-input {
     <div class="topbar">
       <div class="search-wrap">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <input class="search-input" id="searchInput" placeholder="Search… or ⌘K for command palette" oninput="handleSearch(this.value)" onfocus="showSearchPreview(this.value)" onblur="hideSearchPreview()">
+        <input class="search-input" id="searchInput" placeholder="Search… or press / for command palette" oninput="handleSearch(this.value)" onfocus="showSearchPreview(this.value)" onblur="hideSearchPreview()">
         <div class="search-preview" id="searchPreview"></div>
       </div>
       <div class="date-filter-wrap">
@@ -1925,8 +2014,8 @@ body.light .date-filter-input {
   <div class="cmd-box" onclick="event.stopPropagation()">
     <div class="cmd-input-wrap">
       <span class="cmd-icon">⌘</span>
-      <input class="cmd-input" id="cmdInput" placeholder="Search quotes, companies, or jump to a tab…" oninput="updateCmd(this.value)" onkeydown="cmdKey(event)">
-      <span class="cmd-hint">ESC</span>
+      <input class="cmd-input" id="cmdInput" placeholder="Jump to a view, search quotes, or run an action…" oninput="updateCmd(this.value)" onkeydown="cmdKey(event)">
+      <span class="cmd-hint">ESC · / to open</span>
     </div>
     <div class="cmd-results" id="cmdResults"></div>
   </div>
@@ -3234,6 +3323,15 @@ const cmdTabs = [
   { icon:"✦",  label:"AI Insights",      tab:"ai" },
 ];
 
+const cmdActions = [
+  { icon:"✦",  label:"Run AI analysis",          action: () => { closeCmd(); jumpToTab("ai"); setTimeout(runAIAnalysis, 300); } },
+  { icon:"📥", label:"Export this month's wins as CSV", action: () => { closeCmd(); generateCSV("thismonth"); } },
+  { icon:"📥", label:"Export hot prospects as CSV",     action: () => { closeCmd(); generateCSV("hot"); } },
+  { icon:"📥", label:"Export chasing needed as CSV",    action: () => { closeCmd(); generateCSV("chasing"); } },
+  { icon:"☀️", label:"Toggle light / dark mode",        action: () => { closeCmd(); toggleTheme(); } },
+  { icon:"▶",  label:"Start demo mode",                 action: () => { closeCmd(); toggleDemo(); } },
+];
+
 function updateCmd(val) {
   const q = val.toLowerCase().trim();
   const container = document.getElementById("cmdResults");
@@ -3241,12 +3339,25 @@ function updateCmd(val) {
 
   let html = "";
 
+  // Actions
+  const matchActions = cmdActions.filter(a => !q || a.label.toLowerCase().includes(q));
+  if (matchActions.length) {
+    html += `<div class="cmd-section-label">Actions</div>`;
+    html += matchActions.map((a, i) => `
+      <div class="cmd-item" onclick="cmdActions[${cmdActions.indexOf(a)}].action()">
+        <div class="cmd-item-icon" style="background:rgba(167,139,250,0.15)">${a.icon}</div>
+        <div class="cmd-item-main">
+          <div class="cmd-item-title">${a.label}</div>
+        </div>
+      </div>`).join("");
+  }
+
   // Tab shortcuts
   const matchTabs = cmdTabs.filter(t => !q || t.label.toLowerCase().includes(q));
   if (matchTabs.length) {
-    html += `<div class="cmd-section-label">Jump to</div>`;
-    html += matchTabs.slice(0,5).map((t,i) => `
-      <div class="cmd-item" data-idx="${i}" onclick="cmdSelectTab('${t.tab}')">
+    html += `<div class="cmd-section-label">Jump to view</div>`;
+    html += matchTabs.slice(0,6).map(t => `
+      <div class="cmd-item" onclick="cmdSelectTab('${t.tab}')">
         <div class="cmd-item-icon">${t.icon}</div>
         <div class="cmd-item-main">
           <div class="cmd-item-title">${t.label}</div>
@@ -3261,7 +3372,7 @@ function updateCmd(val) {
       (x.doc.SoldToCompany||"").toLowerCase().includes(q) ||
       (x.doc.SoldToContact||"").toLowerCase().includes(q) ||
       (x.doc.DocName||"").toLowerCase().includes(q)
-    ).slice(0, 6);
+    ).slice(0, 5);
 
     if (matches.length) {
       html += `<div class="cmd-section-label">Quotes</div>`;
@@ -3343,6 +3454,14 @@ function renderSearchPreview(val) {
       </div>
     </div>`).join("");
   preview.classList.add("visible");
+}
+
+function toggleGroup(id) {
+  const body  = document.getElementById(id);
+  const arrow = document.getElementById("arr-" + id);
+  if (!body) return;
+  body.classList.toggle("collapsed");
+  if (arrow) arrow.classList.toggle("collapsed");
 }
 
 function jumpToTab(tab) {
@@ -3427,7 +3546,10 @@ function updateNotifBtn() {
 /* ── Init ── */
 document.addEventListener("keydown", e => {
   if (e.key === "Escape") { closeModal(); closeRepModal(); closeCmd(); }
-  if ((e.metaKey || e.ctrlKey) && e.key === "k") { e.preventDefault(); openCmd(); }
+  // Open command palette with / unless typing in an input
+  if (e.key === "/" && !["INPUT","TEXTAREA"].includes(document.activeElement.tagName)) {
+    e.preventDefault(); openCmd();
+  }
 });
 setInterval(loadData, 60000);
 requestNotifications();
