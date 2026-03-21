@@ -578,6 +578,22 @@ body::after {
 .rep-row:hover { background: rgba(255,255,255,0.02); }
 .rep-row:last-child { border-bottom: none; }
 
+.period-select {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--dim);
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  padding: 4px 8px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  color-scheme: dark;
+}
+
+.period-select:hover, .period-select:focus { border-color: var(--blue); color: var(--text); }
+
 .rep-rank {
   width: 24px;
   height: 24px;
@@ -1856,6 +1872,14 @@ body.light .date-filter-input {
         <div class="right-section">
           <div class="col-header">
             <span class="col-title">🏆 Leaderboard</span>
+            <select class="period-select" id="leaderboardPeriod" onchange="renderLeaderboard()">
+              <option value="ytd" selected>YTD</option>
+              <option value="today">Today</option>
+              <option value="thisweek">This week</option>
+              <option value="thismonth">This month</option>
+              <option value="lastweek">Last week</option>
+              <option value="lastmonth">Last month</option>
+            </select>
           </div>
           <div class="panel-scroll" id="leaderboard">
             <div class="loader"><div class="spinner"></div></div>
@@ -2133,7 +2157,7 @@ function filtered() {
     case "hot":           list = list.filter(x => !x.accepted && x.views >= 3); break;
     case "accepted":      list = list.filter(x => x.accepted); break;
     case "stale":         list = list.filter(x => x.created && !x.accepted && x.views === 0); break;
-    case "expired":       list = list.filter(x => x.expiredView && !x.accepted && x.lastActivityType === "QuoteValet.ExpiredQuoteWasViewedByCustomer"); break;
+    case "expired":       list = list.filter(x => x.expiredView && !x.accepted); break;
     case "highvalue":     list = list.filter(x => !x.accepted && parseFloat(x.doc.SubTotal||0) >= 10000); break;
     case "chasing":       list = list.filter(x => x.created && !x.accepted && x.views === 0 && parseTs(x.createdAt) && (Date.now() - parseTs(x.createdAt)) > 3 * 86400000); break;
     case "gonecold":      list = list.filter(x => !x.accepted && x.views > 0 && parseTs(x.lastActivity) && (Date.now() - parseTs(x.lastActivity)) > 14 * 86400000); break;
@@ -2175,7 +2199,7 @@ function renderStats() {
   const views  = list.reduce((s,q) => s + q.views, 0);
   const hot    = list.filter(q => !q.accepted && q.views >= 3).length;
   const unseen  = list.filter(q => q.created && !q.accepted && q.views === 0).length;
-  const expired = list.filter(q => q.expiredView && !q.accepted && q.lastActivityType === "QuoteValet.ExpiredQuoteWasViewedByCustomer").length;
+  const expired = list.filter(q => q.expiredView && !q.accepted).length;
 
   animateCurrency(document.getElementById("sPipeline"), pipeV, 800);
   document.getElementById("sPipelineSub").textContent = open.length + " open quotes";
@@ -2194,7 +2218,7 @@ function updateCounts() {
   document.getElementById("countHot").textContent          = list.filter(q => !q.accepted && q.views >= 3).length;
   document.getElementById("countAccepted").textContent     = list.filter(q => q.accepted).length;
   document.getElementById("countStale").textContent        = list.filter(q => q.created && !q.accepted && q.views === 0).length;
-  document.getElementById("countExpired").textContent      = list.filter(q => q.expiredView && !q.accepted && q.lastActivityType === "QuoteValet.ExpiredQuoteWasViewedByCustomer").length;
+  document.getElementById("countExpired").textContent      = list.filter(q => q.expiredView && !q.accepted).length;
   document.getElementById("countHighValue").textContent    = list.filter(q => !q.accepted && parseFloat(q.doc.SubTotal||0) >= 10000).length;
   document.getElementById("countChasing").textContent      = list.filter(q => q.created && !q.accepted && q.views === 0 && parseTs(q.createdAt) && (Date.now() - parseTs(q.createdAt)) > 3 * 86400000).length;
   document.getElementById("countGoneCold").textContent     = list.filter(q => !q.accepted && q.views > 0 && parseTs(q.lastActivity) && (Date.now() - parseTs(q.lastActivity)) > 14 * 86400000).length;
@@ -2326,17 +2350,53 @@ function renderQuotes() {
   }).join("");
 }
 
+function getPeriodRange(period) {
+  const now = new Date();
+  const sod  = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // start of today
+  switch(period) {
+    case "today":
+      return { from: sod, to: null };
+    case "thisweek": {
+      const d = new Date(sod);
+      d.setDate(d.getDate() - d.getDay() + (d.getDay() === 0 ? -6 : 1)); // Mon
+      return { from: d, to: null };
+    }
+    case "thismonth":
+      return { from: new Date(now.getFullYear(), now.getMonth(), 1), to: null };
+    case "lastweek": {
+      const mon = new Date(sod);
+      mon.setDate(mon.getDate() - mon.getDay() + (mon.getDay() === 0 ? -6 : 1) - 7);
+      const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+      return { from: mon, to: sun };
+    }
+    case "lastmonth": {
+      const from = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const to   = new Date(now.getFullYear(), now.getMonth(), 0);
+      return { from, to };
+    }
+    case "ytd":
+    default:
+      return { from: new Date(now.getFullYear(), 0, 1), to: null };
+  }
+}
+
 function renderLeaderboard() {
   const container = document.getElementById("leaderboard");
+  const period    = document.getElementById("leaderboardPeriod")?.value || "ytd";
+  const { from, to } = getPeriodRange(period);
   const reps = {};
 
   Object.values(quotes).forEach(q => {
+    if (!q.accepted) return;
+    const acceptedTs = parseTs(q.lastActivity);
+    if (!acceptedTs) return;
+    if (from && acceptedTs < from) return;
+    if (to   && acceptedTs > to)   return;
+
     const rep = q.doc.SalesRep || "Unknown";
-    if (!reps[rep]) reps[rep] = { won:0, pipeline:0, count:0 };
+    if (!reps[rep]) reps[rep] = { won:0, count:0 };
+    reps[rep].won   += parseFloat(q.doc.SubTotal||0);
     reps[rep].count++;
-    const v = parseFloat(q.doc.SubTotal||0);
-    if (q.accepted) reps[rep].won += v;
-    else reps[rep].pipeline += v;
   });
 
   const sorted = Object.entries(reps)
@@ -2344,7 +2404,7 @@ function renderLeaderboard() {
     .slice(0,6);
 
   if (!sorted.length) {
-    container.innerHTML = `<div class="empty">No data yet</div>`;
+    container.innerHTML = `<div class="empty">No accepted quotes in this period</div>`;
     return;
   }
 
@@ -2364,7 +2424,7 @@ function renderLeaderboard() {
         </div>
         <div>
           <div class="rep-won">${gbp(d.won)}</div>
-          <div class="rep-total">${d.count} quotes</div>
+          <div class="rep-total">${d.count} won</div>
         </div>
       </div>
     `;
@@ -2693,7 +2753,7 @@ function buildDataSummary() {
   const open      = list.filter(q => q.created && !q.accepted);
   const hot       = list.filter(q => !q.accepted && q.views >= 3);
   const stale     = list.filter(q => q.created && !q.accepted && q.views === 0);
-  const expired   = list.filter(q => q.expiredView && !q.accepted && q.lastActivityType === "QuoteValet.ExpiredQuoteWasViewedByCustomer");
+  const expired   = list.filter(q => q.expiredView && !q.accepted);
   const chasing   = list.filter(q => q.created && !q.accepted && q.views === 0 && parseTs(q.createdAt) && (now - parseTs(q.createdAt)) > 3 * 86400000);
   const highval   = list.filter(q => !q.accepted && parseFloat(q.doc.SubTotal||0) >= 10000);
 
