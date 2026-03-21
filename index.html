@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>QuoteValet</title>
+<title>QuoteValet Dashboard</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%234f8ef7'/><text x='50%' y='54%' dominant-baseline='middle' text-anchor='middle' font-size='18'>📊</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -1677,9 +1677,9 @@ body.light .date-filter-input {
 
 /* Roulette */
 .roulette-wrap { display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 12px 0; }
-.roulette-drum { width: 100%; max-width: 560px; background: var(--bg2); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; position: relative; height: 120px; }
+.roulette-drum { width: 100%; max-width: 560px; background: var(--bg2); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; position: relative; height: 58px; }
 .roulette-window { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: 2; }
-.roulette-highlight { width: calc(100% - 28px); height: 58px; border: 2px solid var(--purple); border-radius: 10px; background: rgba(167,139,250,0.06); box-shadow: 0 0 20px rgba(167,139,250,0.2); }
+.roulette-highlight { width: calc(100% - 4px); height: 54px; border: 2px solid var(--purple); border-radius: 10px; background: rgba(167,139,250,0.06); box-shadow: 0 0 20px rgba(167,139,250,0.2); }
 .roulette-strip { display: flex; flex-direction: column; padding: 0 14px; }
 .roulette-item { height: 58px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; padding: 0 6px; }
 .roulette-item-main { font-size: 0.85rem; font-weight: 500; }
@@ -3902,8 +3902,8 @@ function spinRoulette() {
   const result = document.getElementById("rouletteResult");
 
   const itemH    = 58;
-  const drumH    = 120;
-  const offset   = Math.floor((drumH - itemH) / 2);
+  const drumH    = 58;
+  const offset   = Math.floor((drumH - itemH) / 2);  // = 0, item fills drum exactly
   const picked   = Math.floor(Math.random() * rouletteQuotes.length);
   const targetIdx = rouletteQuotes.length * 2 + picked;
   const targetY   = targetIdx * itemH - offset;
