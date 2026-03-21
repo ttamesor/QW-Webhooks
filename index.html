@@ -1772,32 +1772,45 @@ async function runAIAnalysis() {
     </div>`;
 
   const data = buildDataSummary();
+  const s = data.summary;
 
-  const prompt = `You are a sharp, experienced sales manager analysing QuoteValet data for a UK B2B business. 
-You have access to the following pipeline summary data (values in GBP):
+  // Build a compact plain-text summary to keep URL short
+  const repLines = data.reps.slice(0,6).map(r =>
+    `${r.name}: sent ${r.sent}, won ${r.accepted} (${r.convRate}%), won value £${r.wonVal.toLocaleString()}`
+  ).join(" | ");
 
-${JSON.stringify(data, null, 2)}
+  const chasingLines = data.chasingList.map(q =>
+    `${q.company} (${q.doc}, £${Math.round(q.value).toLocaleString()}, ${q.daysSinceSent}d ago)`
+  ).join(", ");
 
-Provide a concise, insightful analysis across these 6 areas. Be specific — use the actual numbers. Be direct and actionable. Write for a sales manager who wants to know what to do, not just what's happening. UK English throughout.
+  const topOpenLines = data.topOpen.map(q =>
+    `${q.company} (${q.doc}, £${Math.round(q.value).toLocaleString()}, ${q.views} views)`
+  ).join(", ");
 
-Respond ONLY with a valid JSON array of exactly 6 objects. Each object must have:
-- "label": short title (e.g. "Pipeline Health")  
-- "content": 2-4 sentences of insight using the data. Use ** around key figures or company names for emphasis.
+  const expiredLines = data.expiredList.map(q =>
+    `${q.company} (${q.doc}, £${Math.round(q.value).toLocaleString()})`
+  ).join(", ");
 
-The 6 areas must be:
-1. Pipeline Health — overall state, conversion rate, pipeline vs won value
-2. Immediate Opportunities — hot prospects and velocity quotes that need attention now
-3. Rep Performance — who's performing, conversion rates, any standout patterns
-4. At Risk — stale, chasing needed, expired views — money at risk and what to do
-5. Timing Insights — how long quotes take to close, any patterns worth noting
-6. One Big Recommendation — the single most impactful action to take this week
+  const prompt = `You are a sharp sales manager analysing UK B2B quote data. Be specific with numbers, direct, actionable. UK English.
 
-Return only the JSON array, no markdown, no preamble.`;
+PIPELINE: ${s.total} quotes total. Open: ${s.openCount} worth £${s.pipeVal.toLocaleString()}. Won: ${s.acceptedCount} worth £${s.wonVal.toLocaleString()}. Conversion: ${s.acceptedCount && s.total ? Math.round(s.acceptedCount/s.total*100) : 0}%. Views: ${s.totalViews}. Hot (3+ views): ${s.hotCount}. Stale (unseen): ${s.staleCount}. Chasing needed (3+ days unseen): ${s.chasingCount}. Expired views: ${s.expiredCount}. Avg days to accept: ${s.avgAcceptDays || 'unknown'}.
+REPS: ${repLines}
+TOP OPEN: ${topOpenLines}
+NEEDS CHASING: ${chasingLines}
+EXPIRED VIEWS: ${expiredLines}
+
+Respond ONLY with a JSON array of exactly 6 objects, each with "label" and "content" (2-3 sentences, use **bold** for key figures/names). Areas: 1) Pipeline Health 2) Immediate Opportunities 3) Rep Performance 4) At Risk 5) Timing Insights 6) One Big Recommendation. No markdown, no preamble, just the JSON array.`;
 
   try {
     const params = new URLSearchParams({ ai: "1", prompt, ts: Date.now() });
-    const res = await fetch(APPS_SCRIPT_BASE + "?" + params.toString());
-    const json = await res.json();
+    const url = APPS_SCRIPT_BASE + "?" + params.toString();
+    console.log("Prompt length:", prompt.length, "URL length:", url.length);
+
+    const res = await fetch(url);
+    const rawText = await res.text();
+    console.log("Raw response:", rawText.substring(0, 500));
+
+    const json = JSON.parse(rawText);
     const text = json.text || "";
     const clean = text.replace(/```json|```/g, "").trim();
     const cards = JSON.parse(clean);
@@ -1819,6 +1832,7 @@ Return only the JSON array, no markdown, no preamble.`;
 
   } catch(err) {
     body.innerHTML = `<div class="ai-idle"><div class="ai-idle-icon">⚠</div><div class="ai-idle-title">Analysis failed</div><div class="ai-idle-sub">${err.message}</div><button class="ai-run-btn" onclick="runAIAnalysis()">Try again</button></div>`;
+    console.error("AI analysis error:", err);
   }
 
   btn.disabled = false;
