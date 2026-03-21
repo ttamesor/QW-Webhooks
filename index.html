@@ -1992,7 +1992,7 @@ function generateCSV(type) {
   setTimeout(() => { body.innerHTML = prev; }, 2500);
 }
 
-
+function setPrompt(btn) {
   document.querySelectorAll(".ai-suggest-btn").forEach(b => b.classList.remove("selected"));
   btn.classList.add("selected");
   const q = btn.textContent;
