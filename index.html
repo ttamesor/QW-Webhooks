@@ -416,39 +416,6 @@ body::after {
   color: var(--muted);
 }
 
-/* Date filter */
-.date-filter-wrap {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.date-filter-label {
-  font-size: 0.72rem;
-  font-family: var(--font-mono);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--muted);
-  white-space: nowrap;
-}
-
-.date-filter-input {
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  color: var(--text);
-  font-family: var(--font-body);
-  font-size: 0.82rem;
-  padding: 7px 10px;
-  outline: none;
-  cursor: pointer;
-  transition: border-color 0.2s;
-  color-scheme: dark;
-}
-
-.date-filter-input:focus,
-.date-filter-input:hover { border-color: var(--blue); }
-
 /* Quote rows */
 .quote-row {
   display: grid;
@@ -908,6 +875,8 @@ body::after {
   font-family: var(--font-mono);
   color: var(--muted);
 }
+
+.modal-timeline {
   border-top: 1px solid var(--border);
   padding-top: 16px;
 }
@@ -1198,13 +1167,6 @@ body::after {
   padding-bottom: 6px;
   border-bottom: 1px solid var(--border);
 }
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: center;
-  max-width: 640px;
-  margin: 4px 0 16px;
-}
 
 /* ── Nav Groups ── */
 .nav-label-section {
@@ -1230,9 +1192,9 @@ body::after {
 .nav-group-header:hover { background: rgba(255,255,255,0.06); }
 
 .nav-group-label {
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--dim);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text);
 }
 
 .nav-group-arrow {
@@ -1360,6 +1322,15 @@ body::after {
 
 .ai-ask-again-btn:hover { background: rgba(167,139,250,0.25); }
 
+.ai-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  max-width: 640px;
+  margin: 4px 0 16px;
+}
+
 .ai-timestamp {
   margin-top: 24px;
   font-size: 0.7rem;
@@ -1388,8 +1359,7 @@ body.light .ticker-bar {
   background: var(--bg2);
 }
 
-body.light .search-input,
-body.light .date-filter-input {
+body.light .search-input {
   background: var(--bg);
   color: var(--text);
 }
@@ -1810,7 +1780,7 @@ body.light .date-filter-input {
         <div class="brand-icon">📊</div>
         QuoteValet
       </div>
-      <div class="brand-sub">Sales Intelligence</div>
+      <div class="brand-sub">Sales Intelligence by Prestige Quoting</div>
       <div class="live-pill">
         <span class="live-dot"></span>
         Live feed
@@ -1969,10 +1939,6 @@ body.light .date-filter-input {
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
         <input class="search-input" id="searchInput" placeholder="Search… or double-click for command palette" oninput="handleSearch(this.value)" onfocus="showSearchPreview(this.value)" onblur="hideSearchPreview()" ondblclick="openCmd()">
         <div class="search-preview" id="searchPreview"></div>
-      </div>
-      <div class="date-filter-wrap">
-        <label class="date-filter-label">Ignore anything older than</label>
-        <input type="date" class="date-filter-input" id="dateFrom" value="2026-01-01" onchange="handleDateFilter()">
       </div>
       <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
         <button class="topbar-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle light/dark mode">☀️ Light mode</button>
@@ -2197,7 +2163,6 @@ let allData = [];
 let quotes  = {};
 let currentTab = "all";
 let searchQuery = "";
-let dateFrom = new Date("2026-01-01T00:00:00Z");
 let seenEventKeys = new Set();
 let notificationsReady = false;
 let isFirstLoad = true;
@@ -2314,11 +2279,6 @@ function handleData(data) {
 function buildQuotes() {
   quotes = {};
   allData.forEach(r => {
-    // Skip rows before dateFrom cutoff (based on EventDateTime)
-    if (dateFrom) {
-      const t = parseTs(r.EventDateTime || r.Timestamp || r.Created);
-      if (t && t < dateFrom) return;
-    }
     // Group by QuoteValetDocumentID so revisions follow the same quote
     const id = r.QuoteValetDocumentID || r.DocNo;
     if (!quotes[id]) {
@@ -2363,6 +2323,33 @@ function buildQuotes() {
       q.lastActivityType = r.EventFullName;
     }
   });
+
+  // Synthesise a CreatedForCustomer for any quote missing one,
+  // dated 1 minute before the earliest view (or earliest event)
+  Object.values(quotes).forEach(q => {
+    if (q.created) return;
+
+    const viewEvents = q.events.filter(e =>
+      e.type === "QuoteValet.ViewedExternal" ||
+      e.type === "QuoteValet.ViewedExternalFirstView" ||
+      e.type === "QuoteValet.ExpiredQuoteWasViewedByCustomer"
+    );
+
+    const pool    = viewEvents.length ? viewEvents : q.events;
+    const earliest = pool.map(e => parseTs(e.ts)).filter(Boolean).sort((a,b) => a-b)[0];
+    if (!earliest) return;
+
+    const syntheticTs  = new Date(earliest.getTime() - 60000).toISOString();
+    q.events.push({ type:"QuoteValet.CreatedForCustomer", ts: syntheticTs, synthetic: true });
+    q.created   = true;
+    q.createdAt = syntheticTs;
+
+    // Update lastActivity if this synthetic date is the only activity
+    if (!q.lastActivity) {
+      q.lastActivity     = syntheticTs;
+      q.lastActivityType = "QuoteValet.CreatedForCustomer";
+    }
+  });
 }
 
 /* ── Filtering ── */
@@ -2383,10 +2370,10 @@ function filtered() {
   switch(currentTab) {
     case "hot":           list = list.filter(x => !x.accepted && x.views >= 3); break;
     case "accepted":      list = list.filter(x => x.accepted); break;
-    case "stale":         list = list.filter(x => x.created && !x.accepted && x.views === 0); break;
+    case "stale":         list = list.filter(x => !x.accepted && x.views === 0); break;
     case "expired":       list = list.filter(x => x.expiredView && !x.accepted); break;
     case "highvalue":     list = list.filter(x => !x.accepted && parseFloat(x.doc.SubTotal||0) >= 10000); break;
-    case "chasing":       list = list.filter(x => x.created && !x.accepted && x.views === 0 && parseTs(x.createdAt) && (Date.now() - parseTs(x.createdAt)) > 3 * 86400000); break;
+    case "chasing":       list = list.filter(x => !x.accepted && x.views === 0 && parseTs(x.createdAt) && (Date.now() - parseTs(x.createdAt)) > 3 * 86400000); break;
     case "gonecold":      list = list.filter(x => !x.accepted && x.views > 0 && parseTs(x.lastActivity) && (Date.now() - parseTs(x.lastActivity)) > 14 * 86400000); break;
     case "viewedtoday":   list = list.filter(x => parseTs(x.lastActivity) && (Date.now() - parseTs(x.lastActivity)) < 86400000 && (x.lastActivityType === "QuoteValet.ViewedExternal" || x.lastActivityType === "QuoteValet.ViewedExternalFirstView")); break;
     case "senttoday":     list = list.filter(x => parseTs(x.createdAt) && (Date.now() - parseTs(x.createdAt)) < 86400000); break;
@@ -2425,7 +2412,7 @@ function renderStats() {
   const wonV   = won.reduce((s,q)  => s + parseFloat(q.doc.SubTotal||0), 0);
   const views  = list.reduce((s,q) => s + q.views, 0);
   const hot    = list.filter(q => !q.accepted && q.views >= 3).length;
-  const unseen  = list.filter(q => q.created && !q.accepted && q.views === 0).length;
+  const unseen  = list.filter(q => !q.accepted && q.views === 0).length;
   const expired = list.filter(q => q.expiredView && !q.accepted).length;
 
   animateCurrency(document.getElementById("sPipeline"), pipeV, 800);
@@ -2444,10 +2431,10 @@ function updateCounts() {
   document.getElementById("countAll").textContent          = list.length;
   document.getElementById("countHot").textContent          = list.filter(q => !q.accepted && q.views >= 3).length;
   document.getElementById("countAccepted").textContent     = list.filter(q => q.accepted).length;
-  document.getElementById("countStale").textContent        = list.filter(q => q.created && !q.accepted && q.views === 0).length;
+  document.getElementById("countStale").textContent        = list.filter(q => !q.accepted && q.views === 0).length;
   document.getElementById("countExpired").textContent      = list.filter(q => q.expiredView && !q.accepted).length;
   document.getElementById("countHighValue").textContent    = list.filter(q => !q.accepted && parseFloat(q.doc.SubTotal||0) >= 10000).length;
-  document.getElementById("countChasing").textContent      = list.filter(q => q.created && !q.accepted && q.views === 0 && parseTs(q.createdAt) && (Date.now() - parseTs(q.createdAt)) > 3 * 86400000).length;
+  document.getElementById("countChasing").textContent      = list.filter(q => !q.accepted && q.views === 0 && parseTs(q.createdAt) && (Date.now() - parseTs(q.createdAt)) > 3 * 86400000).length;
   document.getElementById("countGoneCold").textContent     = list.filter(q => !q.accepted && q.views > 0 && parseTs(q.lastActivity) && (Date.now() - parseTs(q.lastActivity)) > 14 * 86400000).length;
   document.getElementById("countViewedToday").textContent  = list.filter(q => parseTs(q.lastActivity) && (Date.now() - parseTs(q.lastActivity)) < 86400000 && (q.lastActivityType === "QuoteValet.ViewedExternal" || q.lastActivityType === "QuoteValet.ViewedExternalFirstView")).length;
   document.getElementById("countSentToday").textContent    = list.filter(q => parseTs(q.createdAt) && (Date.now() - parseTs(q.createdAt)) < 86400000).length;
@@ -2462,7 +2449,6 @@ function updateCounts() {
     return rv > ov && rv >= 1;
   }).length;
   document.getElementById("countRevised").textContent      = list.filter(q => q.events.some(e => e.type === "QuoteValet.UpdatedForCustomer") && !q.accepted).length;
-  document.getElementById("countNearlyThere").textContent  = list.filter(q => !q.accepted && (q.views === 1 || q.views === 2)).length;
 }
 
 function eventLabel(type) {
@@ -2738,6 +2724,12 @@ function showDetail(docId) {
       `;
     }).join("");
 
+  const createdDate = parseTs(q.createdAt);
+  const expiryDate  = createdDate ? new Date(createdDate.getTime() + 30 * 86400000) : null;
+  const expiryStr   = expiryDate ? expiryDate.toLocaleDateString("en-GB", {day:"numeric", month:"short", year:"numeric"}) : "—";
+  const isExpired   = expiryDate && expiryDate < new Date() && !q.accepted;
+  const expiryStyle = isExpired ? "color:var(--red)" : expiryDate && (expiryDate - Date.now()) < 7*86400000 ? "color:var(--amber)" : "";
+
   document.getElementById("mBody").innerHTML = `
     <div class="modal-amount">${gbp(doc.SubTotal)}</div>
     ${doc.SalesRepFacingUrl ? `
@@ -2770,6 +2762,14 @@ function showDetail(docId) {
         <div class="detail-cell-label">Total Views</div>
         <div class="detail-cell-val">${q.views}</div>
       </div>
+      <div class="detail-cell">
+        <div class="detail-cell-label">Created</div>
+        <div class="detail-cell-val">${shortDate(q.createdAt)}</div>
+      </div>
+      <div class="detail-cell">
+        <div class="detail-cell-label">Expires</div>
+        <div class="detail-cell-val" style="${expiryStyle}">${expiryStr}${isExpired ? " ⚠" : ""}</div>
+      </div>
     </div>
     <div class="modal-timeline">
       <div class="timeline-title">Event History</div>
@@ -2786,7 +2786,7 @@ function showRepScorecard(repName) {
   const accepted  = repQuotes.filter(q => q.accepted);
   const open      = repQuotes.filter(q => q.created && !q.accepted);
   const hot       = repQuotes.filter(q => !q.accepted && q.views >= 3);
-  const unseen    = repQuotes.filter(q => q.created && !q.accepted && q.views === 0);
+  const unseen    = repQuotes.filter(q => !q.accepted && q.views === 0);
   const wonVal    = accepted.reduce((s,q) => s + parseFloat(q.doc.SubTotal||0), 0);
   const pipeVal   = open.reduce((s,q) => s + parseFloat(q.doc.SubTotal||0), 0);
   const convRate  = repQuotes.length ? Math.round((accepted.length / repQuotes.length) * 100) : 0;
@@ -2996,9 +2996,9 @@ function buildDataSummary() {
   const accepted  = list.filter(q => q.accepted);
   const open      = list.filter(q => q.created && !q.accepted);
   const hot       = list.filter(q => !q.accepted && q.views >= 3);
-  const stale     = list.filter(q => q.created && !q.accepted && q.views === 0);
+  const stale     = list.filter(q => !q.accepted && q.views === 0);
   const expired   = list.filter(q => q.expiredView && !q.accepted);
-  const chasing   = list.filter(q => q.created && !q.accepted && q.views === 0 && parseTs(q.createdAt) && (now - parseTs(q.createdAt)) > 3 * 86400000);
+  const chasing   = list.filter(q => !q.accepted && q.views === 0 && parseTs(q.createdAt) && (now - parseTs(q.createdAt)) > 3 * 86400000);
   const highval   = list.filter(q => !q.accepted && parseFloat(q.doc.SubTotal||0) >= 10000);
 
   const pipeVal   = open.reduce((s,q) => s + parseFloat(q.doc.SubTotal||0), 0);
@@ -3081,7 +3081,7 @@ function generateCSV(type) {
     rows = list.filter(q => !q.accepted && q.views >= 3);
     filename = "hot-prospects.csv";
   } else if (type === "chasing") {
-    rows = list.filter(q => q.created && !q.accepted && q.views === 0 && parseTs(q.createdAt) && (now - parseTs(q.createdAt)) > 3 * 86400000);
+    rows = list.filter(q => !q.accepted && q.views === 0 && parseTs(q.createdAt) && (now - parseTs(q.createdAt)) > 3 * 86400000);
     filename = "quotes-needing-chase.csv";
   } else {
     rows = list;
@@ -3090,22 +3090,27 @@ function generateCSV(type) {
 
   rows.sort((a,b) => parseFloat(b.doc.SubTotal||0) - parseFloat(a.doc.SubTotal||0));
 
-  const headers = ["Doc No","Doc Name","Company","Contact","Sales Rep","Value","Views","Status","Created","Last Activity","Last Event"];
+  const headers = ["Doc No","Doc Name","Company","Contact","Sales Rep","Value","Views","Status","Created","Expires","Last Activity","Last Event"];
   const escape  = v => `"${String(v||"").replace(/"/g,'""')}"`;
 
-  const csvRows = rows.map(q => [
-    q.docNos.join(" → "),
-    q.doc.DocName || "",
-    q.doc.SoldToCompany || "",
-    q.doc.SoldToContact || "",
-    q.doc.SalesRep || "",
-    parseFloat(q.doc.SubTotal||0).toFixed(2),
-    q.views,
-    q.accepted ? "Accepted" : q.views > 0 ? "Viewed" : "Unseen",
-    shortDate(q.createdAt),
-    shortDate(q.lastActivity),
-    eventLabel(q.lastActivityType)
-  ].map(escape).join(","));
+  const csvRows = rows.map(q => {
+    const expiry    = parseTs(q.createdAt) ? new Date(parseTs(q.createdAt).getTime() + 30*86400000) : null;
+    const expiryStr = expiry ? expiry.toLocaleDateString("en-GB", {day:"numeric", month:"short", year:"numeric"}) : "—";
+    return [
+      q.docNos.join(" → "),
+      q.doc.DocName || "",
+      q.doc.SoldToCompany || "",
+      q.doc.SoldToContact || "",
+      q.doc.SalesRep || "",
+      parseFloat(q.doc.SubTotal||0).toFixed(2),
+      q.views,
+      q.accepted ? "Accepted" : q.views > 0 ? "Viewed" : "Unseen",
+      shortDate(q.createdAt),
+      expiryStr,
+      shortDate(q.lastActivity),
+      eventLabel(q.lastActivityType)
+    ].map(escape).join(",");
+  });
 
   const csv  = [headers.map(escape).join(","), ...csvRows].join("\n");
   const blob = new Blob([csv], { type: "text/csv" });
@@ -3249,12 +3254,6 @@ Respond ONLY with a JSON array of exactly 6 objects, each with "label" and "cont
   btn.textContent = "Analyse now";
 }
 
-function handleDateFilter() {
-  const val = document.getElementById("dateFrom").value;
-  dateFrom = val ? new Date(val + "T00:00:00Z") : null;
-  buildQuotes();
-  render();
-}
 
 /* ── Theme Toggle ── */
 function toggleTheme() {
@@ -3724,11 +3723,8 @@ function renderFunnel() {
 
   const maxCount = sent.length || 1;
 
-  const stagesHtml = stages.map((s, i) => {
+    const stagesHtml = stages.map((s, i) => {
     const pct = Math.round((s.count / maxCount) * 100);
-    const prev = i > 0 ? stages[i-1].count : s.count;
-    const dropPct = prev > 0 ? Math.round(((prev - s.count) / prev) * 100) : 0;
-    const arrow = i < stages.length - 1 ? `<div class="funnel-arrow">↓ ${dropPct}% drop-off</div>` : "";
     return `
       <div class="funnel-stage">
         <div class="funnel-fill" style="background:${s.color};width:${pct}%"></div>
@@ -3742,8 +3738,7 @@ function renderFunnel() {
           <div class="funnel-pct" style="color:${s.color}">${pct}%</div>
           ${i > 0 ? `<div class="funnel-drop">of sent</div>` : ''}
         </div>
-      </div>
-      ${arrow}`;
+      </div>`; 
   }).join("");
 
   const overallConv = sent.length ? Math.round((accepted.length/sent.length)*100) : 0;
@@ -3765,8 +3760,12 @@ function renderFunnel() {
           <div class="fstat-val" style="color:var(--blue)">${avgDays !== null ? avgDays + 'd' : '—'}</div>
         </div>
         <div class="fstat-card">
-          <div class="fstat-label">Pipeline value</div>
+          <div class="fstat-label">Total sent value</div>
           <div class="fstat-val" style="color:var(--blue)">${gbp(sentVal)}</div>
+        </div>
+        <div class="fstat-card">
+          <div class="fstat-label">Open pipeline</div>
+          <div class="fstat-val" style="color:var(--blue)">${gbp(sent.filter(q=>!q.accepted).reduce((s,q)=>s+parseFloat(q.doc.SubTotal||0),0))}</div>
         </div>
         <div class="fstat-card">
           <div class="fstat-label">Won value</div>
