@@ -370,6 +370,39 @@ body::after {
   color: var(--muted);
 }
 
+/* Date filter */
+.date-filter-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.date-filter-label {
+  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.date-filter-input {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  padding: 7px 10px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  color-scheme: dark;
+}
+
+.date-filter-input:focus,
+.date-filter-input:hover { border-color: var(--blue); }
+
 /* Quote rows */
 .quote-row {
   display: grid;
@@ -1192,6 +1225,10 @@ body::after {
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
         <input class="search-input" id="searchInput" placeholder="Search by doc, company, contact…" oninput="handleSearch(this.value)">
       </div>
+      <div class="date-filter-wrap">
+        <label class="date-filter-label">From</label>
+        <input type="date" class="date-filter-input" id="dateFrom" value="2026-01-01" onchange="handleDateFilter()">
+      </div>
       <div class="page-title" id="pageTitle">All Quotes</div>
     </div>
 
@@ -1332,6 +1369,7 @@ let allData = [];
 let quotes  = {};
 let currentTab = "all";
 let searchQuery = "";
+let dateFrom = new Date("2026-01-01T00:00:00Z");
 
 /* ── Helpers ── */
 function gbp(v) {
@@ -1386,6 +1424,11 @@ function handleData(data) {
 function buildQuotes() {
   quotes = {};
   allData.forEach(r => {
+    // Skip rows before dateFrom cutoff (based on EventDateTime)
+    if (dateFrom) {
+      const t = parseTs(r.EventDateTime || r.Timestamp || r.Created);
+      if (t && t < dateFrom) return;
+    }
     // Group by QuoteValetDocumentID so revisions follow the same quote
     const id = r.QuoteValetDocumentID || r.DocNo;
     if (!quotes[id]) {
@@ -1841,6 +1884,9 @@ function switchTab(btn, tab) {
           <button class="ai-suggest-btn" onclick="setPrompt(this)">Where am I most at risk of losing deals?</button>
           <button class="ai-suggest-btn" onclick="setPrompt(this)">Which customers are showing strong buying signals?</button>
           <button class="ai-suggest-btn" onclick="setPrompt(this)">What's my conversion rate and how can I improve it?</button>
+          <button class="ai-suggest-btn ai-suggest-csv" onclick="generateCSV('thismonth')">📥 Export this month's accepted quotes as CSV</button>
+          <button class="ai-suggest-btn ai-suggest-csv" onclick="generateCSV('hot')">📥 Export hot prospects as CSV</button>
+          <button class="ai-suggest-btn ai-suggest-csv" onclick="generateCSV('chasing')">📥 Export quotes needing chase as CSV</button>
         </div>
         <div class="ai-input-wrap">
           <textarea class="ai-input" id="aiPromptInput" placeholder="Or type your own question…" rows="2"></textarea>
@@ -2116,6 +2162,13 @@ Respond ONLY with a JSON array of exactly 6 objects, each with "label" and "cont
 
   btn.disabled = false;
   btn.textContent = "Analyse now";
+}
+
+function handleDateFilter() {
+  const val = document.getElementById("dateFrom").value;
+  dateFrom = val ? new Date(val + "T00:00:00Z") : null;
+  buildQuotes();
+  render();
 }
 
 function handleSearch(val) {
