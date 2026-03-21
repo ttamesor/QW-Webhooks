@@ -2613,6 +2613,9 @@ function debugQuote(docNo) {
 
 function switchTab(btn, tab) {
   currentTab = tab;
+  searchQuery = "";
+  document.getElementById("searchInput").value = "";
+  document.getElementById("searchPreview").classList.remove("visible");
   document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
   btn.classList.add("active");
   const labels = {
