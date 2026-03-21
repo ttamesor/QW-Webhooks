@@ -1368,8 +1368,226 @@ body.light .date-filter-input {
 /* ── Animated counters ── */
 .stat-val { transition: color 0.3s; }
 .stat-val.counting { opacity: 0.7; }
-  grid-template-columns: 1fr;
+
+/* ── Command Palette ── */
+.cmd-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(6px);
+  z-index: 9000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 15vh;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.15s;
 }
+
+.cmd-overlay.open { opacity: 1; visibility: visible; }
+
+.cmd-box {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 14px;
+  width: 90%;
+  max-width: 560px;
+  overflow: hidden;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+  transform: translateY(-8px) scale(0.98);
+  transition: transform 0.15s;
+}
+
+.cmd-overlay.open .cmd-box { transform: translateY(0) scale(1); }
+
+.cmd-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.cmd-icon { color: var(--muted); font-size: 1rem; flex-shrink: 0; }
+
+.cmd-input {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  outline: none;
+}
+
+.cmd-input::placeholder { color: var(--muted); }
+
+.cmd-hint {
+  font-size: 0.7rem;
+  font-family: var(--font-mono);
+  color: var(--muted);
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  flex-shrink: 0;
+}
+
+.cmd-results { max-height: 380px; overflow-y: auto; }
+.cmd-results::-webkit-scrollbar { width: 4px; }
+.cmd-results::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 2px; }
+
+.cmd-section-label {
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  padding: 10px 20px 4px;
+}
+
+.cmd-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.cmd-item:hover, .cmd-item.selected {
+  background: rgba(79,142,247,0.1);
+}
+
+.cmd-item-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--bg3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.cmd-item-main { flex: 1; min-width: 0; }
+.cmd-item-title { font-size: 0.88rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cmd-item-sub   { font-size: 0.75rem; color: var(--dim); }
+.cmd-item-val   { font-family: var(--font-mono); font-size: 0.8rem; color: var(--green); flex-shrink: 0; }
+
+.cmd-empty { padding: 32px 20px; text-align: center; color: var(--muted); font-size: 0.85rem; }
+
+/* ── Search preview dropdown ── */
+.search-preview {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  z-index: 500;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  display: none;
+}
+
+.search-preview.visible { display: block; }
+.search-wrap { position: relative; }
+
+.preview-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 14px;
+  cursor: pointer;
+  gap: 12px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
+}
+
+.preview-item:last-child { border-bottom: none; }
+.preview-item:hover { background: rgba(255,255,255,0.04); }
+
+.preview-doc  { font-family: var(--font-mono); font-size: 0.72rem; color: var(--blue); }
+.preview-name { font-size: 0.82rem; font-weight: 500; }
+.preview-co   { font-size: 0.72rem; color: var(--dim); }
+.preview-right { text-align: right; flex-shrink: 0; }
+.preview-val  { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text); }
+
+/* ── Map tab ── */
+.map-col {
+  grid-column: 1 / -1;
+  padding: 28px 32px;
+  display: none;
+}
+
+.map-wrap {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 24px;
+  align-items: start;
+}
+
+.city-table { width: 100%; }
+
+.city-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+}
+
+.city-row:last-child { border-bottom: none; }
+
+.city-name { font-size: 0.88rem; font-weight: 500; }
+.city-bar-wrap { grid-column: 1 / -1; height: 3px; background: var(--bg3); border-radius: 2px; margin-top: 2px; }
+.city-bar-fill { height: 100%; background: linear-gradient(90deg, var(--blue), var(--purple)); border-radius: 2px; transition: width 0.6s ease; }
+.city-count { font-family: var(--font-mono); font-size: 0.78rem; color: var(--dim); }
+.city-val   { font-family: var(--font-mono); font-size: 0.78rem; color: var(--green); }
+
+.map-svg-wrap {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  min-height: 340px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.map-title { font-size: 0.7rem; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+
+.bubble-chart {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-content: flex-start;
+}
+
+.bubble {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(79,142,247,0.2), rgba(167,139,250,0.2));
+  border: 1px solid rgba(79,142,247,0.3);
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+  padding: 8px;
+}
+
+.bubble:hover { transform: scale(1.05); background: linear-gradient(135deg, rgba(79,142,247,0.35), rgba(167,139,250,0.35)); }
+.bubble-city  { font-size: 0.68rem; font-weight: 600; color: var(--text); line-height: 1.2; }
+.bubble-val   { font-size: 0.62rem; font-family: var(--font-mono); color: var(--blue); margin-top: 2px; }
 
 @keyframes toastIn {
   from { opacity: 0; transform: translateX(-50%) translateY(-12px); }
@@ -1473,6 +1691,9 @@ body.light .date-filter-input {
         <span class="nav-count" id="countRevised">0</span>
       </button>
       <div class="nav-label" style="margin-top:16px">Intelligence</div>
+      <button class="nav-btn" data-tab="map" onclick="switchTab(this,'map')">
+        <span class="nav-icon">🗺️</span> Territory Map
+      </button>
       <button class="nav-btn nav-btn-ai" data-tab="ai" onclick="switchTab(this,'ai')">
         <span class="nav-icon">✦</span> AI Insights
       </button>
@@ -1499,7 +1720,8 @@ body.light .date-filter-input {
     <div class="topbar">
       <div class="search-wrap">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <input class="search-input" id="searchInput" placeholder="Search by doc, company, contact…" oninput="handleSearch(this.value)">
+        <input class="search-input" id="searchInput" placeholder="Search… or ⌘K for command palette" oninput="handleSearch(this.value)" onfocus="showSearchPreview(this.value)" onblur="hideSearchPreview()">
+        <div class="search-preview" id="searchPreview"></div>
       </div>
       <div class="date-filter-wrap">
         <label class="date-filter-label">Ignore anything older than</label>
@@ -1623,11 +1845,43 @@ body.light .date-filter-input {
         </div>
 
       </div>
+
+      <!-- Map col -->
+      <div class="map-col" id="mapCol">
+        <div class="col-header" style="margin-bottom:20px">
+          <span class="col-title">🗺️ Territory Map</span>
+          <span class="col-count" id="mapCount"></span>
+        </div>
+        <div class="map-wrap">
+          <div>
+            <div class="rep-section-title">Pipeline by Location</div>
+            <div id="cityTable"></div>
+          </div>
+          <div class="map-svg-wrap">
+            <div class="map-title">Bubble size = pipeline value</div>
+            <div class="bubble-chart" id="bubbleChart"></div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
 
-<!-- Modal -->
+<!-- Command Palette -->
+<div class="cmd-overlay" id="cmdOverlay" onclick="closeCmd(event)">
+  <div class="cmd-box" onclick="event.stopPropagation()">
+    <div class="cmd-input-wrap">
+      <span class="cmd-icon">⌘</span>
+      <input class="cmd-input" id="cmdInput" placeholder="Search quotes, companies, or jump to a tab…" oninput="updateCmd(this.value)" onkeydown="cmdKey(event)">
+      <span class="cmd-hint">ESC</span>
+    </div>
+    <div class="cmd-results" id="cmdResults"></div>
+  </div>
+</div>
+
+<!-- Search Preview -->
+<div class="search-preview" id="searchPreview"></div>
 <div class="overlay" id="overlay" onclick="closeModal(event)">
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-head">
@@ -2334,48 +2588,60 @@ function switchTab(btn, tab) {
     viewedtoday:"👀 Viewed Today", senttoday:"🆕 Sent Today",
     fastwins:"⚡ Fast Wins", thismonthwins:"🎉 This Month's Wins",
     thisweek:"🗓️ This Week", trending:"📈 Trending",
-    revised:"🔄 Revised", nearlythere:"🎯 Nearly There",
+    revised:"🔄 Revised", map:"🗺️ Territory Map",
     ai:"✦ AI Insights"
   };
   document.getElementById("pageTitle").textContent = labels[tab] || "Quotes";
 
   const quotesCol = document.getElementById("quotesCol");
   const aiCol     = document.getElementById("aiCol");
+  const mapCol    = document.getElementById("mapCol");
   const rightCol  = document.querySelector(".right-col");
   const content   = document.querySelector(".content");
+
+  // Hide all special panels first
+  quotesCol.style.display = "";
+  aiCol.style.display     = "none";
+  mapCol.style.display    = "none";
+  rightCol.style.display  = "";
+  content.style.gridTemplateColumns = "";
 
   if (tab === "ai") {
     quotesCol.style.display = "none";
     rightCol.style.display  = "none";
     aiCol.style.display     = "block";
     content.style.gridTemplateColumns = "1fr";
-    // Always reset to prompt screen when clicking AI tab
-    document.getElementById("aiBody").innerHTML = `
-      <div class="ai-idle">
-        <div class="ai-idle-icon">✦</div>
-        <div class="ai-idle-title">Ask anything about your pipeline</div>
-        <div class="ai-idle-sub">Choose a suggested question or type your own. The AI has full access to your live quote data.</div>
-        <div class="ai-suggestions">
-          <button class="ai-suggest-btn" onclick="setPrompt(this)">Give me a full pipeline health check</button>
-          <button class="ai-suggest-btn" onclick="setPrompt(this)">Which quotes should I chase today and why?</button>
-          <button class="ai-suggest-btn" onclick="setPrompt(this)">How are my reps performing compared to each other?</button>
-          <button class="ai-suggest-btn" onclick="setPrompt(this)">Where am I most at risk of losing deals?</button>
-          <button class="ai-suggest-btn" onclick="setPrompt(this)">Which customers are showing strong buying signals?</button>
-          <button class="ai-suggest-btn" onclick="setPrompt(this)">What's my conversion rate and how can I improve it?</button>
-          <button class="ai-suggest-btn ai-suggest-csv" onclick="generateCSV('thismonth')">📥 Export this month's accepted quotes as CSV</button>
-          <button class="ai-suggest-btn ai-suggest-csv" onclick="generateCSV('hot')">📥 Export hot prospects as CSV</button>
-          <button class="ai-suggest-btn ai-suggest-csv" onclick="generateCSV('chasing')">📥 Export quotes needing chase as CSV</button>
-        </div>
-        <div class="ai-input-wrap">
-          <textarea class="ai-input" id="aiPromptInput" placeholder="Or type your own question…" rows="2"></textarea>
-          <button class="ai-run-btn" onclick="runAIAnalysis(document.getElementById('aiPromptInput').value.trim())">✦ Analyse</button>
-        </div>
-      </div>`;
+    const aiBody = document.getElementById("aiBody");
+    if (!aiBody.querySelector(".ai-results")) {
+      aiBody.innerHTML = `
+        <div class="ai-idle">
+          <div class="ai-idle-icon">✦</div>
+          <div class="ai-idle-title">Ask anything about your pipeline</div>
+          <div class="ai-idle-sub">Choose a suggested question or type your own. The AI has full access to your live quote data.</div>
+          <div class="ai-suggestions">
+            <button class="ai-suggest-btn" onclick="setPrompt(this)">Give me a full pipeline health check</button>
+            <button class="ai-suggest-btn" onclick="setPrompt(this)">Which quotes should I chase today and why?</button>
+            <button class="ai-suggest-btn" onclick="setPrompt(this)">How are my reps performing compared to each other?</button>
+            <button class="ai-suggest-btn" onclick="setPrompt(this)">Where am I most at risk of losing deals?</button>
+            <button class="ai-suggest-btn" onclick="setPrompt(this)">Which customers are showing strong buying signals?</button>
+            <button class="ai-suggest-btn" onclick="setPrompt(this)">What's my conversion rate and how can I improve it?</button>
+            <button class="ai-suggest-btn ai-suggest-csv" onclick="generateCSV('thismonth')">📥 Export this month's accepted quotes as CSV</button>
+            <button class="ai-suggest-btn ai-suggest-csv" onclick="generateCSV('hot')">📥 Export hot prospects as CSV</button>
+            <button class="ai-suggest-btn ai-suggest-csv" onclick="generateCSV('chasing')">📥 Export quotes needing chase as CSV</button>
+          </div>
+          <div class="ai-input-wrap">
+            <textarea class="ai-input" id="aiPromptInput" placeholder="Or type your own question…" rows="2"></textarea>
+            <button class="ai-run-btn" onclick="runAIAnalysis(document.getElementById('aiPromptInput').value.trim())">✦ Analyse</button>
+          </div>
+        </div>`;
+    }
+  } else if (tab === "map") {
+    quotesCol.style.display = "none";
+    rightCol.style.display  = "none";
+    mapCol.style.display    = "block";
+    content.style.gridTemplateColumns = "1fr";
+    renderMap();
   } else {
-    quotesCol.style.display = "";
-    rightCol.style.display  = "";
-    aiCol.style.display     = "none";
-    content.style.gridTemplateColumns = "";
     renderQuotes();
   }
 }
@@ -2787,6 +3053,201 @@ function runDemoEvent() {
   setTimeout(() => { toast.style.opacity="0"; toast.style.transition="opacity 0.4s"; setTimeout(()=>toast.remove(),400); }, 3000);
 }
 
+/* ── Territory Map ── */
+function renderMap() {
+  const list = Object.values(quotes);
+  const cities = {};
+
+  list.forEach(q => {
+    const city = q.doc.SoldToCity || q.doc.SoldToCountry || "Unknown";
+    if (!cities[city]) cities[city] = { count:0, pipeline:0, won:0, quotes:[] };
+    cities[city].count++;
+    const v = parseFloat(q.doc.SubTotal||0);
+    if (q.accepted) cities[city].won += v;
+    else cities[city].pipeline += v;
+    cities[city].quotes.push(q);
+  });
+
+  const sorted = Object.entries(cities)
+    .filter(([k]) => k !== "Unknown")
+    .sort((a,b) => (b[1].pipeline + b[1].won) - (a[1].pipeline + a[1].won))
+    .slice(0, 20);
+
+  const maxVal = sorted.length ? sorted[0][1].pipeline + sorted[0][1].won : 1;
+  document.getElementById("mapCount").textContent = sorted.length + " locations";
+
+  // Table
+  document.getElementById("cityTable").innerHTML = sorted.map(([city, d]) => {
+    const total = d.pipeline + d.won;
+    const pct   = Math.round((total / maxVal) * 100);
+    return `
+      <div class="city-row">
+        <div>
+          <div class="city-name">${city}</div>
+          <div class="city-bar-wrap"><div class="city-bar-fill" style="width:${pct}%"></div></div>
+        </div>
+        <div class="city-count">${d.count} quotes</div>
+        <div class="city-val">${gbp(total)}</div>
+      </div>`;
+  }).join("");
+
+  // Bubbles
+  const maxBubble = 90, minBubble = 36;
+  document.getElementById("bubbleChart").innerHTML = sorted.slice(0,16).map(([city, d]) => {
+    const total = d.pipeline + d.won;
+    const size  = minBubble + Math.round(((total / maxVal) ** 0.5) * (maxBubble - minBubble));
+    return `
+      <div class="bubble" style="width:${size}px;height:${size}px" title="${city}: ${gbp(total)}">
+        <div class="bubble-city">${city.length > 10 ? city.slice(0,9)+'…' : city}</div>
+        <div class="bubble-val">${gbp(total)}</div>
+      </div>`;
+  }).join("");
+}
+
+/* ── Command Palette ── */
+let cmdSelectedIndex = -1;
+
+function openCmd() {
+  document.getElementById("cmdOverlay").classList.add("open");
+  setTimeout(() => { document.getElementById("cmdInput").focus(); }, 50);
+  updateCmd("");
+}
+
+function closeCmd(e) {
+  if (!e || e.target === document.getElementById("cmdOverlay")) {
+    document.getElementById("cmdOverlay").classList.remove("open");
+    document.getElementById("cmdInput").value = "";
+  }
+}
+
+const cmdTabs = [
+  { icon:"◈", label:"All Quotes",        tab:"all" },
+  { icon:"🔥", label:"Hot Prospects",     tab:"hot" },
+  { icon:"✓",  label:"Accepted",          tab:"accepted" },
+  { icon:"❄",  label:"Stale",             tab:"stale" },
+  { icon:"⏰", label:"Expired Views",     tab:"expired" },
+  { icon:"💰", label:"High Value",        tab:"highvalue" },
+  { icon:"🕐", label:"Chasing Needed",    tab:"chasing" },
+  { icon:"👻", label:"Gone Cold",         tab:"gonecold" },
+  { icon:"👀", label:"Viewed Today",      tab:"viewedtoday" },
+  { icon:"🆕", label:"Sent Today",        tab:"senttoday" },
+  { icon:"⚡", label:"Fast Wins",         tab:"fastwins" },
+  { icon:"🎉", label:"This Month's Wins", tab:"thismonthwins" },
+  { icon:"🗺️", label:"Territory Map",    tab:"map" },
+  { icon:"✦",  label:"AI Insights",      tab:"ai" },
+];
+
+function updateCmd(val) {
+  const q = val.toLowerCase().trim();
+  const container = document.getElementById("cmdResults");
+  cmdSelectedIndex = -1;
+
+  let html = "";
+
+  // Tab shortcuts
+  const matchTabs = cmdTabs.filter(t => !q || t.label.toLowerCase().includes(q));
+  if (matchTabs.length) {
+    html += `<div class="cmd-section-label">Jump to</div>`;
+    html += matchTabs.slice(0,5).map((t,i) => `
+      <div class="cmd-item" data-idx="${i}" onclick="cmdSelectTab('${t.tab}')">
+        <div class="cmd-item-icon">${t.icon}</div>
+        <div class="cmd-item-main">
+          <div class="cmd-item-title">${t.label}</div>
+        </div>
+      </div>`).join("");
+  }
+
+  // Quote results
+  if (q.length >= 2) {
+    const matches = Object.values(quotes).filter(x =>
+      (x.docNos.join(" ")).toLowerCase().includes(q) ||
+      (x.doc.SoldToCompany||"").toLowerCase().includes(q) ||
+      (x.doc.SoldToContact||"").toLowerCase().includes(q) ||
+      (x.doc.DocName||"").toLowerCase().includes(q)
+    ).slice(0, 6);
+
+    if (matches.length) {
+      html += `<div class="cmd-section-label">Quotes</div>`;
+      html += matches.map(q => {
+        const docId = q.doc.QuoteValetDocumentID || q.doc.DocNo;
+        return `
+          <div class="cmd-item" onclick="closeCmdAndOpen('${docId}')">
+            <div class="cmd-item-icon" style="background:rgba(79,142,247,0.15)">📋</div>
+            <div class="cmd-item-main">
+              <div class="cmd-item-title">${q.docNos[q.docNos.length-1] || q.doc.DocNo} — ${q.doc.DocName || ""}</div>
+              <div class="cmd-item-sub">${q.doc.SoldToCompany || ""} · ${q.doc.SalesRep || ""}</div>
+            </div>
+            <div class="cmd-item-val">${gbp(q.doc.SubTotal)}</div>
+          </div>`;
+      }).join("");
+    }
+  }
+
+  container.innerHTML = html || `<div class="cmd-empty">Type to search quotes or jump to a view…</div>`;
+}
+
+function cmdSelectTab(tab) {
+  closeCmd();
+  jumpToTab(tab);
+}
+
+function closeCmdAndOpen(docId) {
+  closeCmd();
+  showDetail(docId);
+}
+
+function cmdKey(e) {
+  if (e.key === "Escape") closeCmd();
+  if (e.key === "Enter") {
+    const selected = document.querySelector(".cmd-item.selected");
+    if (selected) selected.click();
+  }
+}
+
+/* ── Search Preview ── */
+let searchPreviewTimeout = null;
+
+function showSearchPreview(val) {
+  if (val.length >= 2) renderSearchPreview(val);
+}
+
+function hideSearchPreview() {
+  setTimeout(() => {
+    const p = document.getElementById("searchPreview");
+    if (p) p.classList.remove("visible");
+  }, 200);
+}
+
+function renderSearchPreview(val) {
+  const q = val.toLowerCase();
+  const preview = document.getElementById("searchPreview");
+  if (!preview || q.length < 2) { preview.classList.remove("visible"); return; }
+
+  const matches = Object.values(quotes).filter(x =>
+    (x.docNos.join(" ")).toLowerCase().includes(q) ||
+    (x.doc.SoldToCompany||"").toLowerCase().includes(q) ||
+    (x.doc.SoldToContact||"").toLowerCase().includes(q) ||
+    (x.doc.DocName||"").toLowerCase().includes(q)
+  ).slice(0, 6);
+
+  if (!matches.length) { preview.classList.remove("visible"); return; }
+
+  const docId = (q) => q.doc.QuoteValetDocumentID || q.doc.DocNo;
+  preview.innerHTML = matches.map(q => `
+    <div class="preview-item" onmousedown="showDetail('${docId(q)}')">
+      <div>
+        <div class="preview-doc">${q.docNos[q.docNos.length-1] || q.doc.DocNo}</div>
+        <div class="preview-name">${q.doc.DocName || q.doc.DocNo}</div>
+        <div class="preview-co">${q.doc.SoldToCompany || ""}</div>
+      </div>
+      <div class="preview-right">
+        <div class="preview-val">${gbp(q.doc.SubTotal)}</div>
+        ${q.accepted ? '<span class="pill pill-accepted" style="font-size:0.65rem">✓</span>' : q.views >= 3 ? '<span class="pill pill-hot" style="font-size:0.65rem">🔥</span>' : ''}
+      </div>
+    </div>`).join("");
+  preview.classList.add("visible");
+}
+
 function jumpToTab(tab) {
   const btn = document.querySelector(`.nav-btn[data-tab="${tab}"]`);
   if (btn) switchTab(btn, tab);
@@ -2795,9 +3256,8 @@ function jumpToTab(tab) {
 function handleSearch(val) {
   searchQuery = val;
   renderQuotes();
+  renderSearchPreview(val);
 }
-
-document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
 
 function launchConfetti() {
   if (typeof confetti !== "function") return;
@@ -2868,7 +3328,10 @@ function updateNotifBtn() {
 }
 
 /* ── Init ── */
-document.addEventListener("keydown", e => { if (e.key === "Escape") { closeModal(); closeRepModal(); } });
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") { closeModal(); closeRepModal(); closeCmd(); }
+  if ((e.metaKey || e.ctrlKey) && e.key === "k") { e.preventDefault(); openCmd(); }
+});
 setInterval(loadData, 60000);
 requestNotifications();
 updateNotifBtn();
