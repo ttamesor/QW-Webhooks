@@ -416,34 +416,6 @@ body::after {
   color: var(--muted);
 }
 
-/* Date filter */
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-  font-size: 0.72rem;
-  font-family: var(--font-mono);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--muted);
-  white-space: nowrap;
-}
-
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  color: var(--text);
-  font-family: var(--font-body);
-  font-size: 0.82rem;
-  padding: 7px 10px;
-  outline: none;
-  cursor: pointer;
-  transition: border-color 0.2s;
-  color-scheme: dark;
-}
-
-
 /* Quote rows */
 .quote-row {
   display: grid;
@@ -903,6 +875,8 @@ body::after {
   font-family: var(--font-mono);
   color: var(--muted);
 }
+
+.modal-timeline {
   border-top: 1px solid var(--border);
   padding-top: 16px;
 }
@@ -1355,6 +1329,15 @@ body::after {
 
 .ai-ask-again-btn:hover { background: rgba(167,139,250,0.25); }
 
+.ai-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  max-width: 640px;
+  margin: 4px 0 16px;
+}
+
 .ai-timestamp {
   margin-top: 24px;
   font-size: 0.7rem;
@@ -1383,7 +1366,7 @@ body.light .ticker-bar {
   background: var(--bg2);
 }
 
-body.light .search-input,
+body.light .search-input {
   background: var(--bg);
   color: var(--text);
 }
@@ -1964,7 +1947,6 @@ body.light .search-input,
         <input class="search-input" id="searchInput" placeholder="Search… or double-click for command palette" oninput="handleSearch(this.value)" onfocus="showSearchPreview(this.value)" onblur="hideSearchPreview()" ondblclick="openCmd()">
         <div class="search-preview" id="searchPreview"></div>
       </div>
-      </div>
       <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
         <button class="topbar-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle light/dark mode">☀️ Light mode</button>
         <button class="topbar-btn demo-btn" id="demoBtn" onclick="toggleDemo()" title="Demo mode">▶ Demo</button>
@@ -2474,7 +2456,6 @@ function updateCounts() {
     return rv > ov && rv >= 1;
   }).length;
   document.getElementById("countRevised").textContent      = list.filter(q => q.events.some(e => e.type === "QuoteValet.UpdatedForCustomer") && !q.accepted).length;
-  document.getElementById("countNearlyThere").textContent  = list.filter(q => !q.accepted && (q.views === 1 || q.views === 2)).length;
 }
 
 function eventLabel(type) {
