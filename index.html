@@ -309,6 +309,33 @@ body::after {
 
 .stat-block:hover { background: var(--bg2); }
 
+.stat-clickable {
+  cursor: pointer;
+}
+
+.stat-clickable:hover {
+  background: var(--bg2);
+}
+
+.stat-clickable:hover .stat-val {
+  opacity: 0.85;
+}
+
+.stat-clickable::after {
+  content: '→';
+  position: absolute;
+  bottom: 10px;
+  right: 12px;
+  font-size: 0.7rem;
+  color: var(--muted);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.stat-clickable:hover::after {
+  opacity: 1;
+}
+
 .stat-accent {
   position: absolute;
   bottom: 0;
@@ -1364,37 +1391,37 @@ body::after {
 
     <!-- Stats -->
     <div class="stats-row" id="statsRow">
-      <div class="stat-block s-blue">
+      <div class="stat-block s-blue stat-clickable" onclick="jumpToTab('all')" title="View all quotes">
         <div class="stat-label">Pipeline Value</div>
         <div class="stat-val" id="sPipeline">—</div>
         <div class="stat-sub" id="sPipelineSub">loading</div>
         <div class="stat-accent"></div>
       </div>
-      <div class="stat-block s-green">
+      <div class="stat-block s-green stat-clickable" onclick="jumpToTab('accepted')" title="View accepted quotes">
         <div class="stat-label">Won Value</div>
         <div class="stat-val" id="sWon">—</div>
         <div class="stat-sub" id="sWonSub">loading</div>
         <div class="stat-accent"></div>
       </div>
-      <div class="stat-block s-purple">
+      <div class="stat-block s-purple stat-clickable" onclick="jumpToTab('viewedtoday')" title="View quotes viewed today">
         <div class="stat-label">Total Views</div>
         <div class="stat-val" id="sViews">—</div>
         <div class="stat-sub" id="sViewsSub">loading</div>
         <div class="stat-accent"></div>
       </div>
-      <div class="stat-block s-amber">
+      <div class="stat-block s-amber stat-clickable" onclick="jumpToTab('hot')" title="View hot prospects">
         <div class="stat-label">Hot Prospects</div>
         <div class="stat-val" id="sHot">—</div>
         <div class="stat-sub">3+ views, open</div>
         <div class="stat-accent"></div>
       </div>
-      <div class="stat-block s-red">
+      <div class="stat-block s-red stat-clickable" onclick="jumpToTab('stale')" title="View unseen quotes">
         <div class="stat-label">Not Viewed</div>
         <div class="stat-val" id="sUnseen">—</div>
         <div class="stat-sub">sent, no views yet</div>
         <div class="stat-accent"></div>
       </div>
-      <div class="stat-block s-orange">
+      <div class="stat-block s-orange stat-clickable" onclick="jumpToTab('expired')" title="View expired views">
         <div class="stat-label">Expired Views</div>
         <div class="stat-val" id="sExpired">—</div>
         <div class="stat-sub">last activity expired</div>
@@ -1462,10 +1489,10 @@ body::after {
           </div>
         </div>
 
-        <!-- Activity -->
+        <!-- Live Activity -->
         <div class="right-section">
           <div class="col-header">
-            <span class="col-title">⚡ Activity</span>
+            <span class="col-title">⚡ Live Activity</span>
           </div>
           <div class="panel-scroll" id="activityFeed">
             <div class="loader"><div class="spinner"></div></div>
@@ -2496,6 +2523,11 @@ function handleDateFilter() {
   dateFrom = val ? new Date(val + "T00:00:00Z") : null;
   buildQuotes();
   render();
+}
+
+function jumpToTab(tab) {
+  const btn = document.querySelector(`.nav-btn[data-tab="${tab}"]`);
+  if (btn) switchTab(btn, tab);
 }
 
 function handleSearch(val) {
