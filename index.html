@@ -1680,7 +1680,7 @@ body.light .date-filter-input {
 .roulette-drum { width: 100%; max-width: 560px; background: var(--bg2); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; position: relative; height: 120px; }
 .roulette-window { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: 2; }
 .roulette-highlight { width: calc(100% - 28px); height: 58px; border: 2px solid var(--purple); border-radius: 10px; background: rgba(167,139,250,0.06); box-shadow: 0 0 20px rgba(167,139,250,0.2); }
-.roulette-strip { display: flex; flex-direction: column; padding: 30px 14px; }
+.roulette-strip { display: flex; flex-direction: column; padding: 0 14px; }
 .roulette-item { height: 58px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; padding: 0 6px; }
 .roulette-item-main { font-size: 0.85rem; font-weight: 500; }
 .roulette-item-sub  { font-size: 0.72rem; color: var(--dim); }
@@ -1697,7 +1697,14 @@ body.light .date-filter-input {
 .roulette-result-grid  { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
 .roulette-result-stat  { background: var(--bg3); border-radius: 8px; padding: 9px 11px; }
 .roulette-result-stat-val   { font-family: var(--font-mono); font-size: 0.9rem; font-weight: 600; }
-.roulette-result-stat-label { font-size: 0.62rem; color: var(--muted); margin-top: 2px; }
+.roulette-link {
+  background: rgba(255,255,255,0.08) !important;
+  border-color: rgba(255,255,255,0.2) !important;
+}
+
+.roulette-link span:first-child { color: var(--text) !important; }
+.roulette-link .modal-quote-url { color: rgba(255,255,255,0.45) !important; }
+.roulette-link:hover { background: rgba(255,255,255,0.14) !important; }
 
 
 .map-col {
@@ -3893,25 +3900,23 @@ function spinRoulette() {
   const btn    = document.getElementById("rouletteBtn");
   const strip  = document.getElementById("rouletteStrip");
   const result = document.getElementById("rouletteResult");
-  const itemH  = 58;
+
+  const itemH    = 58;
+  const drumH    = 120;
+  const offset   = Math.floor((drumH - itemH) / 2);
+  const picked   = Math.floor(Math.random() * rouletteQuotes.length);
+  const targetIdx = rouletteQuotes.length * 2 + picked;
+  const targetY   = targetIdx * itemH - offset;
 
   btn.disabled = true;
   btn.textContent = "Spinning…";
   result.classList.remove("visible");
 
-  // Pick a random quote from the middle repeat (index 2 of 5 repeats)
-  const picked   = Math.floor(Math.random() * rouletteQuotes.length);
-  const targetIdx = rouletteQuotes.length * 2 + picked; // land in 3rd repeat
-  const targetY   = targetIdx * itemH;
-
-  // Start from top
   strip.style.transition = "none";
   strip.style.transform  = "translateY(0px)";
-
-  // Force reflow then animate
   void strip.offsetHeight;
 
-  const duration = 3000;
+  const duration = 2400;
   strip.style.transition = `transform ${duration}ms cubic-bezier(0.25, 0.1, 0.1, 1)`;
   strip.style.transform  = `translateY(-${targetY}px)`;
 
@@ -3960,7 +3965,7 @@ function showRouletteResult(q) {
       <div class="roulette-result-stat"><div class="roulette-result-stat-val">${timeAgo(q.lastActivity)}</div><div class="roulette-result-stat-label">Last activity</div></div>
     </div>
 
-    ${url ? `<a href="${url}" target="_blank" class="modal-quote-link" style="margin-bottom:12px">↗ Open quote in QuoteValet</a>` : ''}
+    ${url ? `<a href="${url}" target="_blank" class="modal-quote-link roulette-link" style="margin-bottom:12px">↗ Open quote in QuoteValet</a>` : ''}
 
     <div style="font-size:0.68rem;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px">Event history</div>
     <div class="modal-timeline" style="border-top:none;padding-top:0">${timelineHtml || '<div class="empty">No events</div>'}</div>`;
