@@ -1139,6 +1139,26 @@ body::after {
         <span class="nav-icon">🕐</span> Chasing Needed
         <span class="nav-count" id="countChasing">0</span>
       </button>
+      <button class="nav-btn" data-tab="gonecold" onclick="switchTab(this,'gonecold')">
+        <span class="nav-icon">👻</span> Gone Cold
+        <span class="nav-count" id="countGoneCold">0</span>
+      </button>
+      <button class="nav-btn" data-tab="viewedtoday" onclick="switchTab(this,'viewedtoday')">
+        <span class="nav-icon">👀</span> Viewed Today
+        <span class="nav-count" id="countViewedToday">0</span>
+      </button>
+      <button class="nav-btn" data-tab="senttoday" onclick="switchTab(this,'senttoday')">
+        <span class="nav-icon">🆕</span> Sent Today
+        <span class="nav-count" id="countSentToday">0</span>
+      </button>
+      <button class="nav-btn" data-tab="fastwins" onclick="switchTab(this,'fastwins')">
+        <span class="nav-icon">⚡</span> Fast Wins
+        <span class="nav-count" id="countFastWins">0</span>
+      </button>
+      <button class="nav-btn" data-tab="thismonthwins" onclick="switchTab(this,'thismonthwins')">
+        <span class="nav-icon">🎉</span> This Month's Wins
+        <span class="nav-count" id="countThisMonthWins">0</span>
+      </button>
 
       <div class="nav-label" style="margin-top:16px">Intelligence</div>
       <button class="nav-btn nav-btn-ai" data-tab="ai" onclick="switchTab(this,'ai')">
@@ -1412,12 +1432,17 @@ function filtered() {
   }
 
   switch(currentTab) {
-    case "hot":       list = list.filter(x => !x.accepted && x.views >= 3); break;
-    case "accepted":  list = list.filter(x => x.accepted); break;
-    case "stale":     list = list.filter(x => x.created && !x.accepted && x.views === 0); break;
-    case "expired":   list = list.filter(x => x.expiredView && !x.accepted && x.lastActivityType === "QuoteValet.ExpiredQuoteWasViewedByCustomer"); break;
-    case "highvalue": list = list.filter(x => !x.accepted && parseFloat(x.doc.SubTotal||0) >= 10000); break;
-    case "chasing":   list = list.filter(x => x.created && !x.accepted && x.views === 0 && parseTs(x.createdAt) && (Date.now() - parseTs(x.createdAt)) > 3 * 86400000); break;
+    case "hot":           list = list.filter(x => !x.accepted && x.views >= 3); break;
+    case "accepted":      list = list.filter(x => x.accepted); break;
+    case "stale":         list = list.filter(x => x.created && !x.accepted && x.views === 0); break;
+    case "expired":       list = list.filter(x => x.expiredView && !x.accepted && x.lastActivityType === "QuoteValet.ExpiredQuoteWasViewedByCustomer"); break;
+    case "highvalue":     list = list.filter(x => !x.accepted && parseFloat(x.doc.SubTotal||0) >= 10000); break;
+    case "chasing":       list = list.filter(x => x.created && !x.accepted && x.views === 0 && parseTs(x.createdAt) && (Date.now() - parseTs(x.createdAt)) > 3 * 86400000); break;
+    case "gonecold":      list = list.filter(x => !x.accepted && x.views > 0 && parseTs(x.lastActivity) && (Date.now() - parseTs(x.lastActivity)) > 14 * 86400000); break;
+    case "viewedtoday":   list = list.filter(x => parseTs(x.lastActivity) && (Date.now() - parseTs(x.lastActivity)) < 86400000 && (x.lastActivityType === "QuoteValet.ViewedExternal" || x.lastActivityType === "QuoteValet.ViewedExternalFirstView")); break;
+    case "senttoday":     list = list.filter(x => parseTs(x.createdAt) && (Date.now() - parseTs(x.createdAt)) < 86400000); break;
+    case "fastwins":      list = list.filter(x => { if (!x.accepted || !x.createdAt || !x.lastActivity) return false; return (parseTs(x.lastActivity) - parseTs(x.createdAt)) < 86400000; }); break;
+    case "thismonthwins": list = list.filter(x => { if (!x.accepted || !x.lastActivity) return false; const d = parseTs(x.lastActivity); const n = new Date(); return d && d.getMonth() === n.getMonth() && d.getFullYear() === n.getFullYear(); }); break;
   }
 
   list.sort((a,b) => parseFloat(b.doc.SubTotal||0) - parseFloat(a.doc.SubTotal||0));
@@ -1457,13 +1482,18 @@ function renderStats() {
 
 function updateCounts() {
   const list = Object.values(quotes);
-  document.getElementById("countAll").textContent       = list.length;
-  document.getElementById("countHot").textContent       = list.filter(q => !q.accepted && q.views >= 3).length;
-  document.getElementById("countAccepted").textContent  = list.filter(q => q.accepted).length;
-  document.getElementById("countStale").textContent     = list.filter(q => q.created && !q.accepted && q.views === 0).length;
-  document.getElementById("countExpired").textContent   = list.filter(q => q.expiredView && !q.accepted && q.lastActivityType === "QuoteValet.ExpiredQuoteWasViewedByCustomer").length;
-  document.getElementById("countHighValue").textContent = list.filter(q => !q.accepted && parseFloat(q.doc.SubTotal||0) >= 10000).length;
-  document.getElementById("countChasing").textContent   = list.filter(q => q.created && !q.accepted && q.views === 0 && parseTs(q.createdAt) && (Date.now() - parseTs(q.createdAt)) > 3 * 86400000).length;
+  document.getElementById("countAll").textContent          = list.length;
+  document.getElementById("countHot").textContent          = list.filter(q => !q.accepted && q.views >= 3).length;
+  document.getElementById("countAccepted").textContent     = list.filter(q => q.accepted).length;
+  document.getElementById("countStale").textContent        = list.filter(q => q.created && !q.accepted && q.views === 0).length;
+  document.getElementById("countExpired").textContent      = list.filter(q => q.expiredView && !q.accepted && q.lastActivityType === "QuoteValet.ExpiredQuoteWasViewedByCustomer").length;
+  document.getElementById("countHighValue").textContent    = list.filter(q => !q.accepted && parseFloat(q.doc.SubTotal||0) >= 10000).length;
+  document.getElementById("countChasing").textContent      = list.filter(q => q.created && !q.accepted && q.views === 0 && parseTs(q.createdAt) && (Date.now() - parseTs(q.createdAt)) > 3 * 86400000).length;
+  document.getElementById("countGoneCold").textContent     = list.filter(q => !q.accepted && q.views > 0 && parseTs(q.lastActivity) && (Date.now() - parseTs(q.lastActivity)) > 14 * 86400000).length;
+  document.getElementById("countViewedToday").textContent  = list.filter(q => parseTs(q.lastActivity) && (Date.now() - parseTs(q.lastActivity)) < 86400000 && (q.lastActivityType === "QuoteValet.ViewedExternal" || q.lastActivityType === "QuoteValet.ViewedExternalFirstView")).length;
+  document.getElementById("countSentToday").textContent    = list.filter(q => parseTs(q.createdAt) && (Date.now() - parseTs(q.createdAt)) < 86400000).length;
+  document.getElementById("countFastWins").textContent     = list.filter(q => { if (!q.accepted || !q.createdAt || !q.lastActivity) return false; return (parseTs(q.lastActivity) - parseTs(q.createdAt)) < 86400000; }).length;
+  document.getElementById("countThisMonthWins").textContent= list.filter(q => { if (!q.accepted || !q.lastActivity) return false; const d = parseTs(q.lastActivity); const n = new Date(); return d && d.getMonth() === n.getMonth() && d.getFullYear() === n.getFullYear(); }).length;
 }
 
 function eventLabel(type) {
@@ -1491,13 +1521,18 @@ function renderSummary(list) {
   const wonVal   = list.filter(q => q.accepted).reduce((s,q) => s + parseFloat(q.doc.SubTotal||0), 0);
 
   const summaries = {
-    all:       `<strong>${list.length}</strong> quotes tracked · total value <span class="fs-val">${gbp(totalVal)}</span> · <strong>${accepted}</strong> accepted worth <span class="fs-val">${gbp(wonVal)}</span>`,
-    hot:       `<strong>${list.length}</strong> hot prospects with 3+ views · combined value <span class="fs-val">${gbp(totalVal)}</span> — these are your best opportunities right now`,
-    accepted:  `<strong>${list.length}</strong> quotes accepted · total won value <span class="fs-val">${gbp(wonVal)}</span>`,
-    stale:     `<strong>${list.length}</strong> quotes sent but never opened · <span class="fs-val">${gbp(totalVal)}</span> at risk — consider following up`,
-    expired:   `<strong>${list.length}</strong> quotes where the customer viewed an expired quote · worth <span class="fs-val">${gbp(totalVal)}</span> — they're interested, resend now`,
-    highvalue: `<strong>${list.length}</strong> open quotes worth £10k+ · combined value <span class="fs-val">${gbp(totalVal)}</span>`,
-    chasing:   `<strong>${list.length}</strong> quotes sent 3+ days ago with no view · <span class="fs-val">${gbp(totalVal)}</span> — needs a chase`,
+    all:           `<strong>${list.length}</strong> quotes tracked · total value <span class="fs-val">${gbp(totalVal)}</span> · <strong>${accepted}</strong> accepted worth <span class="fs-val">${gbp(wonVal)}</span>`,
+    hot:           `<strong>${list.length}</strong> hot prospects with 3+ views · combined value <span class="fs-val">${gbp(totalVal)}</span> — these are your best opportunities right now`,
+    accepted:      `<strong>${list.length}</strong> quotes accepted · total won value <span class="fs-val">${gbp(wonVal)}</span>`,
+    stale:         `<strong>${list.length}</strong> quotes sent but never opened · <span class="fs-val">${gbp(totalVal)}</span> waiting — a well-timed follow-up could unlock these`,
+    expired:       `<strong>${list.length}</strong> quotes where the customer viewed an expired quote · worth <span class="fs-val">${gbp(totalVal)}</span> — they're still interested, a resend could close these`,
+    highvalue:     `<strong>${list.length}</strong> open quotes worth £10k+ · combined value <span class="fs-val">${gbp(totalVal)}</span>`,
+    chasing:       `<strong>${list.length}</strong> quotes sent 3+ days ago with no view · <span class="fs-val">${gbp(totalVal)}</span> — a quick nudge could get these moving`,
+    gonecold:      `<strong>${list.length}</strong> quotes viewed at least once but silent for 14+ days · <span class="fs-val">${gbp(totalVal)}</span> — worth a re-engagement`,
+    viewedtoday:   `<strong>${list.length}</strong> quotes viewed in the last 24 hours · <span class="fs-val">${gbp(totalVal)}</span> — buyers are active right now`,
+    senttoday:     `<strong>${list.length}</strong> quotes sent today · <span class="fs-val">${gbp(totalVal)}</span> in fresh pipeline`,
+    fastwins:      `<strong>${list.length}</strong> quotes accepted within 24 hours of being sent · <span class="fs-val">${gbp(wonVal)}</span> won — fast decisions from engaged buyers`,
+    thismonthwins: `<strong>${list.length}</strong> quotes accepted this month · <span class="fs-val">${gbp(wonVal)}</span> won so far this month`,
   };
 
   el.innerHTML = summaries[currentTab] || "";
@@ -1758,7 +1793,14 @@ function switchTab(btn, tab) {
   currentTab = tab;
   document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
   btn.classList.add("active");
-  const labels = { all:"All Quotes", hot:"🔥 Hot Prospects", accepted:"✓ Accepted", stale:"❄ Stale", expired:"⏰ Expired Views", highvalue:"💰 High Value", chasing:"🕐 Chasing Needed", ai:"✦ AI Insights" };
+  const labels = {
+    all:"All Quotes", hot:"🔥 Hot Prospects", accepted:"✓ Accepted",
+    stale:"❄ Stale", expired:"⏰ Expired Views", highvalue:"💰 High Value",
+    chasing:"🕐 Chasing Needed", gonecold:"👻 Gone Cold",
+    viewedtoday:"👀 Viewed Today", senttoday:"🆕 Sent Today",
+    fastwins:"⚡ Fast Wins", thismonthwins:"🎉 This Month's Wins",
+    ai:"✦ AI Insights"
+  };
   document.getElementById("pageTitle").textContent = labels[tab] || "Quotes";
 
   const quotesCol = document.getElementById("quotesCol");
