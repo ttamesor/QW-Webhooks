@@ -407,6 +407,25 @@ body::after {
   text-overflow: ellipsis;
 }
 
+.q-meta {
+  display: flex;
+  gap: 14px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.q-meta-item {
+  font-size: 0.72rem;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.q-meta-item span {
+  color: var(--dim);
+}
+
 .q-customer {
   font-size: 0.78rem;
   color: var(--dim);
@@ -990,19 +1009,25 @@ function buildQuotes() {
   allData.forEach(r => {
     const id = r.DocNo;
     if (!quotes[id]) {
-      quotes[id] = { doc:r, views:0, accepted:false, created:false, events:[], lastActivity:null };
+      quotes[id] = { doc:r, views:0, accepted:false, created:false, events:[], lastActivity:null, lastActivityType:null, createdAt:null };
     }
     const q = quotes[id];
     const evtTime = r.Timestamp || r.Created;
 
     q.events.push({ type: r.EventFullName, ts: evtTime });
 
-    if (r.EventFullName === "QuoteValet.CreatedForCustomer") q.created = true;
-    if (r.EventFullName === "QuoteValet.ViewedExternal")     q.views++;
-    if (r.EventFullName === "QuoteValet.Accepted")           q.accepted = true;
+    if (r.EventFullName === "QuoteValet.CreatedForCustomer") {
+      q.created = true;
+      if (!q.createdAt || new Date(evtTime) < new Date(q.createdAt)) {
+        q.createdAt = evtTime;
+      }
+    }
+    if (r.EventFullName === "QuoteValet.ViewedExternal") q.views++;
+    if (r.EventFullName === "QuoteValet.Accepted")       q.accepted = true;
 
     if (evtTime && (!q.lastActivity || new Date(evtTime) > new Date(q.lastActivity))) {
-      q.lastActivity = evtTime;
+      q.lastActivity     = evtTime;
+      q.lastActivityType = r.EventFullName;
     }
   });
 }
@@ -1067,6 +1092,20 @@ function updateCounts() {
   document.getElementById("countStale").textContent    = list.filter(q => q.created && !q.accepted && q.views === 0).length;
 }
 
+function eventLabel(type) {
+  if (!type) return "—";
+  if (type === "QuoteValet.CreatedForCustomer") return "Created";
+  if (type === "QuoteValet.ViewedExternal")     return "Viewed";
+  if (type === "QuoteValet.Accepted")           return "Accepted";
+  // Strip prefix for anything else
+  return type.replace("QuoteValet.", "");
+}
+
+function shortDate(ts) {
+  if (!ts) return "—";
+  return new Date(ts).toLocaleDateString("en-GB", { day:"numeric", month:"short", year:"numeric" });
+}
+
 function renderQuotes() {
   const container = document.getElementById("quotesList");
   const list = filtered();
@@ -1095,6 +1134,12 @@ function renderQuotes() {
     }
 
     const customerLine = [company, contact].filter(Boolean).join(" · ");
+    const lastEvtLabel = eventLabel(q.lastActivityType);
+    const lastEvtDate  = shortDate(q.lastActivity);
+    const createdDate  = shortDate(q.createdAt);
+
+    // Don't show last activity if it's the same as created
+    const showLastActivity = q.lastActivityType && q.lastActivityType !== "QuoteValet.CreatedForCustomer";
 
     return `
       <div class="quote-row" onclick="showDetail('${q.doc.DocNo}')">
@@ -1104,6 +1149,10 @@ function renderQuotes() {
             ${docname ? `<span class="q-docname">${docname}</span>` : ''}
           </div>
           <div class="q-customer">${customerLine}</div>
+          <div class="q-meta">
+            ${createdDate !== '—' ? `<div class="q-meta-item">📅 <span>${createdDate}</span></div>` : ''}
+            ${showLastActivity ? `<div class="q-meta-item">↻ <span>${lastEvtLabel} ${lastEvtDate}</span></div>` : ''}
+          </div>
         </div>
         <div class="q-right">
           <span class="q-amount">${gbp(amount)}</span>
