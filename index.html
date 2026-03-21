@@ -1220,7 +1220,7 @@ body::after {
   user-select: none;
 }
 
-.nav-group-header:hover { background: rgba(255,255,255,0.04); }
+.nav-group-header:hover { background: rgba(255,255,255,0.06); }
 
 .nav-group-label {
   font-size: 0.78rem;
@@ -1229,12 +1229,31 @@ body::after {
 }
 
 .nav-group-arrow {
-  font-size: 0.65rem;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: var(--muted);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+  font-style: normal;
+}
+
+.nav-group-arrow::before {
+  content: '';
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg) translateY(-2px);
   transition: transform 0.2s;
 }
 
-.nav-group-arrow.collapsed { transform: rotate(-90deg); }
+.nav-group-arrow.collapsed::before {
+  transform: rotate(-45deg) translateY(0px);
+}
 
 .nav-group-body {
   overflow: hidden;
@@ -1732,7 +1751,7 @@ body.light .date-filter-input {
       <div class="nav-group">
         <div class="nav-group-header" onclick="toggleGroup('grp-opportunities')">
           <span class="nav-group-label">🔥 Opportunities</span>
-          <span class="nav-group-arrow" id="arr-grp-opportunities">▾</span>
+          <span class="nav-group-arrow" id="arr-grp-opportunities"></span>
         </div>
         <div class="nav-group-body" id="grp-opportunities">
           <button class="nav-btn" data-tab="hot" onclick="switchTab(this,'hot')">
@@ -1758,7 +1777,7 @@ body.light .date-filter-input {
       <div class="nav-group">
         <div class="nav-group-header" onclick="toggleGroup('grp-action')">
           <span class="nav-group-label">🕐 Action Needed</span>
-          <span class="nav-group-arrow" id="arr-grp-action">▾</span>
+          <span class="nav-group-arrow" id="arr-grp-action"></span>
         </div>
         <div class="nav-group-body" id="grp-action">
           <button class="nav-btn" data-tab="chasing" onclick="switchTab(this,'chasing')">
@@ -1784,7 +1803,7 @@ body.light .date-filter-input {
       <div class="nav-group">
         <div class="nav-group-header" onclick="toggleGroup('grp-won')">
           <span class="nav-group-label">✓ Won</span>
-          <span class="nav-group-arrow" id="arr-grp-won">▾</span>
+          <span class="nav-group-arrow" id="arr-grp-won"></span>
         </div>
         <div class="nav-group-body" id="grp-won">
           <button class="nav-btn" data-tab="accepted" onclick="switchTab(this,'accepted')">
@@ -1806,7 +1825,7 @@ body.light .date-filter-input {
       <div class="nav-group">
         <div class="nav-group-header" onclick="toggleGroup('grp-recent')">
           <span class="nav-group-label">🗓️ Recent</span>
-          <span class="nav-group-arrow" id="arr-grp-recent">▾</span>
+          <span class="nav-group-arrow" id="arr-grp-recent"></span>
         </div>
         <div class="nav-group-body" id="grp-recent">
           <button class="nav-btn" data-tab="senttoday" onclick="switchTab(this,'senttoday')">
@@ -3546,10 +3565,16 @@ function updateNotifBtn() {
 /* ── Init ── */
 document.addEventListener("keydown", e => {
   if (e.key === "Escape") { closeModal(); closeRepModal(); closeCmd(); }
-  // Open command palette with / unless typing in an input
   if (e.key === "/" && !["INPUT","TEXTAREA"].includes(document.activeElement.tagName)) {
     e.preventDefault(); openCmd();
   }
+});
+// Collapse all groups except Opportunities on load
+["grp-action","grp-won","grp-recent"].forEach(id => {
+  const body  = document.getElementById(id);
+  const arrow = document.getElementById("arr-" + id);
+  if (body)  body.classList.add("collapsed");
+  if (arrow) arrow.classList.add("collapsed");
 });
 setInterval(loadData, 60000);
 requestNotifications();
