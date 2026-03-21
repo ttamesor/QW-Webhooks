@@ -992,14 +992,23 @@ function gbp(v) {
   return parseFloat(v || 0).toLocaleString("en-GB", { style:"currency", currency:"GBP", maximumFractionDigits:0 });
 }
 
+function parseTs(ts) {
+  if (!ts) return null;
+  const normalised = ts.toString().trim().replace(" ", "T").replace(/T(\d{2}:\d{2}:\d{2})$/, "T$1Z");
+  const d = new Date(normalised);
+  return isNaN(d) ? null : d;
+}
+
 function timeAgo(ts) {
   if (!ts) return "—";
-  const s = Math.floor((Date.now() - new Date(ts)) / 1000);
+  const d = parseTs(ts);
+  if (!d) return "—";
+  const s = Math.floor((Date.now() - d) / 1000);
   if (s < 60)     return "just now";
   if (s < 3600)   return Math.floor(s/60) + "m ago";
   if (s < 86400)  return Math.floor(s/3600) + "h ago";
   if (s < 604800) return Math.floor(s/86400) + "d ago";
-  return new Date(ts).toLocaleDateString("en-GB", {day:"numeric", month:"short"});
+  return d.toLocaleDateString("en-GB", {day:"numeric", month:"short"});
 }
 
 function customerLabel(doc) {
@@ -1041,15 +1050,21 @@ function buildQuotes() {
 
     if (r.EventFullName === "QuoteValet.CreatedForCustomer") {
       q.created = true;
-      if (!q.createdAt || new Date(evtTime) < new Date(q.createdAt)) {
+      const t = parseTs(evtTime);
+      if (t && (!q.createdAt || t < parseTs(q.createdAt))) {
         q.createdAt = evtTime;
       }
     }
-    if (r.EventFullName === "QuoteValet.ViewedExternal")               q.views++;
+    if (r.EventFullName === "QuoteValet.ViewedExternal" ||
+        r.EventFullName === "QuoteValet.ViewedExternalFirstView")      q.views++;
     if (r.EventFullName === "QuoteValet.Accepted")                     q.accepted = true;
-    if (r.EventFullName === "QuoteValet.ExpiredQuoteWasViewedByCustomer") q.expiredView = true;
+    if (r.EventFullName === "QuoteValet.ExpiredQuoteWasViewedByCustomer") {
+      q.expiredView = true;
+      q.lastExpiredViewTs = evtTime;
+    }
 
-    if (evtTime && (!q.lastActivity || new Date(evtTime) > new Date(q.lastActivity))) {
+    const t = parseTs(evtTime);
+    if (t && (!q.lastActivity || t > parseTs(q.lastActivity))) {
       q.lastActivity     = evtTime;
       q.lastActivityType = r.EventFullName;
     }
@@ -1133,7 +1148,9 @@ function eventLabel(type) {
 
 function shortDate(ts) {
   if (!ts) return "—";
-  return new Date(ts).toLocaleDateString("en-GB", { day:"numeric", month:"short", year:"numeric" });
+  const d = parseTs(ts);
+  if (!d) return "—";
+  return d.toLocaleDateString("en-GB", { day:"numeric", month:"short", year:"numeric" });
 }
 
 function renderQuotes() {
@@ -1255,7 +1272,7 @@ function renderActivity() {
     });
   });
 
-  events.sort((a,b) => new Date(b.ts) - new Date(a.ts));
+  events.sort((a,b) => (parseTs(b.ts)||0) - (parseTs(a.ts)||0));
   const recent = events.slice(0, 10);
 
   if (!recent.length) {
@@ -1265,8 +1282,9 @@ function renderActivity() {
 
   container.innerHTML = recent.map(e => {
     let icon = "📄", cls = "act-create", verb = "created";
-    if (e.type === "QuoteValet.ViewedExternal") { icon="👁"; cls="act-view";   verb="viewed"; }
-    if (e.type === "QuoteValet.Accepted")       { icon="✓"; cls="act-accept"; verb="accepted"; }
+    if (e.type === "QuoteValet.ViewedExternal" || e.type === "QuoteValet.ViewedExternalFirstView") { icon="👁"; cls="act-view"; verb="viewed"; }
+    if (e.type === "QuoteValet.Accepted")                        { icon="✓"; cls="act-accept"; verb="accepted"; }
+    if (e.type === "QuoteValet.ExpiredQuoteWasViewedByCustomer") { icon="⏰"; cls="act-view";  verb="viewed (expired)"; }
 
     return `
       <div class="activity-row">
@@ -1300,12 +1318,14 @@ function showDetail(docNo) {
     : "Unseen";
 
   const timelineHtml = q.events
-    .sort((a,b) => new Date(b.ts) - new Date(a.ts))
+    .sort((a,b) => (parseTs(b.ts)||0) - (parseTs(a.ts)||0))
     .slice(0, 8)
     .map(e => {
       let dotCls = "tl-dot-create", label = "Created";
-      if (e.type === "QuoteValet.ViewedExternal") { dotCls="tl-dot-view";   label="Viewed"; }
-      if (e.type === "QuoteValet.Accepted")       { dotCls="tl-dot-accept"; label="Accepted"; }
+      if (e.type === "QuoteValet.ViewedExternal" || e.type === "QuoteValet.ViewedExternalFirstView") { dotCls="tl-dot-view";   label="Viewed"; }
+      if (e.type === "QuoteValet.Accepted")                        { dotCls="tl-dot-accept"; label="Accepted"; }
+      if (e.type === "QuoteValet.ExpiredQuoteWasViewedByCustomer") { dotCls="tl-dot-view";   label="Viewed (expired)"; }
+      if (e.type === "QuoteValet.UpdatedForCustomer")              { dotCls="tl-dot-create"; label="Updated"; }
       return `
         <div class="timeline-item">
           <div class="tl-dot ${dotCls}"></div>
