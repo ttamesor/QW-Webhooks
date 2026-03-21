@@ -1007,6 +1007,18 @@ body::after {
   color: var(--purple);
 }
 
+.ai-suggest-csv {
+  background: rgba(34,211,160,0.08);
+  border-color: rgba(34,211,160,0.25);
+  color: var(--green);
+}
+
+.ai-suggest-csv:hover {
+  background: rgba(34,211,160,0.18) !important;
+  border-color: rgba(34,211,160,0.4) !important;
+  color: var(--green) !important;
+}
+
 .ai-input-wrap {
   display: flex;
   flex-direction: column;
@@ -1257,6 +1269,9 @@ body::after {
               <button class="ai-suggest-btn" onclick="setPrompt(this)">Where am I most at risk of losing deals?</button>
               <button class="ai-suggest-btn" onclick="setPrompt(this)">Which customers are showing strong buying signals?</button>
               <button class="ai-suggest-btn" onclick="setPrompt(this)">What's my conversion rate and how can I improve it?</button>
+              <button class="ai-suggest-btn ai-suggest-csv" onclick="generateCSV('thismonth')">📥 Export this month's accepted quotes as CSV</button>
+              <button class="ai-suggest-btn ai-suggest-csv" onclick="generateCSV('hot')">📥 Export hot prospects as CSV</button>
+              <button class="ai-suggest-btn ai-suggest-csv" onclick="generateCSV('chasing')">📥 Export quotes needing chase as CSV</button>
             </div>
 
             <div class="ai-input-wrap">
@@ -1916,7 +1931,68 @@ function buildDataSummary() {
   };
 }
 
-function setPrompt(btn) {
+function generateCSV(type) {
+  const list  = Object.values(quotes);
+  const now   = Date.now();
+  const curMo = new Date().getMonth();
+  const curYr = new Date().getFullYear();
+
+  let rows, filename;
+
+  if (type === "thismonth") {
+    rows = list.filter(q => {
+      if (!q.accepted || !q.lastActivity) return false;
+      const d = parseTs(q.lastActivity);
+      return d && d.getMonth() === curMo && d.getFullYear() === curYr;
+    });
+    filename = "accepted-this-month.csv";
+  } else if (type === "hot") {
+    rows = list.filter(q => !q.accepted && q.views >= 3);
+    filename = "hot-prospects.csv";
+  } else if (type === "chasing") {
+    rows = list.filter(q => q.created && !q.accepted && q.views === 0 && parseTs(q.createdAt) && (now - parseTs(q.createdAt)) > 3 * 86400000);
+    filename = "quotes-needing-chase.csv";
+  } else {
+    rows = list;
+    filename = "all-quotes.csv";
+  }
+
+  rows.sort((a,b) => parseFloat(b.doc.SubTotal||0) - parseFloat(a.doc.SubTotal||0));
+
+  const headers = ["Doc No","Doc Name","Company","Contact","Sales Rep","Value","Views","Status","Created","Last Activity","Last Event"];
+  const escape  = v => `"${String(v||"").replace(/"/g,'""')}"`;
+
+  const csvRows = rows.map(q => [
+    q.docNos.join(" → "),
+    q.doc.DocName || "",
+    q.doc.SoldToCompany || "",
+    q.doc.SoldToContact || "",
+    q.doc.SalesRep || "",
+    parseFloat(q.doc.SubTotal||0).toFixed(2),
+    q.views,
+    q.accepted ? "Accepted" : q.views > 0 ? "Viewed" : "Unseen",
+    shortDate(q.createdAt),
+    shortDate(q.lastActivity),
+    eventLabel(q.lastActivityType)
+  ].map(escape).join(","));
+
+  const csv  = [headers.map(escape).join(","), ...csvRows].join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href     = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+
+  // Flash confirmation in the body
+  const body = document.getElementById("aiBody");
+  const prev = body.innerHTML;
+  body.innerHTML = `<div class="ai-idle"><div class="ai-idle-icon">✓</div><div class="ai-idle-title">CSV downloaded</div><div class="ai-idle-sub"><strong>${rows.length} rows</strong> exported to <strong>${filename}</strong></div></div>`;
+  setTimeout(() => { body.innerHTML = prev; }, 2500);
+}
+
+
   document.querySelectorAll(".ai-suggest-btn").forEach(b => b.classList.remove("selected"));
   btn.classList.add("selected");
   const q = btn.textContent;
