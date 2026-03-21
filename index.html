@@ -2538,6 +2538,8 @@ function launchConfetti() {
   document.body.appendChild(toast);
   setTimeout(() => { toast.style.opacity = "0"; toast.style.transition = "opacity 0.5s"; setTimeout(() => toast.remove(), 500); }, 3000);
 }
+
+function toggleNotifications() {
   if (!("Notification" in window)) {
     alert("Your browser doesn't support notifications.");
     return;
