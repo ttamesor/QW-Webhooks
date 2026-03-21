@@ -211,6 +211,25 @@ body::after {
   border-top: 1px solid var(--border);
 }
 
+.notif-btn {
+  width: 100%;
+  background: rgba(245,166,35,0.1);
+  border: 1px solid rgba(245,166,35,0.25);
+  border-radius: 8px;
+  color: var(--amber);
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 7px 12px;
+  cursor: pointer;
+  margin-bottom: 10px;
+  transition: all 0.15s;
+  text-align: left;
+}
+
+.notif-btn:hover { background: rgba(245,166,35,0.2); }
+.notif-btn.enabled { background: rgba(34,211,160,0.1); border-color: rgba(34,211,160,0.25); color: var(--green); }
+
 .last-updated {
   font-size: 0.72rem;
   font-family: var(--font-mono);
@@ -1133,6 +1152,11 @@ body::after {
   grid-template-columns: 1fr;
 }
 
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(-12px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
 /* Responsive */
 @media (max-width: 1100px) {
   .layout { grid-template-columns: 200px 1fr; }
@@ -1236,6 +1260,7 @@ body::after {
     </div>
 
     <div class="sidebar-footer">
+      <button class="notif-btn" id="notifBtn" onclick="toggleNotifications()">🔔 Enable notifications</button>
       <div class="last-updated" id="lastUpdated">Connecting…</div>
     </div>
   </aside>
@@ -1386,6 +1411,7 @@ body::after {
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/canvas-confetti/1.9.2/confetti.browser.min.js"></script>
 <script>
 const APPS_SCRIPT_BASE = "https://script.google.com/macros/s/AKfycbzzQtKk_VCtHwYjhmC1f32dNPMXDb5CWa2jE7Sg2rMwVHY_HUvmijH9SnMUQjSTTG3ubw/exec";
 
@@ -1394,6 +1420,66 @@ let quotes  = {};
 let currentTab = "all";
 let searchQuery = "";
 let dateFrom = new Date("2026-01-01T00:00:00Z");
+let seenEventKeys = new Set();
+let notificationsReady = false;
+let isFirstLoad = true;
+
+/* ── Notifications ── */
+function requestNotifications() {
+  if (!("Notification" in window)) return;
+  if (Notification.permission === "granted") {
+    notificationsReady = true;
+  } else if (Notification.permission !== "denied") {
+    Notification.requestPermission().then(p => {
+      notificationsReady = p === "granted";
+    });
+  }
+}
+
+function fireNotification(title, body, icon) {
+  if (!notificationsReady) return;
+  const n = new Notification(title, {
+    body,
+    icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%234f8ef7'/><text x='50%' y='54%' dominant-baseline='middle' text-anchor='middle' font-size='18'>📊</text></svg>",
+    badge: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%234f8ef7'/></svg>",
+    tag: title
+  });
+  setTimeout(() => n.close(), 8000);
+}
+
+function checkForNewEvents(newQuotes) {
+  if (isFirstLoad) {
+    // On first load, just seed the seen set — don't fire notifications
+    Object.values(newQuotes).forEach(q => {
+      q.events.forEach(e => seenEventKeys.add(q.doc.QuoteValetDocumentID + "|" + e.type + "|" + e.ts));
+    });
+    isFirstLoad = false;
+    return;
+  }
+
+  Object.values(newQuotes).forEach(q => {
+    q.events.forEach(e => {
+      const key = (q.doc.QuoteValetDocumentID || q.doc.DocNo) + "|" + e.type + "|" + e.ts;
+      if (seenEventKeys.has(key)) return;
+      seenEventKeys.add(key);
+
+      const company = q.doc.SoldToCompany || q.doc.SoldToContact || "A customer";
+      const docNo   = q.docNos[q.docNos.length - 1] || q.doc.DocNo;
+      const val     = gbp(q.doc.SubTotal);
+
+      if (e.type === "QuoteValet.ViewedExternal" || e.type === "QuoteValet.ViewedExternalFirstView") {
+        fireNotification(`👀 Quote Viewed — ${docNo}`, `${company} just viewed ${docNo} (${val})`);
+      }
+      if (e.type === "QuoteValet.Accepted") {
+        fireNotification(`✅ Quote Accepted — ${docNo}!`, `${company} accepted ${docNo} for ${val}`);
+        launchConfetti();
+      }
+      if (e.type === "QuoteValet.ExpiredQuoteWasViewedByCustomer") {
+        fireNotification(`⏰ Expired Quote Viewed — ${docNo}`, `${company} viewed an expired quote (${val}) — worth resending`);
+      }
+    });
+  });
+}
 
 /* ── Helpers ── */
 function gbp(v) {
@@ -1441,6 +1527,7 @@ function handleData(data) {
     "Updated " + new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
   allData = data || [];
   buildQuotes();
+  checkForNewEvents(quotes);
   render();
   debugQuote('PREQ61284');
 }
@@ -2228,8 +2315,76 @@ function handleSearch(val) {
 
 document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
 
+function launchConfetti() {
+  if (typeof confetti !== "function") return;
+
+  // Big burst from the middle
+  confetti({
+    particleCount: 120,
+    spread: 80,
+    origin: { x: 0.5, y: 0.4 },
+    colors: ["#4f8ef7", "#22d3a0", "#a78bfa", "#f5a623", "#f25c5c"],
+    zIndex: 9999
+  });
+
+  // Two side cannons
+  setTimeout(() => {
+    confetti({ particleCount: 60, angle: 60, spread: 55, origin: { x: 0, y: 0.6 }, colors: ["#4f8ef7","#22d3a0","#a78bfa"], zIndex: 9999 });
+    confetti({ particleCount: 60, angle: 120, spread: 55, origin: { x: 1, y: 0.6 }, colors: ["#f5a623","#f25c5c","#22d3a0"], zIndex: 9999 });
+  }, 200);
+
+  // Toast message
+  const toast = document.createElement("div");
+  toast.innerHTML = "🎉 Quote Accepted!";
+  toast.style.cssText = `
+    position: fixed; top: 24px; left: 50%; transform: translateX(-50%);
+    background: linear-gradient(135deg, #22d3a0, #4f8ef7);
+    color: white; font-family: Inter, sans-serif; font-weight: 700;
+    font-size: 1.1rem; padding: 14px 32px; border-radius: 50px;
+    box-shadow: 0 8px 32px rgba(34,211,160,0.4);
+    z-index: 10000; animation: toastIn 0.4s ease;
+    letter-spacing: -0.3px;
+  `;
+  document.body.appendChild(toast);
+  setTimeout(() => { toast.style.opacity = "0"; toast.style.transition = "opacity 0.5s"; setTimeout(() => toast.remove(), 500); }, 3000);
+}
+  if (!("Notification" in window)) {
+    alert("Your browser doesn't support notifications.");
+    return;
+  }
+  if (Notification.permission === "granted") {
+    notificationsReady = !notificationsReady;
+    updateNotifBtn();
+  } else {
+    Notification.requestPermission().then(p => {
+      notificationsReady = p === "granted";
+      updateNotifBtn();
+      if (p === "granted") fireNotification("🔔 QuoteValet Notifications On", "You'll be notified when quotes are viewed or accepted.");
+    });
+  }
+}
+
+function updateNotifBtn() {
+  const btn = document.getElementById("notifBtn");
+  if (!btn) return;
+  if (!("Notification" in window) || Notification.permission === "denied") {
+    btn.textContent = "🔕 Notifications blocked";
+    btn.classList.remove("enabled");
+    return;
+  }
+  if (notificationsReady) {
+    btn.textContent = "🔔 Notifications on";
+    btn.classList.add("enabled");
+  } else {
+    btn.textContent = "🔔 Enable notifications";
+    btn.classList.remove("enabled");
+  }
+}
+
 /* ── Init ── */
 setInterval(loadData, 60000);
+requestNotifications();
+updateNotifBtn();
 loadData();
 </script>
 </body>
