@@ -3,700 +3,937 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>QuoteValet Dashboard</title>
-<link rel="icon" type="image/x-icon" href="favicon.ico">
-<link href="[fonts.googleapis.com](https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap)" rel="stylesheet">
+<title>QuoteValet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
 <style>
 :root {
-  --bg-primary: #0a0f1a;
-  --bg-secondary: #111827;
-  --bg-card: rgba(17, 24, 39, 0.8);
-  --bg-card-hover: rgba(31, 41, 55, 0.9);
-  --border: rgba(255, 255, 255, 0.08);
-  --text-primary: #f9fafb;
-  --text-secondary: #9ca3af;
-  --text-muted: #6b7280;
-  --accent-blue: #3b82f6;
-  --accent-green: #10b981;
-  --accent-amber: #f59e0b;
-  --accent-red: #ef4444;
-  --accent-purple: #8b5cf6;
+  --bg:        #080c14;
+  --bg2:       #0e1420;
+  --bg3:       #141b2d;
+  --surface:   rgba(20, 27, 45, 0.7);
+  --border:    rgba(255,255,255,0.07);
+  --border2:   rgba(255,255,255,0.12);
+  --text:      #e8edf5;
+  --muted:     #4a5568;
+  --dim:       #8492a6;
+  --blue:      #4f8ef7;
+  --green:     #22d3a0;
+  --amber:     #f5a623;
+  --red:       #f25c5c;
+  --purple:    #a78bfa;
+  --teal:      #2dd4bf;
+  --font-head: 'Inter', sans-serif;
+  --font-mono: 'Inter', monospace;
+  --font-body: 'Inter', sans-serif;
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
-  background: var(--bg-primary);
-  color: var(--text-primary);
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
   min-height: 100vh;
-  line-height: 1.5;
+  overflow-x: hidden;
 }
 
-.wrapper {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 32px 24px;
-}
-
-/* Header */
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 32px;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
-.header h1 {
-  font-size: 1.75rem;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.header-meta {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.status-badge {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  background: rgba(16, 185, 129, 0.15);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-  border-radius: 20px;
-  font-size: 0.8rem;
-  color: var(--accent-green);
-}
-
-.status-dot {
-  width: 8px;
-  height: 8px;
-  background: var(--accent-green);
-  border-radius: 50%;
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
-#lastUpdated {
-  color: var(--text-muted);
-  font-size: 0.85rem;
-}
-
-/* Stats Grid */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-  margin-bottom: 32px;
-}
-
-.stat-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 20px 24px;
-  position: relative;
-  overflow: hidden;
-  transition: all 0.2s ease;
-}
-
-.stat-card:hover {
-  background: var(--bg-card-hover);
-  transform: translateY(-2px);
-}
-
-.stat-card::before {
+/* Subtle grid background */
+body::before {
   content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(79,142,247,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(79,142,247,0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+  z-index: 0;
 }
 
-.stat-card.pipeline::before { background: var(--accent-blue); }
-.stat-card.accepted::before { background: var(--accent-green); }
-.stat-card.views::before { background: var(--accent-purple); }
-.stat-card.pending::before { background: var(--accent-amber); }
-
-.stat-label {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 8px;
+/* Glow orbs */
+body::after {
+  content: '';
+  position: fixed;
+  top: -200px;
+  left: -200px;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(79,142,247,0.06) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
 }
 
-.stat-value {
-  font-size: 1.75rem;
-  font-weight: 600;
-}
-
-.stat-change {
-  font-size: 0.8rem;
-  margin-top: 8px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.stat-change.up { color: var(--accent-green); }
-.stat-change.down { color: var(--accent-red); }
-
-/* Tabs */
-.tab-container {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 24px;
-  background: var(--bg-secondary);
-  padding: 6px;
-  border-radius: 10px;
-  width: fit-content;
-}
-
-.tab-btn {
-  padding: 10px 20px;
-  border-radius: 8px;
-  border: none;
-  background: transparent;
-  color: var(--text-secondary);
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 500;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.tab-btn:hover {
-  color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.tab-btn.active {
-  background: var(--accent-blue);
-  color: white;
-}
-
-.tab-count {
-  background: rgba(255, 255, 255, 0.2);
-  padding: 2px 8px;
-  border-radius: 10px;
-  font-size: 0.75rem;
-}
-
-/* Main Content Grid */
-.main-grid {
+.layout {
+  position: relative;
+  z-index: 1;
   display: grid;
-  grid-template-columns: 1fr 380px;
-  gap: 24px;
+  grid-template-columns: 240px 1fr;
+  min-height: 100vh;
 }
 
-@media (max-width: 1024px) {
-  .main-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* Panels */
-.panel {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.panel-header {
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--border);
+/* ─── SIDEBAR ─── */
+.sidebar {
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.panel-title {
-  font-size: 0.95rem;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.panel-body {
-  padding: 0;
-  max-height: 400px;
+  flex-direction: column;
+  padding: 28px 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
   overflow-y: auto;
 }
 
-.panel-body::-webkit-scrollbar {
-  width: 6px;
-}
-
-.panel-body::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.panel-body::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
-}
-
-/* Quote List Items */
-.quote-item {
-  padding: 14px 20px;
+.brand {
+  padding: 0 24px 28px;
   border-bottom: 1px solid var(--border);
-  cursor: pointer;
-  transition: background 0.15s ease;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 12px;
+}
+
+.brand-name {
+  font-family: var(--font-head);
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  display: flex;
   align-items: center;
+  gap: 10px;
 }
 
-.quote-item:last-child {
-  border-bottom: none;
-}
-
-.quote-item:hover {
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.quote-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.quote-doc {
-  font-weight: 500;
-  font-size: 0.9rem;
-}
-
-.quote-customer {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-}
-
-.quote-meta {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.quote-amount {
-  font-weight: 600;
-  font-size: 0.95rem;
-}
-
-.quote-badge {
-  padding: 3px 8px;
-  border-radius: 4px;
-  font-size: 0.7rem;
-  font-weight: 500;
-  text-transform: uppercase;
-}
-
-.badge-views {
-  background: rgba(139, 92, 246, 0.2);
-  color: var(--accent-purple);
-}
-
-.badge-hot {
-  background: rgba(245, 158, 11, 0.2);
-  color: var(--accent-amber);
-}
-
-.badge-stale {
-  background: rgba(107, 114, 128, 0.2);
-  color: var(--text-muted);
-}
-
-.badge-accepted {
-  background: rgba(16, 185, 129, 0.2);
-  color: var(--accent-green);
-}
-
-/* Activity Feed */
-.activity-item {
-  padding: 12px 20px;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-}
-
-.activity-item:last-child {
-  border-bottom: none;
-}
-
-.activity-icon {
+.brand-icon {
   width: 32px;
   height: 32px;
+  background: linear-gradient(135deg, var(--blue), var(--purple));
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
   font-size: 0.9rem;
 }
 
-.activity-icon.view { background: rgba(139, 92, 246, 0.2); }
-.activity-icon.accept { background: rgba(16, 185, 129, 0.2); }
-.activity-icon.create { background: rgba(59, 130, 246, 0.2); }
-
-.activity-content {
-  flex: 1;
-  min-width: 0;
+.brand-sub {
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 4px;
 }
 
-.activity-text {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
+.live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  background: rgba(34,211,160,0.1);
+  border: 1px solid rgba(34,211,160,0.25);
+  border-radius: 20px;
+  font-size: 0.68rem;
+  font-family: var(--font-mono);
+  color: var(--green);
+  margin-top: 8px;
 }
 
-.activity-text strong {
-  color: var(--text-primary);
+.live-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--green);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+.nav-section {
+  padding: 20px 16px 8px;
+}
+
+.nav-label {
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  padding: 0 8px;
+  margin-bottom: 6px;
+}
+
+.nav-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--dim);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
   font-weight: 500;
+  transition: all 0.15s;
+  text-align: left;
 }
 
-.activity-time {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  margin-top: 2px;
+.nav-btn:hover { background: rgba(255,255,255,0.04); color: var(--text); }
+
+.nav-btn.active {
+  background: rgba(79,142,247,0.12);
+  color: var(--blue);
+  border: 1px solid rgba(79,142,247,0.2);
 }
 
-/* Rep Leaderboard */
-.rep-item {
-  padding: 14px 20px;
+.nav-icon { font-size: 1rem; width: 20px; text-align: center; }
+
+.nav-count {
+  margin-left: auto;
+  background: var(--bg3);
+  border-radius: 10px;
+  padding: 2px 7px;
+  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  color: var(--dim);
+}
+
+.nav-btn.active .nav-count {
+  background: rgba(79,142,247,0.2);
+  color: var(--blue);
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding: 20px 24px 0;
+  border-top: 1px solid var(--border);
+}
+
+.last-updated {
+  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  color: var(--muted);
+}
+
+/* ─── MAIN ─── */
+.main {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.topbar {
+  padding: 20px 32px;
   border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.search-wrap {
+  position: relative;
+  flex: 1;
+  max-width: 480px;
+}
+
+.search-wrap svg {
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px 16px 10px 40px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.search-input::placeholder { color: var(--muted); }
+.search-input:focus { border-color: rgba(79,142,247,0.5); }
+
+.page-title {
+  font-family: var(--font-head);
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-left: auto;
+  color: var(--dim);
+}
+
+/* ─── STATS ─── */
+.stats-row {
   display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 14px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.stat-block {
+  background: var(--bg);
+  padding: 24px 28px;
+  position: relative;
+  overflow: hidden;
+  transition: background 0.2s;
+}
+
+.stat-block:hover { background: var(--bg2); }
+
+.stat-accent {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+}
+
+.stat-block.s-blue .stat-accent  { background: linear-gradient(90deg, var(--blue), transparent); }
+.stat-block.s-green .stat-accent { background: linear-gradient(90deg, var(--green), transparent); }
+.stat-block.s-purple .stat-accent{ background: linear-gradient(90deg, var(--purple), transparent); }
+.stat-block.s-amber .stat-accent { background: linear-gradient(90deg, var(--amber), transparent); }
+
+.stat-label {
+  font-size: 0.7rem;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.stat-val {
+  font-family: var(--font-head);
+  font-size: 1.9rem;
+  font-weight: 700;
+  letter-spacing: -1px;
+  line-height: 1;
+}
+
+.stat-block.s-blue .stat-val  { color: var(--blue); }
+.stat-block.s-green .stat-val { color: var(--green); }
+.stat-block.s-purple .stat-val{ color: var(--purple); }
+.stat-block.s-amber .stat-val { color: var(--amber); }
+
+.stat-sub {
+  margin-top: 6px;
+  font-size: 0.78rem;
+  color: var(--dim);
+}
+
+/* ─── CONTENT ─── */
+.content {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 0;
+  flex: 1;
+}
+
+.quotes-col {
+  border-right: 1px solid var(--border);
+}
+
+.col-header {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.col-title {
+  font-family: var(--font-head);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--dim);
+}
+
+.col-count {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+/* Quote rows */
+.quote-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+  padding: 15px 24px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.12s;
   align-items: center;
 }
 
-.rep-item:last-child {
-  border-bottom: none;
+.quote-row:hover { background: rgba(255,255,255,0.02); }
+.quote-row:last-child { border-bottom: none; }
+
+.q-main {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
 }
+
+.q-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.q-docno {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--blue);
+  font-weight: 500;
+}
+
+.q-docname {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.q-customer {
+  font-size: 0.78rem;
+  color: var(--dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.q-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.q-amount {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+/* Status pills */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 0.68rem;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.pill-accepted { background: rgba(34,211,160,0.12); color: var(--green); border: 1px solid rgba(34,211,160,0.2); }
+.pill-hot      { background: rgba(245,166,35,0.12);  color: var(--amber); border: 1px solid rgba(245,166,35,0.2); }
+.pill-viewed   { background: rgba(167,139,250,0.12); color: var(--purple); border: 1px solid rgba(167,139,250,0.2); }
+.pill-unseen   { background: rgba(74,85,104,0.2);    color: var(--muted); border: 1px solid rgba(74,85,104,0.3); }
+
+/* ─── RIGHT SIDEBAR ─── */
+.right-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.right-section {
+  border-bottom: 1px solid var(--border);
+}
+
+/* Leaderboard */
+.rep-row {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  gap: 12px;
+  padding: 12px 20px;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.12s;
+}
+
+.rep-row:hover { background: rgba(255,255,255,0.02); }
+.rep-row:last-child { border-bottom: none; }
 
 .rep-rank {
   width: 24px;
   height: 24px;
   border-radius: 6px;
-  background: var(--bg-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 500;
 }
 
-.rep-rank.gold { background: rgba(245, 158, 11, 0.2); color: var(--accent-amber); }
-.rep-rank.silver { background: rgba(156, 163, 175, 0.2); color: var(--text-secondary); }
-.rep-rank.bronze { background: rgba(180, 83, 9, 0.2); color: #d97706; }
+.rank-1 { background: rgba(245,166,35,0.15); color: var(--amber); }
+.rank-2 { background: rgba(148,163,184,0.15); color: #94a3b8; }
+.rank-3 { background: rgba(205,127,50,0.15); color: #cd7f32; }
+.rank-n { background: var(--bg3); color: var(--muted); }
 
-.rep-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
+.rep-info { min-width: 0; }
 
 .rep-name {
+  font-size: 0.82rem;
   font-weight: 500;
-  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.rep-bar {
-  height: 4px;
-  background: var(--bg-secondary);
+.rep-bar-wrap {
+  height: 3px;
+  background: var(--bg3);
   border-radius: 2px;
+  margin-top: 5px;
   overflow: hidden;
 }
 
 .rep-bar-fill {
   height: 100%;
-  background: var(--accent-green);
+  background: linear-gradient(90deg, var(--green), var(--teal));
   border-radius: 2px;
-  transition: width 0.5s ease;
+  transition: width 0.6s ease;
 }
 
-.rep-amount {
-  font-weight: 600;
-  font-size: 0.9rem;
-  text-align: right;
-}
-
-/* Search */
-.search-box {
-  position: relative;
-  margin-bottom: 16px;
-}
-
-.search-box input {
-  width: 100%;
-  padding: 10px 16px 10px 40px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  color: var(--text-primary);
-  font-size: 0.9rem;
-  outline: none;
-  transition: border-color 0.2s;
-}
-
-.search-box input::placeholder {
-  color: var(--text-muted);
-}
-
-.search-box input:focus {
-  border-color: var(--accent-blue);
-}
-
-.search-box::before {
-  content: '🔍';
-  position: absolute;
-  left: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 0.85rem;
-  opacity: 0.5;
-}
-
-/* Empty State */
-.empty-state {
-  padding: 40px 20px;
-  text-align: center;
-  color: var(--text-muted);
-}
-
-.empty-state-icon {
-  font-size: 2rem;
-  margin-bottom: 12px;
-}
-
-/* Modal */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  opacity: 0;
-  visibility: hidden;
-  transition: all 0.2s ease;
-}
-
-.modal-overlay.active {
-  opacity: 1;
-  visibility: visible;
-}
-
-.modal {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  width: 90%;
-  max-width: 500px;
-  max-height: 80vh;
-  overflow: hidden;
-  transform: scale(0.95);
-  transition: transform 0.2s ease;
-}
-
-.modal-overlay.active .modal {
-  transform: scale(1);
-}
-
-.modal-header {
-  padding: 20px 24px;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.modal-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-}
-
-.modal-close {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  font-size: 1.25rem;
-  padding: 4px;
-  line-height: 1;
-}
-
-.modal-close:hover {
-  color: var(--text-primary);
-}
-
-.modal-body {
-  padding: 24px;
-  overflow-y: auto;
-}
-
-.detail-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 12px 0;
-  border-bottom: 1px solid var(--border);
-}
-
-.detail-row:last-child {
-  border-bottom: none;
-}
-
-.detail-label {
-  color: var(--text-secondary);
-  font-size: 0.85rem;
-}
-
-.detail-value {
+.rep-won {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--green);
   font-weight: 500;
   text-align: right;
 }
 
-/* Loading */
-.loading {
+.rep-total {
+  font-size: 0.68rem;
+  color: var(--muted);
+  text-align: right;
+}
+
+/* Activity */
+.activity-row {
+  display: flex;
+  gap: 12px;
+  padding: 11px 20px;
+  border-bottom: 1px solid var(--border);
+  align-items: flex-start;
+}
+
+.activity-row:last-child { border-bottom: none; }
+
+.act-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 60px;
+  flex-shrink: 0;
+  font-size: 0.8rem;
+}
+
+.act-view   { background: rgba(167,139,250,0.15); }
+.act-accept { background: rgba(34,211,160,0.15); }
+.act-create { background: rgba(79,142,247,0.15); }
+
+.act-body { flex: 1; min-width: 0; }
+
+.act-line {
+  font-size: 0.8rem;
+  color: var(--dim);
+  line-height: 1.4;
+}
+
+.act-line strong { color: var(--text); font-weight: 500; }
+.act-line .act-co { color: var(--blue); font-family: var(--font-mono); font-size: 0.72rem; }
+
+.act-time {
+  font-size: 0.68rem;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  margin-top: 2px;
+}
+
+/* Scrollable panel bodies */
+.panel-scroll {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.panel-scroll::-webkit-scrollbar { width: 4px; }
+.panel-scroll::-webkit-scrollbar-track { background: transparent; }
+.panel-scroll::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 2px; }
+
+/* Quotes list scroll */
+.quotes-scroll {
+  overflow-y: auto;
+  max-height: calc(100vh - 220px);
+}
+
+.quotes-scroll::-webkit-scrollbar { width: 4px; }
+.quotes-scroll::-webkit-scrollbar-track { background: transparent; }
+.quotes-scroll::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 2px; }
+
+/* Empty state */
+.empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.empty-icon { font-size: 1.8rem; margin-bottom: 10px; opacity: 0.5; }
+
+/* Loading */
+.loader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
 }
 
 .spinner {
+  width: 28px;
+  height: 28px;
+  border: 2px solid var(--border);
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── MODAL ─── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(6px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s;
+}
+
+.overlay.open { opacity: 1; visibility: visible; }
+
+.modal {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 16px;
+  width: 92%;
+  max-width: 520px;
+  max-height: 85vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transform: translateY(8px) scale(0.98);
+  transition: transform 0.2s;
+}
+
+.overlay.open .modal { transform: translateY(0) scale(1); }
+
+.modal-head {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.modal-doc {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--blue);
+  margin-bottom: 4px;
+}
+
+.modal-name {
+  font-family: var(--font-head);
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.modal-company {
+  font-size: 0.82rem;
+  color: var(--dim);
+  margin-top: 2px;
+}
+
+.modal-close {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--dim);
   width: 32px;
   height: 32px;
-  border: 3px solid var(--border);
-  border-top-color: var(--accent-blue);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  transition: all 0.15s;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
+.modal-close:hover { background: var(--bg); color: var(--text); }
+
+.modal-body {
+  padding: 20px 24px;
+  overflow-y: auto;
+  flex: 1;
 }
+
+.modal-amount {
+  font-family: var(--font-head);
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--green);
+  letter-spacing: -1px;
+  margin-bottom: 20px;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.detail-cell {
+  background: var(--bg3);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.detail-cell-label {
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+  margin-bottom: 5px;
+}
+
+.detail-cell-val {
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+
+.modal-timeline {
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+}
+
+.timeline-title {
+  font-size: 0.68rem;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+.timeline-item {
+  display: flex;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  align-items: flex-start;
+}
+
+.timeline-item:last-child { border-bottom: none; }
+
+.tl-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+
+.tl-dot-view   { background: var(--purple); }
+.tl-dot-accept { background: var(--green); }
+.tl-dot-create { background: var(--blue); }
+
+.tl-text { font-size: 0.8rem; color: var(--dim); flex: 1; }
+.tl-time { font-size: 0.68rem; font-family: var(--font-mono); color: var(--muted); margin-top: 2px; }
 
 /* Responsive */
+@media (max-width: 1100px) {
+  .layout { grid-template-columns: 200px 1fr; }
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .content { grid-template-columns: 1fr; }
+  .right-col { display: none; }
+}
+
 @media (max-width: 768px) {
-  .wrapper {
-    padding: 20px 16px;
-  }
-  
-  .header h1 {
-    font-size: 1.35rem;
-  }
-  
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .tab-container {
-    width: 100%;
-    overflow-x: auto;
-  }
+  .layout { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .topbar { padding: 14px 16px; }
 }
 </style>
 </head>
-
 <body>
 
-<div class="wrapper">
+<div class="layout">
 
-  <div class="header">
-    <h1>📊 QuoteValet</h1>
-    <div class="header-meta">
-      <div class="status-badge">
-        <span class="status-dot"></span>
-        Live
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-name">
+        <div class="brand-icon">📊</div>
+        QuoteValet
       </div>
-      <div id="lastUpdated">Connecting...</div>
-    </div>
-  </div>
-
-  <div id="statsGrid" class="stats-grid"></div>
-
-  <div class="search-box">
-    <input type="text" id="searchInput" placeholder="Search quotes by doc number, customer, or rep..." oninput="handleSearch(this.value)">
-  </div>
-
-  <div class="tab-container">
-    <button class="tab-btn active" data-tab="all" onclick="switchTab(event, 'all')">
-      All <span class="tab-count" id="countAll">0</span>
-    </button>
-    <button class="tab-btn" data-tab="hot" onclick="switchTab(event, 'hot')">
-      🔥 Hot <span class="tab-count" id="countHot">0</span>
-    </button>
-    <button class="tab-btn" data-tab="accepted" onclick="switchTab(event, 'accepted')">
-      ✅ Accepted <span class="tab-count" id="countAccepted">0</span>
-    </button>
-    <button class="tab-btn" data-tab="stale" onclick="switchTab(event, 'stale')">
-      🧊 Stale <span class="tab-count" id="countStale">0</span>
-    </button>
-  </div>
-
-  <div class="main-grid">
-    <div class="panel">
-      <div class="panel-header">
-        <span class="panel-title">📋 Quotes</span>
-        <span id="quoteCount" style="color: var(--text-muted); font-size: 0.85rem;"></span>
-      </div>
-      <div class="panel-body" id="quotesList">
-        <div class="loading"><div class="spinner"></div></div>
+      <div class="brand-sub">Sales Intelligence</div>
+      <div class="live-pill">
+        <span class="live-dot"></span>
+        Live feed
       </div>
     </div>
 
-    <div style="display: flex; flex-direction: column; gap: 24px;">
-      <div class="panel">
-        <div class="panel-header">
-          <span class="panel-title">🏆 Leaderboard</span>
+    <div class="nav-section">
+      <div class="nav-label">Filter</div>
+      <button class="nav-btn active" data-tab="all" onclick="switchTab(this,'all')">
+        <span class="nav-icon">◈</span> All Quotes
+        <span class="nav-count" id="countAll">0</span>
+      </button>
+      <button class="nav-btn" data-tab="hot" onclick="switchTab(this,'hot')">
+        <span class="nav-icon">🔥</span> Hot
+        <span class="nav-count" id="countHot">0</span>
+      </button>
+      <button class="nav-btn" data-tab="accepted" onclick="switchTab(this,'accepted')">
+        <span class="nav-icon">✓</span> Accepted
+        <span class="nav-count" id="countAccepted">0</span>
+      </button>
+      <button class="nav-btn" data-tab="stale" onclick="switchTab(this,'stale')">
+        <span class="nav-icon">❄</span> Stale
+        <span class="nav-count" id="countStale">0</span>
+      </button>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="last-updated" id="lastUpdated">Connecting…</div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- Topbar -->
+    <div class="topbar">
+      <div class="search-wrap">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input class="search-input" id="searchInput" placeholder="Search by doc, company, contact…" oninput="handleSearch(this.value)">
+      </div>
+      <div class="page-title" id="pageTitle">All Quotes</div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row" id="statsRow">
+      <div class="stat-block s-blue">
+        <div class="stat-label">Pipeline Value</div>
+        <div class="stat-val" id="sPipeline">—</div>
+        <div class="stat-sub" id="sPipelineSub">loading</div>
+        <div class="stat-accent"></div>
+      </div>
+      <div class="stat-block s-green">
+        <div class="stat-label">Won Value</div>
+        <div class="stat-val" id="sWon">—</div>
+        <div class="stat-sub" id="sWonSub">loading</div>
+        <div class="stat-accent"></div>
+      </div>
+      <div class="stat-block s-purple">
+        <div class="stat-label">Total Views</div>
+        <div class="stat-val" id="sViews">—</div>
+        <div class="stat-sub" id="sViewsSub">loading</div>
+        <div class="stat-accent"></div>
+      </div>
+      <div class="stat-block s-amber">
+        <div class="stat-label">Hot Prospects</div>
+        <div class="stat-val" id="sHot">—</div>
+        <div class="stat-sub">3+ views, open</div>
+        <div class="stat-accent"></div>
+      </div>
+    </div>
+
+    <!-- Content grid -->
+    <div class="content">
+
+      <!-- Quotes list -->
+      <div class="quotes-col">
+        <div class="col-header">
+          <span class="col-title">Quotes</span>
+          <span class="col-count" id="quoteCount"></span>
         </div>
-        <div class="panel-body" id="leaderboard"></div>
+        <div class="quotes-scroll" id="quotesList">
+          <div class="loader"><div class="spinner"></div></div>
+        </div>
       </div>
 
-      <div class="panel">
-        <div class="panel-header">
-          <span class="panel-title">⚡ Recent Activity</span>
+      <!-- Right column -->
+      <div class="right-col">
+
+        <!-- Leaderboard -->
+        <div class="right-section">
+          <div class="col-header">
+            <span class="col-title">🏆 Leaderboard</span>
+          </div>
+          <div class="panel-scroll" id="leaderboard">
+            <div class="loader"><div class="spinner"></div></div>
+          </div>
         </div>
-        <div class="panel-body" id="activityFeed"></div>
+
+        <!-- Activity -->
+        <div class="right-section">
+          <div class="col-header">
+            <span class="col-title">⚡ Activity</span>
+          </div>
+          <div class="panel-scroll" id="activityFeed">
+            <div class="loader"><div class="spinner"></div></div>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
-
 </div>
 
-<!-- Quote Detail Modal -->
-<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+<!-- Modal -->
+<div class="overlay" id="overlay" onclick="closeModal(event)">
   <div class="modal" onclick="event.stopPropagation()">
-    <div class="modal-header">
-      <span class="modal-title" id="modalTitle">Quote Details</span>
-      <button class="modal-close" onclick="closeModal()">&times;</button>
+    <div class="modal-head">
+      <div>
+        <div class="modal-doc" id="mDoc"></div>
+        <div class="modal-name" id="mName"></div>
+        <div class="modal-company" id="mCompany"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
     </div>
-    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-body" id="mBody"></div>
   </div>
 </div>
 
@@ -704,224 +941,173 @@ body {
 const APPS_SCRIPT_BASE = "https://script.google.com/macros/s/AKfycbzzQtKk_VCtHwYjhmC1f32dNPMXDb5CWa2jE7Sg2rMwVHY_HUvmijH9SnMUQjSTTG3ubw/exec";
 
 let allData = [];
-let quotes = {};
+let quotes  = {};
 let currentTab = "all";
 let searchQuery = "";
 
-// Utility functions
-function currency(v) {
-  return parseFloat(v || 0).toLocaleString("en-GB", { style: "currency", currency: "GBP" });
+/* ── Helpers ── */
+function gbp(v) {
+  return parseFloat(v || 0).toLocaleString("en-GB", { style:"currency", currency:"GBP", maximumFractionDigits:0 });
 }
 
-function timeAgo(dateStr) {
-  if (!dateStr) return "";
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diff = Math.floor((now - date) / 1000);
-  
-  if (diff < 60) return "Just now";
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
-  return date.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+function timeAgo(ts) {
+  if (!ts) return "—";
+  const s = Math.floor((Date.now() - new Date(ts)) / 1000);
+  if (s < 60)     return "just now";
+  if (s < 3600)   return Math.floor(s/60) + "m ago";
+  if (s < 86400)  return Math.floor(s/3600) + "h ago";
+  if (s < 604800) return Math.floor(s/86400) + "d ago";
+  return new Date(ts).toLocaleDateString("en-GB", {day:"numeric", month:"short"});
 }
 
+function customerLabel(doc) {
+  const parts = [doc.SoldToCompany, doc.SoldToContact].filter(Boolean);
+  return parts.join(" · ") || doc.CustomerName || doc.Customer || "Unknown";
+}
+
+function companyLabel(doc) {
+  return doc.SoldToCompany || doc.CustomerName || doc.Customer || "Unknown";
+}
+
+/* ── Data ── */
 function loadData() {
-  const script = document.createElement("script");
-  script.src = APPS_SCRIPT_BASE + "?callback=handleData&ts=" + Date.now();
-  script.onerror = () => {
-    document.getElementById("lastUpdated").innerText = "Connection error";
-  };
-  document.body.appendChild(script);
+  const s = document.createElement("script");
+  s.src = APPS_SCRIPT_BASE + "?callback=handleData&ts=" + Date.now();
+  s.onerror = () => { document.getElementById("lastUpdated").textContent = "⚠ Connection error"; };
+  document.body.appendChild(s);
 }
 
 function handleData(data) {
-  document.getElementById("lastUpdated").innerText =
-    "Updated " + new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
-
+  document.getElementById("lastUpdated").textContent =
+    "Updated " + new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
   allData = data || [];
-  groupQuotes();
-  renderDashboard();
+  buildQuotes();
+  render();
 }
 
-function groupQuotes() {
+function buildQuotes() {
   quotes = {};
-  
   allData.forEach(r => {
-    const doc = r.DocNo;
-    if (!quotes[doc]) {
-      quotes[doc] = {
-        doc: r,
-        views: 0,
-        accepted: false,
-        created: false,
-        events: [],
-        lastActivity: null
-      };
+    const id = r.DocNo;
+    if (!quotes[id]) {
+      quotes[id] = { doc:r, views:0, accepted:false, created:false, events:[], lastActivity:null };
     }
+    const q = quotes[id];
+    const evtTime = r.Timestamp || r.Created;
 
-    const event = {
-      type: r.EventFullName,
-      timestamp: r.Timestamp || r.Created
-    };
-    quotes[doc].events.push(event);
+    q.events.push({ type: r.EventFullName, ts: evtTime });
 
-    if (r.EventFullName === "QuoteValet.CreatedForCustomer") {
-      quotes[doc].created = true;
-    }
-    if (r.EventFullName === "QuoteValet.ViewedExternal") {
-      quotes[doc].views++;
-    }
-    if (r.EventFullName === "QuoteValet.Accepted") {
-      quotes[doc].accepted = true;
-    }
+    if (r.EventFullName === "QuoteValet.CreatedForCustomer") q.created = true;
+    if (r.EventFullName === "QuoteValet.ViewedExternal")     q.views++;
+    if (r.EventFullName === "QuoteValet.Accepted")           q.accepted = true;
 
-    // Track most recent activity
-    const eventTime = new Date(event.timestamp);
-    if (!quotes[doc].lastActivity || eventTime > new Date(quotes[doc].lastActivity)) {
-      quotes[doc].lastActivity = event.timestamp;
+    if (evtTime && (!q.lastActivity || new Date(evtTime) > new Date(q.lastActivity))) {
+      q.lastActivity = evtTime;
     }
   });
 }
 
-function getFilteredQuotes() {
+/* ── Filtering ── */
+function filtered() {
   let list = Object.values(quotes);
-  
-  // Apply search
+
   if (searchQuery) {
     const q = searchQuery.toLowerCase();
-    list = list.filter(quote => {
-      const doc = (quote.doc.DocNo || "").toLowerCase();
-      const customer = (quote.doc.CustomerName || quote.doc.Customer || "").toLowerCase();
-      const rep = (quote.doc.SalesRep || "").toLowerCase();
-      return doc.includes(q) || customer.includes(q) || rep.includes(q);
+    list = list.filter(x => {
+      return (x.doc.DocNo||"").toLowerCase().includes(q)
+          || (x.doc.SoldToCompany||"").toLowerCase().includes(q)
+          || (x.doc.SoldToContact||"").toLowerCase().includes(q)
+          || (x.doc.DocName||"").toLowerCase().includes(q)
+          || (x.doc.SalesRep||"").toLowerCase().includes(q);
     });
   }
-  
-  // Apply tab filter
-  switch (currentTab) {
-    case "hot":
-      list = list.filter(q => !q.accepted && q.views >= 2);
-      break;
-    case "accepted":
-      list = list.filter(q => q.accepted);
-      break;
-    case "stale":
-      list = list.filter(q => q.created && !q.accepted && q.views === 0);
-      break;
+
+  switch(currentTab) {
+    case "hot":      list = list.filter(x => !x.accepted && x.views >= 3); break;
+    case "accepted": list = list.filter(x => x.accepted); break;
+    case "stale":    list = list.filter(x => x.created && !x.accepted && x.views === 0); break;
   }
-  
-  // Sort by value descending
-  list.sort((a, b) => parseFloat(b.doc.SubTotal || 0) - parseFloat(a.doc.SubTotal || 0));
-  
+
+  list.sort((a,b) => parseFloat(b.doc.SubTotal||0) - parseFloat(a.doc.SubTotal||0));
   return list;
 }
 
-function switchTab(e, tab) {
-  currentTab = tab;
-  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-  e.target.closest(".tab-btn").classList.add("active");
-  renderQuotesList();
-}
-
-function handleSearch(value) {
-  searchQuery = value;
-  renderQuotesList();
-}
-
-function renderDashboard() {
+/* ── Render ── */
+function render() {
   renderStats();
-  renderQuotesList();
+  renderQuotes();
   renderLeaderboard();
   renderActivity();
-  updateTabCounts();
+  updateCounts();
 }
 
 function renderStats() {
-  const container = document.getElementById("statsGrid");
   const list = Object.values(quotes);
+  const open   = list.filter(q => q.created && !q.accepted);
+  const won    = list.filter(q => q.accepted);
+  const pipeV  = open.reduce((s,q) => s + parseFloat(q.doc.SubTotal||0), 0);
+  const wonV   = won.reduce((s,q)  => s + parseFloat(q.doc.SubTotal||0), 0);
+  const views  = list.reduce((s,q) => s + q.views, 0);
+  const hot    = list.filter(q => !q.accepted && q.views >= 3).length;
 
-  const pipelineQuotes = list.filter(q => q.created && !q.accepted);
-  const pipeline = pipelineQuotes.reduce((sum, q) => sum + parseFloat(q.doc.SubTotal || 0), 0);
-
-  const acceptedQuotes = list.filter(q => q.accepted);
-  const accepted = acceptedQuotes.reduce((sum, q) => sum + parseFloat(q.doc.SubTotal || 0), 0);
-
-  const totalViews = list.reduce((sum, q) => sum + q.views, 0);
-  const hotQuotes = list.filter(q => !q.accepted && q.views >= 2).length;
-
-  container.innerHTML = `
-    <div class="stat-card pipeline">
-      <div class="stat-label">Pipeline Value</div>
-      <div class="stat-value">${currency(pipeline)}</div>
-      <div class="stat-change">${pipelineQuotes.length} active quotes</div>
-    </div>
-    <div class="stat-card accepted">
-      <div class="stat-label">Won Value</div>
-      <div class="stat-value">${currency(accepted)}</div>
-      <div class="stat-change up">↑ ${acceptedQuotes.length} accepted</div>
-    </div>
-    <div class="stat-card views">
-      <div class="stat-label">Total Views</div>
-      <div class="stat-value">${totalViews}</div>
-      <div class="stat-change">${list.length} quotes tracked</div>
-    </div>
-    <div class="stat-card pending">
-      <div class="stat-label">Hot Prospects</div>
-      <div class="stat-value">${hotQuotes}</div>
-      <div class="stat-change">2+ views, not accepted</div>
-    </div>
-  `;
+  document.getElementById("sPipeline").textContent    = gbp(pipeV);
+  document.getElementById("sPipelineSub").textContent = open.length + " open quotes";
+  document.getElementById("sWon").textContent         = gbp(wonV);
+  document.getElementById("sWonSub").textContent      = won.length + " accepted";
+  document.getElementById("sViews").textContent       = views;
+  document.getElementById("sViewsSub").textContent    = list.length + " quotes tracked";
+  document.getElementById("sHot").textContent         = hot;
 }
 
-function updateTabCounts() {
+function updateCounts() {
   const list = Object.values(quotes);
-  document.getElementById("countAll").textContent = list.length;
-  document.getElementById("countHot").textContent = list.filter(q => !q.accepted && q.views >= 2).length;
+  document.getElementById("countAll").textContent      = list.length;
+  document.getElementById("countHot").textContent      = list.filter(q => !q.accepted && q.views >= 3).length;
   document.getElementById("countAccepted").textContent = list.filter(q => q.accepted).length;
-  document.getElementById("countStale").textContent = list.filter(q => q.created && !q.accepted && q.views === 0).length;
+  document.getElementById("countStale").textContent    = list.filter(q => q.created && !q.accepted && q.views === 0).length;
 }
 
-function renderQuotesList() {
+function renderQuotes() {
   const container = document.getElementById("quotesList");
-  const filtered = getFilteredQuotes();
-  
-  document.getElementById("quoteCount").textContent = `${filtered.length} quotes`;
+  const list = filtered();
+  document.getElementById("quoteCount").textContent = list.length + " quotes";
 
-  if (filtered.length === 0) {
-    container.innerHTML = `
-      <div class="empty-state">
-        <div class="empty-state-icon">📭</div>
-        <div>No quotes found</div>
-      </div>
-    `;
+  if (!list.length) {
+    container.innerHTML = `<div class="empty"><div class="empty-icon">📭</div>No quotes found</div>`;
     return;
   }
 
-  container.innerHTML = filtered.map(q => {
-    const amount = parseFloat(q.doc.SubTotal || 0);
-    const customer = q.doc.CustomerName || q.doc.Customer || "Unknown Customer";
-    
-    let badge = "";
+  container.innerHTML = list.map(q => {
+    const amount   = parseFloat(q.doc.SubTotal || 0);
+    const company  = companyLabel(q.doc);
+    const contact  = q.doc.SoldToContact || "";
+    const docname  = q.doc.DocName || "";
+
+    let pill = "";
     if (q.accepted) {
-      badge = `<span class="quote-badge badge-accepted">Accepted</span>`;
-    } else if (q.views >= 2) {
-      badge = `<span class="quote-badge badge-hot">🔥 ${q.views} views</span>`;
+      pill = `<span class="pill pill-accepted">✓ Accepted</span>`;
+    } else if (q.views >= 3) {
+      pill = `<span class="pill pill-hot">🔥 ${q.views} views</span>`;
     } else if (q.views > 0) {
-      badge = `<span class="quote-badge badge-views">${q.views} view${q.views > 1 ? 's' : ''}</span>`;
+      pill = `<span class="pill pill-viewed">👁 ${q.views} view${q.views>1?'s':''}</span>`;
     } else if (q.created) {
-      badge = `<span class="quote-badge badge-stale">Not viewed</span>`;
+      pill = `<span class="pill pill-unseen">unseen</span>`;
     }
 
+    const customerLine = [company, contact].filter(Boolean).join(" · ");
+
     return `
-      <div class="quote-item" onclick="showQuoteDetail('${q.doc.DocNo}')">
-        <div class="quote-info">
-          <div class="quote-doc">${q.doc.DocNo}</div>
-          <div class="quote-customer">${customer}</div>
+      <div class="quote-row" onclick="showDetail('${q.doc.DocNo}')">
+        <div class="q-main">
+          <div class="q-top">
+            <span class="q-docno">${q.doc.DocNo}</span>
+            ${docname ? `<span class="q-docname">${docname}</span>` : ''}
+          </div>
+          <div class="q-customer">${customerLine}</div>
         </div>
-        <div class="quote-meta">
-          ${badge}
-          <div class="quote-amount">${currency(amount)}</div>
+        <div class="q-right">
+          <span class="q-amount">${gbp(amount)}</span>
+          ${pill}
         </div>
       </div>
     `;
@@ -930,44 +1116,44 @@ function renderQuotesList() {
 
 function renderLeaderboard() {
   const container = document.getElementById("leaderboard");
-  const list = Object.values(quotes);
-  
   const reps = {};
-  list.forEach(q => {
+
+  Object.values(quotes).forEach(q => {
     const rep = q.doc.SalesRep || "Unknown";
-    if (!reps[rep]) reps[rep] = { total: 0, accepted: 0, count: 0 };
+    if (!reps[rep]) reps[rep] = { won:0, pipeline:0, count:0 };
     reps[rep].count++;
-    if (q.accepted) {
-      reps[rep].accepted += parseFloat(q.doc.SubTotal || 0);
-    }
-    reps[rep].total += parseFloat(q.doc.SubTotal || 0);
+    const v = parseFloat(q.doc.SubTotal||0);
+    if (q.accepted) reps[rep].won += v;
+    else reps[rep].pipeline += v;
   });
 
   const sorted = Object.entries(reps)
-    .sort((a, b) => b[1].accepted - a[1].accepted)
-    .slice(0, 5);
+    .sort((a,b) => b[1].won - a[1].won)
+    .slice(0,6);
 
-  const maxValue = sorted.length > 0 ? sorted[0][1].accepted : 1;
-
-  if (sorted.length === 0) {
-    container.innerHTML = `<div class="empty-state"><div>No data yet</div></div>`;
+  if (!sorted.length) {
+    container.innerHTML = `<div class="empty">No data yet</div>`;
     return;
   }
 
-  container.innerHTML = sorted.map(([rep, data], i) => {
-    const percent = maxValue > 0 ? (data.accepted / maxValue) * 100 : 0;
-    const rankClass = i === 0 ? "gold" : i === 1 ? "silver" : i === 2 ? "bronze" : "";
-    
+  const maxWon = sorted[0][1].won || 1;
+
+  container.innerHTML = sorted.map(([rep, d], i) => {
+    const pct = (d.won / maxWon) * 100;
+    const rankClass = i===0?"rank-1":i===1?"rank-2":i===2?"rank-3":"rank-n";
     return `
-      <div class="rep-item">
-        <div class="rep-rank ${rankClass}">${i + 1}</div>
+      <div class="rep-row">
+        <div class="rep-rank ${rankClass}">${i+1}</div>
         <div class="rep-info">
           <div class="rep-name">${rep}</div>
-          <div class="rep-bar">
-            <div class="rep-bar-fill" style="width: ${percent}%"></div>
+          <div class="rep-bar-wrap">
+            <div class="rep-bar-fill" style="width:${pct}%"></div>
           </div>
         </div>
-        <div class="rep-amount">${currency(data.accepted)}</div>
+        <div>
+          <div class="rep-won">${gbp(d.won)}</div>
+          <div class="rep-total">${d.count} quotes</div>
+        </div>
       </div>
     `;
   }).join("");
@@ -975,108 +1161,144 @@ function renderLeaderboard() {
 
 function renderActivity() {
   const container = document.getElementById("activityFeed");
-  
-  // Flatten events with quote info
+
   const events = [];
   Object.values(quotes).forEach(q => {
     q.events.forEach(e => {
       events.push({
         ...e,
         docNo: q.doc.DocNo,
-        customer: q.doc.CustomerName || q.doc.Customer || "Unknown"
+        company: companyLabel(q.doc),
+        amount: parseFloat(q.doc.SubTotal||0)
       });
     });
   });
 
-  // Sort by time, most recent first
-  events.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-  const recent = events.slice(0, 8);
+  events.sort((a,b) => new Date(b.ts) - new Date(a.ts));
+  const recent = events.slice(0, 10);
 
-  if (recent.length === 0) {
-    container.innerHTML = `<div class="empty-state"><div>No recent activity</div></div>`;
+  if (!recent.length) {
+    container.innerHTML = `<div class="empty">No activity yet</div>`;
     return;
   }
 
   container.innerHTML = recent.map(e => {
-    let icon = "📄";
-    let iconClass = "create";
-    let action = "created";
-
-    if (e.type === "QuoteValet.ViewedExternal") {
-      icon = "👀";
-      iconClass = "view";
-      action = "viewed";
-    } else if (e.type === "QuoteValet.Accepted") {
-      icon = "✅";
-      iconClass = "accept";
-      action = "accepted";
-    }
+    let icon = "📄", cls = "act-create", verb = "created";
+    if (e.type === "QuoteValet.ViewedExternal") { icon="👁"; cls="act-view";   verb="viewed"; }
+    if (e.type === "QuoteValet.Accepted")       { icon="✓"; cls="act-accept"; verb="accepted"; }
 
     return `
-      <div class="activity-item">
-        <div class="activity-icon ${iconClass}">${icon}</div>
-        <div class="activity-content">
-          <div class="activity-text"><strong>${e.docNo}</strong> was ${action}</div>
-          <div class="activity-time">${timeAgo(e.timestamp)}</div>
+      <div class="activity-row">
+        <div class="act-icon ${cls}">${icon}</div>
+        <div class="act-body">
+          <div class="act-line">
+            <strong>${e.docNo}</strong> ${verb}
+            <span class="act-co"> · ${e.company}</span>
+            <span style="color:var(--green);font-family:var(--font-mono);font-size:0.68rem;margin-left:4px">${gbp(e.amount)}</span>
+          </div>
+          <div class="act-time">${timeAgo(e.ts)}</div>
         </div>
       </div>
     `;
   }).join("");
 }
 
-function showQuoteDetail(docNo) {
-  const quote = quotes[docNo];
-  if (!quote) return;
+/* ── Modal ── */
+function showDetail(docNo) {
+  const q = quotes[docNo];
+  if (!q) return;
+  const doc = q.doc;
 
-  const doc = quote.doc;
-  const customer = doc.CustomerName || doc.Customer || "Unknown";
+  document.getElementById("mDoc").textContent     = docNo;
+  document.getElementById("mName").textContent    = doc.DocName || docNo;
+  document.getElementById("mCompany").textContent = customerLabel(doc);
 
-  document.getElementById("modalTitle").textContent = `Quote ${docNo}`;
-  document.getElementById("modalBody").innerHTML = `
-    <div class="detail-row">
-      <span class="detail-label">Customer</span>
-      <span class="detail-value">${customer}</span>
+  const statusLabel = q.accepted ? "✓ Accepted"
+    : q.views >= 3 ? `🔥 Hot (${q.views} views)`
+    : q.views > 0  ? `👁 Viewed (${q.views}×)`
+    : "Unseen";
+
+  const timelineHtml = q.events
+    .sort((a,b) => new Date(b.ts) - new Date(a.ts))
+    .slice(0, 8)
+    .map(e => {
+      let dotCls = "tl-dot-create", label = "Created";
+      if (e.type === "QuoteValet.ViewedExternal") { dotCls="tl-dot-view";   label="Viewed"; }
+      if (e.type === "QuoteValet.Accepted")       { dotCls="tl-dot-accept"; label="Accepted"; }
+      return `
+        <div class="timeline-item">
+          <div class="tl-dot ${dotCls}"></div>
+          <div>
+            <div class="tl-text">${label}</div>
+            <div class="tl-time">${timeAgo(e.ts)}</div>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+  document.getElementById("mBody").innerHTML = `
+    <div class="modal-amount">${gbp(doc.SubTotal)}</div>
+    <div class="detail-grid">
+      <div class="detail-cell">
+        <div class="detail-cell-label">Company</div>
+        <div class="detail-cell-val">${doc.SoldToCompany || "—"}</div>
+      </div>
+      <div class="detail-cell">
+        <div class="detail-cell-label">Contact</div>
+        <div class="detail-cell-val">${doc.SoldToContact || "—"}</div>
+      </div>
+      <div class="detail-cell">
+        <div class="detail-cell-label">Sales Rep</div>
+        <div class="detail-cell-val">${doc.SalesRep || "—"}</div>
+      </div>
+      <div class="detail-cell">
+        <div class="detail-cell-label">Status</div>
+        <div class="detail-cell-val">${statusLabel}</div>
+      </div>
+      <div class="detail-cell">
+        <div class="detail-cell-label">Last Activity</div>
+        <div class="detail-cell-val">${timeAgo(q.lastActivity)}</div>
+      </div>
+      <div class="detail-cell">
+        <div class="detail-cell-label">Total Views</div>
+        <div class="detail-cell-val">${q.views}</div>
+      </div>
     </div>
-    <div class="detail-row">
-      <span class="detail-label">Sales Rep</span>
-      <span class="detail-value">${doc.SalesRep || "—"}</span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label">Value</span>
-      <span class="detail-value">${currency(doc.SubTotal)}</span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label">Views</span>
-      <span class="detail-value">${quote.views}</span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label">Status</span>
-      <span class="detail-value">${quote.accepted ? "✅ Accepted" : quote.views > 0 ? "👀 Viewed" : "📭 Not viewed"}</span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label">Last Activity</span>
-      <span class="detail-value">${timeAgo(quote.lastActivity)}</span>
+    <div class="modal-timeline">
+      <div class="timeline-title">Event History</div>
+      ${timelineHtml || '<div class="empty">No events</div>'}
     </div>
   `;
 
-  document.getElementById("modalOverlay").classList.add("active");
+  document.getElementById("overlay").classList.add("open");
 }
 
 function closeModal(e) {
-  if (!e || e.target === document.getElementById("modalOverlay")) {
-    document.getElementById("modalOverlay").classList.remove("active");
+  if (!e || e.target === document.getElementById("overlay")) {
+    document.getElementById("overlay").classList.remove("open");
   }
 }
 
-// Keyboard shortcut to close modal
-document.addEventListener("keydown", e => {
-  if (e.key === "Escape") closeModal();
-});
+/* ── Nav ── */
+function switchTab(btn, tab) {
+  currentTab = tab;
+  document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  const labels = { all:"All Quotes", hot:"🔥 Hot Prospects", accepted:"✓ Accepted", stale:"❄ Stale" };
+  document.getElementById("pageTitle").textContent = labels[tab] || "Quotes";
+  renderQuotes();
+}
 
-// Initialize
+function handleSearch(val) {
+  searchQuery = val;
+  renderQuotes();
+}
+
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
+
+/* ── Init ── */
 setInterval(loadData, 60000);
 loadData();
 </script>
-
 </body>
 </html>
