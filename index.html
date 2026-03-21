@@ -858,15 +858,28 @@ body::after {
 
 /* ─── AI TAB ─── */
 .nav-btn-ai {
-  background: linear-gradient(135deg, rgba(79,142,247,0.1), rgba(167,139,250,0.1));
-  border: 1px solid rgba(167,139,250,0.2) !important;
-  color: var(--purple) !important;
+  background: linear-gradient(135deg, #4f8ef7, #a78bfa) !important;
+  border: none !important;
+  color: white !important;
+  font-weight: 600 !important;
+  margin-top: 4px;
+  box-shadow: 0 4px 16px rgba(167,139,250,0.35);
+  letter-spacing: 0.2px;
 }
 
-.nav-btn-ai:hover, .nav-btn-ai.active {
-  background: linear-gradient(135deg, rgba(79,142,247,0.2), rgba(167,139,250,0.2)) !important;
-  color: var(--purple) !important;
-  border-color: rgba(167,139,250,0.4) !important;
+.nav-btn-ai:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(167,139,250,0.5) !important;
+  color: white !important;
+  background: linear-gradient(135deg, #4f8ef7, #a78bfa) !important;
+}
+
+.nav-btn-ai.active {
+  background: linear-gradient(135deg, #4f8ef7, #a78bfa) !important;
+  color: white !important;
+  border: none !important;
+  box-shadow: 0 4px 20px rgba(167,139,250,0.5);
 }
 
 .ai-col {
@@ -1216,11 +1229,6 @@ body::after {
         <span class="nav-icon">🔄</span> Revised
         <span class="nav-count" id="countRevised">0</span>
       </button>
-      <button class="nav-btn" data-tab="nearlythere" onclick="switchTab(this,'nearlythere')">
-        <span class="nav-icon">🎯</span> Nearly There
-        <span class="nav-count" id="countNearlyThere">0</span>
-      </button>
-
       <div class="nav-label" style="margin-top:16px">Intelligence</div>
       <button class="nav-btn nav-btn-ai" data-tab="ai" onclick="switchTab(this,'ai')">
         <span class="nav-icon">✦</span> AI Insights
