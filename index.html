@@ -1702,9 +1702,9 @@ body.light .date-filter-input {
   border-color: rgba(255,255,255,0.2) !important;
 }
 
-.roulette-link span:first-child { color: var(--text) !important; }
-.roulette-link .modal-quote-url { color: rgba(255,255,255,0.45) !important; }
-.roulette-link:hover { background: rgba(255,255,255,0.14) !important; }
+.roulette-link, .roulette-link span { color: var(--text) !important; }
+.roulette-link .modal-quote-url { color: rgba(255,255,255,0.5) !important; }
+.roulette-link:hover { background: rgba(255,255,255,0.14) !important; border-color: rgba(255,255,255,0.35) !important; }
 
 
 .map-col {
@@ -2719,7 +2719,7 @@ function showDetail(docId) {
     : "Unseen";
 
   const timelineHtml = q.events
-    .sort((a,b) => (parseTs(b.ts)||0) - (parseTs(a.ts)||0))
+    .sort((a,b) => (parseTs(a.ts)||0) - (parseTs(b.ts)||0))
     .slice(0, 8)
     .map(e => {
       let dotCls = "tl-dot-create", label = "Created";
@@ -3940,7 +3940,7 @@ function showRouletteResult(q) {
     : "📭 Not yet viewed";
 
   const timelineHtml = q.events
-    .sort((a,b) => (parseTs(b.ts)||0) - (parseTs(a.ts)||0))
+    .sort((a,b) => (parseTs(a.ts)||0) - (parseTs(b.ts)||0))
     .slice(0, 6)
     .map(e => {
       let dot = "tl-dot-create", label = "Created";
