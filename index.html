@@ -1616,6 +1616,8 @@ body.light .search-input {
 .intel-col {
   grid-column: 1 / -1;
   padding: 28px 32px;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 /* Funnel */
@@ -1692,6 +1694,8 @@ body.light .search-input {
   grid-column: 1 / -1;
   padding: 28px 32px;
   display: none;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .map-wrap {
@@ -4195,16 +4199,22 @@ function renderHighlights() {
   // Fastest Finger
   const withTimes = thisMonth.map(q => {
     const c=parseTs(q.createdAt), l=parseTs(q.lastActivity);
-    return (c&&l)?{q, hours:(l-c)/3600000}:null;
-  }).filter(Boolean).sort((a,b)=>a.hours-b.hours);
+    return (c&&l)?{q, mins:Math.round((l-c)/60000)}:null;
+  }).filter(Boolean).sort((a,b)=>a.mins-b.mins);
+
+  const fmtTime = mins => {
+    if (mins < 1)   return "<1m";
+    if (mins < 60)  return `${mins}m`;
+    if (mins < 1440) return `${Math.round(mins/60)}h ${mins%60>0?mins%60+'m':''}`.trim();
+    return `${Math.round(mins/1440)}d`;
+  };
 
   const fastestHtml = withTimes.slice(0,5).map((x,i) => {
-    const hrs = x.hours<24?`${Math.round(x.hours)}h`:`${Math.round(x.hours/24)}d`;
     const medal = ["🥇","🥈","🥉"][i]||"";
     return `<div class="highlights-podium-row">
       <div class="highlights-podium-rank">${medal||i+1}</div>
       <div class="highlights-podium-name">${x.q.doc.SoldToCompany||"Unknown"} — ${x.q.doc.DocName||x.q.docNos[0]}</div>
-      <div class="highlights-podium-val">${hrs}</div>
+      <div class="highlights-podium-val">${fmtTime(x.q.mins||x.mins)}</div>
     </div>`;
   }).join("")||'<div class="empty" style="padding:12px">No wins this month yet</div>';
 
@@ -4235,13 +4245,40 @@ function renderHighlights() {
   const fastWins    = thisMonth.filter(q=>{const c=parseTs(q.createdAt),l=parseTs(q.lastActivity);return c&&l&&(l-c)<3600000;});
   const whaleWins   = thisMonth.filter(q=>parseFloat(q.doc.SubTotal||0)>=50000);
 
+  // Who won first this month
+  const firstWin = [...thisMonth].sort((a,b)=>(parseTs(a.lastActivity)||0)-(parseTs(b.lastActivity)||0))[0];
+  const firstRep = firstWin?.doc.SalesRep || "";
+
+  // Hat trick — who got 3 wins today
+  const todayRepWins = {};
+  todayWins.forEach(q => {
+    const r = q.doc.SalesRep||"Unknown";
+    todayRepWins[r] = (todayRepWins[r]||0)+1;
+  });
+  const hatTrickReps = Object.entries(todayRepWins).filter(([,c])=>c>=3).map(([r,c])=>`${r} (${c})`).join(", ");
+
+  // On fire — top rep this month
+  const onFireRep = topRep ? `${topRep[0]} (${topRep[1].count})` : "";
+
+  // Whale — who landed it
+  const whaleRep = whaleWins[0]?.doc.SalesRep || "";
+
+  // Lightning — who closed fastest
+  const lightningRep = fastWins.length ? (fastWins.sort((a,b)=>{
+    const da=(parseTs(a.lastActivity)-parseTs(a.createdAt)), db=(parseTs(b.lastActivity)-parseTs(b.createdAt));
+    return da-db;
+  })[0]?.doc.SalesRep||"") : "";
+
+  // Consistent — who has most wins
+  const consistentRep = topRep ? topRep[0] : "";
+
   const achievements = [
-    {icon:"🩸", name:"First Blood",      desc:"First win of the month",                  unlocked:thisMonth.length>=1,   note:thisMonth.length>=1?shortDate(thisMonth[thisMonth.length-1]?.lastActivity):""},
-    {icon:"🎩", name:"Hat Trick",        desc:"3 wins in a single day",                  unlocked:todayWins.length>=3,   note:todayWins.length>=3?`${todayWins.length} today`:""},
-    {icon:"🔥", name:"On Fire",          desc:"5+ wins this month",                       unlocked:thisMonth.length>=5,   note:thisMonth.length>=5?`${thisMonth.length} wins`:""},
-    {icon:"🐋", name:"Whale Hunter",     desc:"Win a deal worth £50k+",                   unlocked:whaleWins.length>=1,   note:whaleWins.length>=1?gbp(whaleWins[0]?.doc.SubTotal):""},
-    {icon:"⚡", name:"Lightning Close",  desc:"Quote accepted within 1 hour of sending",  unlocked:fastWins.length>=1,    note:fastWins.length>=1?`${fastWins.length} this month`:""},
-    {icon:"🏅", name:"Consistent",       desc:"10+ wins this month",                      unlocked:thisMonth.length>=10,  note:thisMonth.length>=10?`${thisMonth.length} wins`:""},
+    {icon:"🩸", name:"First Blood",      desc:"First win of the month",                   unlocked:thisMonth.length>=1,   note:firstRep ? `${firstRep} · ${shortDate(firstWin?.lastActivity)}` : ""},
+    {icon:"🎩", name:"Hat Trick",        desc:"3 wins in a single day",                   unlocked:todayWins.length>=3,   note:hatTrickReps},
+    {icon:"🔥", name:"On Fire",          desc:"5+ wins this month",                        unlocked:thisMonth.length>=5,   note:onFireRep},
+    {icon:"🐋", name:"Whale Hunter",     desc:"Win a deal worth £50k+",                    unlocked:whaleWins.length>=1,   note:whaleRep ? `${whaleRep} · ${gbp(whaleWins[0]?.doc.SubTotal)}` : ""},
+    {icon:"⚡", name:"Lightning Close",  desc:"Quote accepted within 1 hour of sending",   unlocked:fastWins.length>=1,    note:lightningRep ? `${lightningRep} · ${fastWins.length} this month` : ""},
+    {icon:"🏅", name:"Consistent",       desc:"10+ wins this month",                       unlocked:thisMonth.length>=10,  note:consistentRep ? `${consistentRep} leads · ${thisMonth.length} total` : ""},
   ];
 
   const achHtml = achievements.map(a => `
