@@ -168,7 +168,7 @@ body::after {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 9px 12px;
+  padding: 7px 12px;
   border-radius: 8px;
   border: none;
   background: transparent;
@@ -1181,7 +1181,7 @@ body::after {
 
 /* ── Nav Groups ── */
 .nav-label-section {
-  font-size: 0.72rem;
+  font-size: 0.82rem;
   font-weight: 700;
   color: var(--text);
   letter-spacing: 0.5px;
@@ -1784,7 +1784,7 @@ body.light .search-input {
 }
 
 /* ── Win Heatmap ── */
-.heatmap-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: start; }
+.heatmap-wrap { display: grid; grid-template-columns: 280px 280px; gap: 48px; align-items: start; }
 .heatmap-section-title { font-size: 0.68rem; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 14px; }
 .heatmap-grid { display: grid; gap: 4px; }
 .heatmap-row { display: flex; align-items: center; gap: 6px; }
@@ -1856,10 +1856,6 @@ body.light .search-input {
         QuoteValet
       </div>
       <div class="brand-sub">Sales Intelligence by Prestige Quoting</div>
-      <div class="live-pill">
-        <span class="live-dot"></span>
-        Live feed
-      </div>
     </div>
 
     <div class="nav-section">
@@ -4145,22 +4141,6 @@ function renderHeatmap() {
     </div>`;
   }).join("");
 
-  const reps = {};
-  accepted.forEach(q => {
-    const r = q.doc.SalesRep||"Unknown";
-    if (!reps[r]) reps[r] = {count:0,val:0};
-    reps[r].count++;
-    reps[r].val += parseFloat(q.doc.SubTotal||0);
-  });
-  const repSorted = Object.entries(reps).sort((a,b) => b[1].val - a[1].val);
-  const maxRepVal = repSorted.length ? repSorted[0][1].val : 1;
-  const repBarsHtml = repSorted.slice(0,8).map(([name,d]) => `
-    <div class="heatmap-bar-row">
-      <div class="heatmap-bar-label">${name}</div>
-      <div class="heatmap-bar-track"><div class="heatmap-bar-fill" style="width:${Math.round(d.val/maxRepVal*100)}%"></div></div>
-      <div class="heatmap-bar-val">${gbp(d.val)} · ${d.count}</div>
-    </div>`).join("");
-
   const legendSwatches = ["rgba(34,211,160,0.1)","rgba(34,211,160,0.25)","rgba(34,211,160,0.45)","rgba(34,211,160,0.7)"]
     .map(c => `<div class="heatmap-legend-swatch" style="background:${c}"></div>`).join("");
 
@@ -4169,13 +4149,12 @@ function renderHeatmap() {
       <div>
         <div class="heatmap-section-title">Wins by day of week</div>
         <div class="heatmap-grid">${dayRowsHtml}</div>
-        <div class="heatmap-section-title" style="margin-top:24px">Wins by hour of day</div>
-        <div class="heatmap-grid">${hourRowsHtml}</div>
-        <div class="heatmap-legend"><span>Fewer</span><div class="heatmap-legend-bar">${legendSwatches}</div><span>More</span></div>
+        <div class="heatmap-legend" style="margin-top:14px"><span>Fewer</span><div class="heatmap-legend-bar">${legendSwatches}</div><span>More</span></div>
       </div>
       <div>
-        <div class="heatmap-section-title">Win value by rep (all time)</div>
-        <div class="heatmap-bar-list">${repBarsHtml||'<div class="empty">No data</div>'}</div>
+        <div class="heatmap-section-title">Wins by hour of day</div>
+        <div class="heatmap-grid">${hourRowsHtml}</div>
+        <div class="heatmap-legend" style="margin-top:14px"><span>Fewer</span><div class="heatmap-legend-bar">${legendSwatches}</div><span>More</span></div>
       </div>
     </div>`;
 }
