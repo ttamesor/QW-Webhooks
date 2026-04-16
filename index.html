@@ -1477,6 +1477,34 @@ body.comfortable .quote-row { padding: 15px 24px; }
   50%      { opacity: 0.7; }
 }
 
+/* Refresh button + last-updated timestamp in topbar */
+.topbar-updated {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+  letter-spacing: 0.3px;
+  padding-right: 4px;
+  white-space: nowrap;
+}
+
+.topbar-updated.stale { color: var(--amber); }
+.topbar-updated.error { color: var(--red); }
+
+#refreshBtn.spinning {
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+#refreshBtn.spinning .refresh-icon {
+  display: inline-block;
+  animation: refreshSpin 0.8s linear infinite;
+}
+
+@keyframes refreshSpin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
 /* ── Animated counters ── */
 .stat-val { transition: color 0.3s; }
 .stat-val.counting { opacity: 0.7; }
@@ -2039,6 +2067,8 @@ body.comfortable .quote-row { padding: 15px 24px; }
         <option value="">All Reps</option>
       </select>
       <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+        <span class="topbar-updated" id="topbarUpdated" title="Last updated">Loading…</span>
+        <button class="topbar-btn" id="refreshBtn" onclick="refreshData()" title="Refresh now"><span class="refresh-icon">⟳</span> Refresh</button>
         <button class="topbar-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle light/dark mode">☀️ Light</button>
         <button class="topbar-btn" id="densityBtn" onclick="toggleDensity()" title="Toggle compact/comfortable">⊟ Compact</button>
         <button class="topbar-btn" id="fontBtn" onclick="toggleFont()" title="Toggle font size">A+ Large</button>
@@ -2241,8 +2271,7 @@ body.comfortable .quote-row { padding: 15px 24px; }
   </div>
 </div>
 
-<!-- Search Preview -->
-<div class="search-preview" id="searchPreview"></div>
+<!-- Search Preview element defined in topbar -->
 <div class="overlay" id="overlay" onclick="closeModal(event)">
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-head">
@@ -2341,6 +2370,16 @@ function checkForNewEvents(newQuotes) {
 }
 
 /* ── Helpers ── */
+function esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[c]));
+}
+
 function gbp(v) {
   return parseFloat(v || 0).toLocaleString("en-GB", { style:"currency", currency:"GBP", maximumFractionDigits:0 });
 }
@@ -2374,22 +2413,85 @@ function companyLabel(doc) {
 }
 
 /* ── Data ── */
+const POLL_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
+let pollTimerId   = null;
+let lastUpdatedTs = null;
+let isLoading     = false;
+
+function formatUpdated(d) {
+  if (!d) return "—";
+  return d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+}
+
+function setLoadingState(loading) {
+  isLoading = loading;
+  const btn  = document.getElementById("refreshBtn");
+  const top  = document.getElementById("topbarUpdated");
+  if (btn) {
+    if (loading) btn.classList.add("spinning");
+    else btn.classList.remove("spinning");
+  }
+  if (loading && top) {
+    top.textContent  = "Refreshing…";
+    top.classList.remove("stale", "error");
+  }
+}
+
+function setErrorState() {
+  const top = document.getElementById("topbarUpdated");
+  const side = document.getElementById("lastUpdated");
+  if (top) {
+    top.textContent = "⚠ Connection error";
+    top.classList.add("error");
+    top.classList.remove("stale");
+  }
+  if (side) side.textContent = "⚠ Connection error";
+  setLoadingState(false);
+}
+
 function loadData() {
+  if (isLoading) return;
+  setLoadingState(true);
   const s = document.createElement("script");
   s.src = APPS_SCRIPT_BASE + "?callback=handleData&ts=" + Date.now();
-  s.onerror = () => { document.getElementById("lastUpdated").textContent = "⚠ Connection error"; };
+  s.onload  = () => s.remove();
+  s.onerror = () => { setErrorState(); s.remove(); };
   document.body.appendChild(s);
 }
 
+function refreshData() {
+  loadData();
+}
+
+function startPolling() {
+  stopPolling();
+  pollTimerId = setInterval(() => {
+    if (!document.hidden) loadData();
+  }, POLL_INTERVAL_MS);
+}
+
+function stopPolling() {
+  if (pollTimerId) { clearInterval(pollTimerId); pollTimerId = null; }
+}
+
 function handleData(data) {
-  document.getElementById("lastUpdated").textContent =
-    "Updated " + new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
+  lastUpdatedTs = new Date();
+  const stamp   = formatUpdated(lastUpdatedTs);
+  const top     = document.getElementById("topbarUpdated");
+  const side    = document.getElementById("lastUpdated");
+  if (top) {
+    top.textContent = "Updated " + stamp;
+    top.classList.remove("stale", "error");
+  }
+  if (side) side.textContent = "Updated " + stamp;
+
   allData = data || [];
   buildQuotes();
   populateRepFilter();
   checkForNewEvents(quotes);
   render();
   seedTicker();
+  setLoadingState(false);
   debugQuote('PREQ61284');
 }
 
@@ -2399,7 +2501,7 @@ function buildQuotes() {
     // Group by QuoteValetDocumentID so revisions follow the same quote
     const id = r.QuoteValetDocumentID || r.DocNo;
     if (!quotes[id]) {
-      quotes[id] = { doc:r, docNos:[], views:0, accepted:false, created:false, expiredView:false, events:[], lastActivity:null, lastActivityType:null, createdAt:null };
+      quotes[id] = { doc:r, docNos:[], views:0, accepted:false, created:false, expiredView:false, events:[], lastActivity:null, lastActivityType:null, createdAt:null, acceptedAt:null, createdSynthetic:false };
     }
     const q = quotes[id];
 
@@ -2428,7 +2530,14 @@ function buildQuotes() {
     if (r.EventFullName === "QuoteValet.ViewedExternal" ||
         r.EventFullName === "QuoteValet.ViewedExternalFirstView" ||
         r.EventFullName === "QuoteValet.ExpiredQuoteWasViewedByCustomer") q.views++;
-    if (r.EventFullName === "QuoteValet.Accepted")                     q.accepted = true;
+    if (r.EventFullName === "QuoteValet.Accepted") {
+      q.accepted = true;
+      // Store the earliest Accepted event timestamp as the true acceptance date
+      const t = parseTs(evtTime);
+      if (t && (!q.acceptedAt || t < parseTs(q.acceptedAt))) {
+        q.acceptedAt = evtTime;
+      }
+    }
     if (r.EventFullName === "QuoteValet.ExpiredQuoteWasViewedByCustomer") {
       q.expiredView = true;
       q.lastExpiredViewTs = evtTime;
@@ -2458,8 +2567,9 @@ function buildQuotes() {
 
     const syntheticTs  = new Date(earliest.getTime() - 60000).toISOString();
     q.events.push({ type:"QuoteValet.CreatedForCustomer", ts: syntheticTs, synthetic: true });
-    q.created   = true;
-    q.createdAt = syntheticTs;
+    q.created          = true;
+    q.createdAt        = syntheticTs;
+    q.createdSynthetic = true;
 
     // Update lastActivity if this synthetic date is the only activity
     if (!q.lastActivity) {
@@ -2499,8 +2609,8 @@ function filtered() {
     case "gonecold":      list = list.filter(x => !x.accepted && x.views > 0 && parseTs(x.lastActivity) && (Date.now() - parseTs(x.lastActivity)) > 14 * 86400000); break;
     case "viewedtoday":   list = list.filter(x => parseTs(x.lastActivity) && (Date.now() - parseTs(x.lastActivity)) < 86400000 && (x.lastActivityType === "QuoteValet.ViewedExternal" || x.lastActivityType === "QuoteValet.ViewedExternalFirstView")); break;
     case "senttoday":     list = list.filter(x => parseTs(x.createdAt) && (Date.now() - parseTs(x.createdAt)) < 86400000); break;
-    case "fastwins":      list = list.filter(x => { if (!x.accepted || !x.createdAt || !x.lastActivity) return false; return (parseTs(x.lastActivity) - parseTs(x.createdAt)) < 86400000; }); break;
-    case "thismonthwins": list = list.filter(x => { if (!x.accepted || !x.lastActivity) return false; const d = parseTs(x.lastActivity); const n = new Date(); return d && d.getMonth() === n.getMonth() && d.getFullYear() === n.getFullYear(); }); break;
+    case "fastwins":      list = list.filter(x => { if (!x.accepted || x.createdSynthetic || !x.createdAt) return false; const a = parseTs(x.acceptedAt || x.lastActivity); const c = parseTs(x.createdAt); return a && c && (a - c) < 86400000; }); break;
+    case "thismonthwins": list = list.filter(x => { if (!x.accepted) return false; const d = parseTs(x.acceptedAt || x.lastActivity); const n = new Date(); return d && d.getMonth() === n.getMonth() && d.getFullYear() === n.getFullYear(); }); break;
     case "thisweek":      list = list.filter(x => parseTs(x.lastActivity) && (Date.now() - parseTs(x.lastActivity)) < 7 * 86400000); break;
     case "trending":      list = list.filter(x => {
       if (x.accepted || x.views < 2) return false;
@@ -2561,8 +2671,8 @@ function updateCounts() {
   document.getElementById("countGoneCold").textContent     = list.filter(q => !q.accepted && q.views > 0 && parseTs(q.lastActivity) && (Date.now() - parseTs(q.lastActivity)) > 14 * 86400000).length;
   document.getElementById("countViewedToday").textContent  = list.filter(q => parseTs(q.lastActivity) && (Date.now() - parseTs(q.lastActivity)) < 86400000 && (q.lastActivityType === "QuoteValet.ViewedExternal" || q.lastActivityType === "QuoteValet.ViewedExternalFirstView")).length;
   document.getElementById("countSentToday").textContent    = list.filter(q => parseTs(q.createdAt) && (Date.now() - parseTs(q.createdAt)) < 86400000).length;
-  document.getElementById("countFastWins").textContent     = list.filter(q => { if (!q.accepted || !q.createdAt || !q.lastActivity) return false; return (parseTs(q.lastActivity) - parseTs(q.createdAt)) < 86400000; }).length;
-  document.getElementById("countThisMonthWins").textContent= list.filter(q => { if (!q.accepted || !q.lastActivity) return false; const d = parseTs(q.lastActivity); const n = new Date(); return d && d.getMonth() === n.getMonth() && d.getFullYear() === n.getFullYear(); }).length;
+  document.getElementById("countFastWins").textContent     = list.filter(q => { if (!q.accepted || q.createdSynthetic || !q.createdAt) return false; const a = parseTs(q.acceptedAt || q.lastActivity); const c = parseTs(q.createdAt); return a && c && (a - c) < 86400000; }).length;
+  document.getElementById("countThisMonthWins").textContent= list.filter(q => { if (!q.accepted) return false; const d = parseTs(q.acceptedAt || q.lastActivity); const n = new Date(); return d && d.getMonth() === n.getMonth() && d.getFullYear() === n.getFullYear(); }).length;
   document.getElementById("countThisWeek").textContent     = list.filter(q => parseTs(q.lastActivity) && (Date.now() - parseTs(q.lastActivity)) < 7 * 86400000).length;
   document.getElementById("countTrending").textContent     = list.filter(q => {
     if (q.accepted || q.views < 2) return false;
@@ -2664,22 +2774,22 @@ function renderQuotes() {
     const quoteUrl = q.doc.SalesRepFacingUrl || "";
 
     return `
-      <div class="quote-row" onclick="showDetail('${docId}')">
+      <div class="quote-row" onclick="showDetail('${esc(docId)}')">
         <div class="q-main">
           <div class="q-top">
-            <span class="q-docno">${docNoDisplay}</span>
-            ${docname ? `<span class="q-docname">${docname}</span>` : ''}
+            <span class="q-docno">${esc(docNoDisplay)}</span>
+            ${docname ? `<span class="q-docname">${esc(docname)}</span>` : ''}
           </div>
-          <div class="q-customer">${customerLine}</div>
+          <div class="q-customer">${esc(customerLine)}</div>
           <div class="q-meta">
-            ${createdDate !== '—' ? `<div class="q-meta-item">📅 <span>${createdDate}</span></div>` : ''}
-            ${showLastActivity ? `<div class="q-meta-item">↻ <span>${lastEvtLabel} ${lastEvtDate}</span></div>` : ''}
+            ${createdDate !== '—' ? `<div class="q-meta-item">📅 <span>${esc(createdDate)}</span></div>` : ''}
+            ${showLastActivity ? `<div class="q-meta-item">↻ <span>${esc(lastEvtLabel)} ${esc(lastEvtDate)}</span></div>` : ''}
           </div>
         </div>
         <div class="q-right">
           <span class="q-amount">${gbp(amount)}</span>
           ${pill}
-          ${quoteUrl ? `<a class="q-open-btn" href="${quoteUrl}" target="_blank" onclick="event.stopPropagation()" title="Open quote">↗</a>` : ''}
+          ${quoteUrl ? `<a class="q-open-btn" href="${esc(quoteUrl)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Open quote">↗</a>` : ''}
         </div>
       </div>
     `;
@@ -2703,11 +2813,12 @@ function getPeriodRange(period) {
       const mon = new Date(sod);
       mon.setDate(mon.getDate() - mon.getDay() + (mon.getDay() === 0 ? -6 : 1) - 7);
       const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+      sun.setHours(23, 59, 59, 999);
       return { from: mon, to: sun };
     }
     case "lastmonth": {
       const from = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      const to   = new Date(now.getFullYear(), now.getMonth(), 0);
+      const to   = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
       return { from, to };
     }
     case "ytd":
@@ -2724,7 +2835,7 @@ function renderLeaderboard() {
 
   Object.values(quotes).forEach(q => {
     if (!q.accepted) return;
-    const acceptedTs = parseTs(q.lastActivity);
+    const acceptedTs = parseTs(q.acceptedAt || q.lastActivity);
     if (!acceptedTs) return;
     if (from && acceptedTs < from) return;
     if (to   && acceptedTs > to)   return;
@@ -2750,10 +2861,10 @@ function renderLeaderboard() {
     const pct = (d.won / maxWon) * 100;
     const rankClass = i===0?"rank-1":i===1?"rank-2":i===2?"rank-3":"rank-n";
     return `
-      <div class="rep-row" onclick="showRepScorecard('${rep.replace(/'/g,"\\'")}'" style="cursor:pointer">
+      <div class="rep-row" onclick="showRepScorecard('${rep.replace(/'/g,"\\'")}')" style="cursor:pointer">
         <div class="rep-rank ${rankClass}">${i+1}</div>
         <div class="rep-info">
-          <div class="rep-name">${rep}</div>
+          <div class="rep-name">${esc(rep)}</div>
           <div class="rep-bar-wrap">
             <div class="rep-bar-fill" style="width:${pct}%"></div>
           </div>
@@ -2801,8 +2912,8 @@ function renderActivity() {
         <div class="act-icon ${cls}">${icon}</div>
         <div class="act-body">
           <div class="act-line">
-            <strong>${e.docNo}</strong> ${verb}
-            <span class="act-co"> · ${e.company}</span>
+            <strong>${esc(e.docNo)}</strong> ${verb}
+            <span class="act-co"> · ${esc(e.company)}</span>
             <span style="color:var(--green);font-family:var(--font-mono);font-size:0.68rem;margin-left:4px">${gbp(e.amount)}</span>
           </div>
           <div class="act-time">${timeAgo(e.ts)}</div>
@@ -2856,22 +2967,22 @@ function showDetail(docId) {
   document.getElementById("mBody").innerHTML = `
     <div class="modal-amount">${gbp(doc.SubTotal)}</div>
     ${doc.SalesRepFacingUrl ? `
-    <a class="modal-quote-link" href="${doc.SalesRepFacingUrl}" target="_blank">
+    <a class="modal-quote-link" href="${esc(doc.SalesRepFacingUrl)}" target="_blank" rel="noopener">
       <span>↗ Open quote in QuoteValet</span>
-      <span class="modal-quote-url">${doc.SalesRepFacingUrl.replace(/^https?:\/\//, '').slice(0, 55)}…</span>
+      <span class="modal-quote-url">${esc(doc.SalesRepFacingUrl.replace(/^https?:\/\//, '').slice(0, 55))}…</span>
     </a>` : ''}
     <div class="detail-grid">
       <div class="detail-cell">
         <div class="detail-cell-label">Company</div>
-        <div class="detail-cell-val">${doc.SoldToCompany || "—"}</div>
+        <div class="detail-cell-val">${esc(doc.SoldToCompany) || "—"}</div>
       </div>
       <div class="detail-cell">
         <div class="detail-cell-label">Contact</div>
-        <div class="detail-cell-val">${doc.SoldToContact || "—"}</div>
+        <div class="detail-cell-val">${esc(doc.SoldToContact) || "—"}</div>
       </div>
       <div class="detail-cell">
         <div class="detail-cell-label">Sales Rep</div>
-        <div class="detail-cell-val">${doc.SalesRep || "—"}</div>
+        <div class="detail-cell-val">${esc(doc.SalesRep) || "—"}</div>
       </div>
       <div class="detail-cell">
         <div class="detail-cell-label">Status</div>
@@ -2914,11 +3025,12 @@ function showRepScorecard(repName) {
   const pipeVal   = open.reduce((s,q) => s + parseFloat(q.doc.SubTotal||0), 0);
   const convRate  = repQuotes.length ? Math.round((accepted.length / repQuotes.length) * 100) : 0;
 
-  // Avg days to close
+  // Avg days to close — skip synthetic-created quotes
   const closeTimes = accepted.map(q => {
-    const c = parseTs(q.createdAt), l = parseTs(q.lastActivity);
+    if (q.createdSynthetic) return null;
+    const c = parseTs(q.createdAt), l = parseTs(q.acceptedAt || q.lastActivity);
     return (c && l) ? (l - c) / 86400000 : null;
-  }).filter(Boolean);
+  }).filter(v => v !== null && !isNaN(v));
   const avgClose = closeTimes.length ? Math.round(closeTimes.reduce((a,b)=>a+b,0) / closeTimes.length) : null;
 
   // Needs attention
@@ -2930,19 +3042,19 @@ function showRepScorecard(repName) {
   const colour  = colours[repName.charCodeAt(0) % colours.length];
 
   const quoteRows = (list, emptyMsg) => !list.length
-    ? `<div class="empty" style="padding:16px">${emptyMsg}</div>`
+    ? `<div class="empty" style="padding:16px">${esc(emptyMsg)}</div>`
     : list.slice(0,8).map(q => {
         const url = q.doc.SalesRepFacingUrl;
         return `
           <div class="rep-quote-row">
             <div>
-              <div class="rep-quote-doc">${q.docNos.join(" → ")}</div>
-              <div class="rep-quote-name">${q.doc.DocName || q.doc.DocNo}</div>
-              <div class="rep-quote-co">${q.doc.SoldToCompany || ""} ${q.views > 0 ? `· 👁 ${q.views}` : "· unseen"}</div>
+              <div class="rep-quote-doc">${esc(q.docNos.join(" → "))}</div>
+              <div class="rep-quote-name">${esc(q.doc.DocName || q.doc.DocNo)}</div>
+              <div class="rep-quote-co">${esc(q.doc.SoldToCompany || "")} ${q.views > 0 ? `· 👁 ${q.views}` : "· unseen"}</div>
             </div>
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
               <div class="rep-quote-val">${gbp(q.doc.SubTotal)}</div>
-              ${url ? `<a class="q-open-btn" href="${url}" target="_blank" title="Open quote">↗</a>` : ""}
+              ${url ? `<a class="q-open-btn" href="${esc(url)}" target="_blank" rel="noopener" title="Open quote">↗</a>` : ""}
             </div>
           </div>`;
       }).join("");
@@ -2950,9 +3062,9 @@ function showRepScorecard(repName) {
   document.getElementById("repName").textContent = repName;
   document.getElementById("repBody").innerHTML = `
     <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
-      <div style="width:52px;height:52px;border-radius:12px;background:${colour};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.1rem;color:white;flex-shrink:0">${repInitials}</div>
+      <div style="width:52px;height:52px;border-radius:12px;background:${colour};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.1rem;color:white;flex-shrink:0">${esc(repInitials)}</div>
       <div>
-        <div style="font-size:1rem;font-weight:600">${repName}</div>
+        <div style="font-size:1rem;font-weight:600">${esc(repName)}</div>
         <div style="font-size:0.8rem;color:var(--dim)">${repQuotes.length} quotes tracked</div>
       </div>
     </div>
@@ -2983,7 +3095,7 @@ function showRepScorecard(repName) {
     <div class="rep-quote-list">${quoteRows(hot, "No hot prospects yet")}</div>
 
     <div class="rep-section-title">✓ Recent acceptances</div>
-    <div class="rep-quote-list">${quoteRows(accepted.sort((a,b) => (parseTs(b.lastActivity)||0) - (parseTs(a.lastActivity)||0)).slice(0,5), "No acceptances yet")}</div>
+    <div class="rep-quote-list">${quoteRows(accepted.sort((a,b) => (parseTs(b.acceptedAt || b.lastActivity)||0) - (parseTs(a.acceptedAt || a.lastActivity)||0)).slice(0,5), "No acceptances yet")}</div>
   `;
 
   document.getElementById("repOverlay").classList.add("open");
@@ -3159,12 +3271,13 @@ function buildDataSummary() {
     avgViews: d.sent > 0 ? Math.round((d.views/d.sent)*10)/10 : 0
   })).sort((a,b) => b.wonVal - a.wonVal);
 
-  // Time to accept (days)
+  // Time to accept (days) — skip synthetic-created quotes
   const acceptTimes = accepted.map(q => {
+    if (q.createdSynthetic) return null;
     const created = parseTs(q.createdAt);
-    const lastEvt = parseTs(q.lastActivity);
-    return (created && lastEvt) ? (lastEvt - created) / 86400000 : null;
-  }).filter(Boolean);
+    const acc     = parseTs(q.acceptedAt || q.lastActivity);
+    return (created && acc) ? (acc - created) / 86400000 : null;
+  }).filter(v => v !== null && !isNaN(v));
   const avgAcceptDays = acceptTimes.length ? Math.round((acceptTimes.reduce((a,b)=>a+b,0)/acceptTimes.length)*10)/10 : null;
 
   // View velocity — quotes with 3+ views in under 48hrs
@@ -3208,8 +3321,8 @@ function generateCSV(type) {
 
   if (type === "thismonth") {
     rows = list.filter(q => {
-      if (!q.accepted || !q.lastActivity) return false;
-      const d = parseTs(q.lastActivity);
+      if (!q.accepted) return false;
+      const d = parseTs(q.acceptedAt || q.lastActivity);
       return d && d.getMonth() === curMo && d.getFullYear() === curYr;
     });
     filename = "accepted-this-month.csv";
@@ -3420,7 +3533,7 @@ function populateRepFilter() {
   const current = select.value;
   const reps = [...new Set(Object.values(quotes).map(q => q.doc.SalesRep).filter(Boolean))].sort();
   select.innerHTML = `<option value="">All Reps</option>` +
-    reps.map(r => `<option value="${r}"${r===current?" selected":""}>${r}</option>`).join("");
+    reps.map(r => `<option value="${esc(r)}"${r===current?" selected":""}>${esc(r)}</option>`).join("");
 }
 
 function handleRepFilter() {
@@ -3433,8 +3546,9 @@ function handleRepFilter() {
 /* ── Animated Counters ── */
 function animateCounter(el, target, prefix, suffix, duration) {
   if (!el) return;
+  if (target <= 0) { el.textContent = prefix + "0" + suffix; return; }
   const start  = 0;
-  const step   = Math.ceil(target / (duration / 16));
+  const step   = Math.max(1, Math.ceil(target / (duration / 16)));
   let   current = start;
   el.classList.add("counting");
   const tick = () => {
@@ -3448,7 +3562,11 @@ function animateCounter(el, target, prefix, suffix, duration) {
 
 function animateCurrency(el, target, duration) {
   if (!el) return;
-  const step = Math.ceil(target / (duration / 16));
+  if (target <= 0) {
+    el.textContent = (0).toLocaleString("en-GB", { style:"currency", currency:"GBP", maximumFractionDigits:0 });
+    return;
+  }
+  const step = Math.max(1, Math.ceil(target / (duration / 16)));
   let current = 0;
   el.classList.add("counting");
   const tick = () => {
@@ -3592,7 +3710,7 @@ function renderMap() {
     return `
       <div class="city-row">
         <div>
-          <div class="city-name">${city}</div>
+          <div class="city-name">${esc(city)}</div>
           <div class="city-bar-wrap"><div class="city-bar-fill" style="width:${pct}%"></div></div>
         </div>
         <div class="city-count">${d.count} quotes</div>
@@ -3605,9 +3723,10 @@ function renderMap() {
   document.getElementById("bubbleChart").innerHTML = sorted.slice(0,16).map(([city, d]) => {
     const total = d.pipeline + d.won;
     const size  = minBubble + Math.round(((total / maxVal) ** 0.5) * (maxBubble - minBubble));
+    const shortCity = city.length > 10 ? city.slice(0,9)+'…' : city;
     return `
-      <div class="bubble" style="width:${size}px;height:${size}px" title="${city}: ${gbp(total)}">
-        <div class="bubble-city">${city.length > 10 ? city.slice(0,9)+'…' : city}</div>
+      <div class="bubble" style="width:${size}px;height:${size}px" title="${esc(city)}: ${gbp(total)}">
+        <div class="bubble-city">${esc(shortCity)}</div>
         <div class="bubble-val">${gbp(total)}</div>
       </div>`;
   }).join("");
@@ -3702,11 +3821,11 @@ function updateCmd(val) {
       html += matches.map(q => {
         const docId = q.doc.QuoteValetDocumentID || q.doc.DocNo;
         return `
-          <div class="cmd-item" onclick="closeCmdAndOpen('${docId}')">
+          <div class="cmd-item" onclick="closeCmdAndOpen('${esc(docId)}')">
             <div class="cmd-item-icon" style="background:rgba(79,142,247,0.15)">📋</div>
             <div class="cmd-item-main">
-              <div class="cmd-item-title">${q.docNos[q.docNos.length-1] || q.doc.DocNo} — ${q.doc.DocName || ""}</div>
-              <div class="cmd-item-sub">${q.doc.SoldToCompany || ""} · ${q.doc.SalesRep || ""}</div>
+              <div class="cmd-item-title">${esc(q.docNos[q.docNos.length-1] || q.doc.DocNo)} — ${esc(q.doc.DocName || "")}</div>
+              <div class="cmd-item-sub">${esc(q.doc.SoldToCompany || "")} · ${esc(q.doc.SalesRep || "")}</div>
             </div>
             <div class="cmd-item-val">${gbp(q.doc.SubTotal)}</div>
           </div>`;
@@ -3765,11 +3884,11 @@ function renderSearchPreview(val) {
 
   const docId = (q) => q.doc.QuoteValetDocumentID || q.doc.DocNo;
   preview.innerHTML = matches.map(q => `
-    <div class="preview-item" onmousedown="showDetail('${docId(q)}')">
+    <div class="preview-item" onmousedown="showDetail('${esc(docId(q))}')">
       <div>
-        <div class="preview-doc">${q.docNos[q.docNos.length-1] || q.doc.DocNo}</div>
-        <div class="preview-name">${q.doc.DocName || q.doc.DocNo}</div>
-        <div class="preview-co">${q.doc.SoldToCompany || ""}</div>
+        <div class="preview-doc">${esc(q.docNos[q.docNos.length-1] || q.doc.DocNo)}</div>
+        <div class="preview-name">${esc(q.doc.DocName || q.doc.DocNo)}</div>
+        <div class="preview-co">${esc(q.doc.SoldToCompany || "")}</div>
       </div>
       <div class="preview-right">
         <div class="preview-val">${gbp(q.doc.SubTotal)}</div>
@@ -3877,9 +3996,10 @@ function renderFunnel() {
   const wonVal   = accepted.reduce((s,q) => s + parseFloat(q.doc.SubTotal||0), 0);
   const avgDays  = (() => {
     const times = accepted.map(q => {
-      const c = parseTs(q.createdAt), l = parseTs(q.lastActivity);
+      if (q.createdSynthetic) return null;
+      const c = parseTs(q.createdAt), l = parseTs(q.acceptedAt || q.lastActivity);
       return (c && l) ? (l-c)/86400000 : null;
-    }).filter(Boolean);
+    }).filter(v => v !== null && !isNaN(v));
     return times.length ? Math.round(times.reduce((a,b)=>a+b,0)/times.length) : null;
   })();
 
@@ -3968,7 +4088,7 @@ function renderTrend() {
       if (months[key]) { months[key].sent++; months[key].sentVal += parseFloat(q.doc.SubTotal||0); }
     }
     if (q.accepted) {
-      const accepted = parseTs(q.lastActivity);
+      const accepted = parseTs(q.acceptedAt || q.lastActivity);
       if (accepted) {
         const key = `${accepted.getFullYear()}-${String(accepted.getMonth()+1).padStart(2,'0')}`;
         if (months[key]) { months[key].won++; months[key].wonVal += parseFloat(q.doc.SubTotal||0); }
@@ -4047,8 +4167,8 @@ function renderRoulette() {
           ${items.map(q => `
             <div class="roulette-item">
               <div>
-                <div class="roulette-item-main">${q.doc.DocName || q.docNos[0] || q.doc.DocNo}</div>
-                <div class="roulette-item-sub">${q.doc.SoldToCompany || ""} · ${q.docNos[0] || q.doc.DocNo}</div>
+                <div class="roulette-item-main">${esc(q.doc.DocName || q.docNos[0] || q.doc.DocNo)}</div>
+                <div class="roulette-item-sub">${esc(q.doc.SoldToCompany || "")} · ${esc(q.docNos[0] || q.doc.DocNo)}</div>
               </div>
               <div class="roulette-item-val">${gbp(q.doc.SubTotal)}</div>
             </div>`).join("")}
@@ -4121,19 +4241,19 @@ function showRouletteResult(q) {
 
   result.innerHTML = `
     <div class="roulette-result-title">🎯 Today's focus quote</div>
-    <div class="roulette-result-name">${doc.DocName || q.docNos[0] || doc.DocNo}</div>
-    <div class="roulette-result-co">${doc.SoldToCompany || ""} · ${doc.SoldToContact || ""}</div>
+    <div class="roulette-result-name">${esc(doc.DocName || q.docNos[0] || doc.DocNo)}</div>
+    <div class="roulette-result-co">${esc(doc.SoldToCompany || "")} · ${esc(doc.SoldToContact || "")}</div>
 
     <div class="roulette-result-grid" style="margin-bottom:12px">
       <div class="roulette-result-stat"><div class="roulette-result-stat-val" style="color:var(--green)">${gbp(doc.SubTotal)}</div><div class="roulette-result-stat-label">Value</div></div>
       <div class="roulette-result-stat"><div class="roulette-result-stat-val" style="color:var(--purple)">${q.views}</div><div class="roulette-result-stat-label">Total views</div></div>
       <div class="roulette-result-stat"><div class="roulette-result-stat-val" style="color:var(--amber)">${daysOpen}d</div><div class="roulette-result-stat-label">Days open</div></div>
-      <div class="roulette-result-stat"><div class="roulette-result-stat-val">${doc.SalesRep || "—"}</div><div class="roulette-result-stat-label">Sales rep</div></div>
+      <div class="roulette-result-stat"><div class="roulette-result-stat-val">${esc(doc.SalesRep || "—")}</div><div class="roulette-result-stat-label">Sales rep</div></div>
       <div class="roulette-result-stat"><div class="roulette-result-stat-val">${statusLabel}</div><div class="roulette-result-stat-label">Status</div></div>
       <div class="roulette-result-stat"><div class="roulette-result-stat-val">${timeAgo(q.lastActivity)}</div><div class="roulette-result-stat-label">Last activity</div></div>
     </div>
 
-    ${url ? `<a href="${url}" target="_blank" class="modal-quote-link roulette-link" style="margin-bottom:12px">↗ Open quote in QuoteValet</a>` : ''}
+    ${url ? `<a href="${esc(url)}" target="_blank" rel="noopener" class="modal-quote-link roulette-link" style="margin-bottom:12px">↗ Open quote in QuoteValet</a>` : ''}
 
     <div style="font-size:0.68rem;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px">Event history</div>
     <div class="modal-timeline" style="border-top:none;padding-top:0">${timelineHtml || '<div class="empty">No events</div>'}</div>`;
@@ -4156,7 +4276,7 @@ document.addEventListener("keydown", e => {
 
 /* ── Win Heatmap ── */
 function renderHeatmap() {
-  const accepted = Object.values(quotes).filter(q => q.accepted && q.lastActivity);
+  const accepted = Object.values(quotes).filter(q => q.accepted);
   const days  = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
   const hours = [8,9,10,11,12,13,14,15,16,17,18];
   const byDay = Array(7).fill(0);
@@ -4165,7 +4285,7 @@ function renderHeatmap() {
   hours.forEach(h => byHour[h] = 0);
 
   accepted.forEach(q => {
-    const d = parseTs(q.lastActivity);
+    const d = parseTs(q.acceptedAt || q.lastActivity);
     if (!d) return;
     const dow = (d.getDay() + 6) % 7;
     byDay[dow]++;
@@ -4229,17 +4349,18 @@ function renderHighlights() {
   const list = Object.values(quotes);
 
   const thisMonth = list.filter(q => {
-    if (!q.accepted || !q.lastActivity) return false;
-    const d = parseTs(q.lastActivity);
+    if (!q.accepted) return false;
+    const d = parseTs(q.acceptedAt || q.lastActivity);
     return d && d.getMonth()===mo && d.getFullYear()===yr;
   });
 
   const totalWon   = thisMonth.reduce((s,q) => s+parseFloat(q.doc.SubTotal||0), 0);
   const monthLabel = now.toLocaleDateString("en-GB",{month:"long",year:"numeric"});
 
-  // Fastest Finger
+  // Fastest Finger — skip synthetic-created quotes to avoid misleading sub-minute times
   const withTimes = thisMonth.map(q => {
-    const c=parseTs(q.createdAt), l=parseTs(q.lastActivity);
+    if (q.createdSynthetic) return null;
+    const c=parseTs(q.createdAt), l=parseTs(q.acceptedAt || q.lastActivity);
     return (c&&l)?{q, mins:Math.round((l-c)/60000)}:null;
   }).filter(Boolean).sort((a,b)=>a.mins-b.mins);
 
@@ -4254,8 +4375,8 @@ function renderHighlights() {
     const medal = ["🥇","🥈","🥉"][i]||"";
     return `<div class="highlights-podium-row">
       <div class="highlights-podium-rank">${medal||i+1}</div>
-      <div class="highlights-podium-name">${x.q.doc.SoldToCompany||"Unknown"} — ${x.q.doc.DocName||x.q.docNos[0]}</div>
-      <div class="highlights-podium-val">${fmtTime(x.q.mins||x.mins)}</div>
+      <div class="highlights-podium-name">${esc(x.q.doc.SoldToCompany||"Unknown")} — ${esc(x.q.doc.DocName||x.q.docNos[0])}</div>
+      <div class="highlights-podium-val">${fmtTime(x.mins)}</div>
     </div>`;
   }).join("")||'<div class="empty" style="padding:12px">No wins this month yet</div>';
 
@@ -4275,19 +4396,19 @@ function renderHighlights() {
     const medal=["🥇","🥈","🥉"][i]||"";
     return `<div class="highlights-podium-row">
       <div class="highlights-podium-rank">${medal||i+1}</div>
-      <div class="highlights-podium-name">${name}</div>
+      <div class="highlights-podium-name">${esc(name)}</div>
       <div class="highlights-podium-val">${gbp(d.val)} · ${d.count}</div>
     </div>`;
   }).join("")||'<div class="empty" style="padding:12px">No data</div>';
 
   // Achievements
-  const allAccepted = list.filter(q=>q.accepted&&q.lastActivity);
-  const todayWins   = allAccepted.filter(q=>{const d=parseTs(q.lastActivity);return d&&(Date.now()-d)<86400000;});
-  const fastWins    = thisMonth.filter(q=>{const c=parseTs(q.createdAt),l=parseTs(q.lastActivity);return c&&l&&(l-c)<3600000;});
+  const allAccepted = list.filter(q=>q.accepted);
+  const todayWins   = allAccepted.filter(q=>{const d=parseTs(q.acceptedAt || q.lastActivity);return d&&(Date.now()-d)<86400000;});
+  const fastWins    = thisMonth.filter(q=>{if (q.createdSynthetic) return false; const c=parseTs(q.createdAt),l=parseTs(q.acceptedAt || q.lastActivity);return c&&l&&(l-c)<3600000;});
   const whaleWins   = thisMonth.filter(q=>parseFloat(q.doc.SubTotal||0)>=50000);
 
   // Who won first this month
-  const firstWin = [...thisMonth].sort((a,b)=>(parseTs(a.lastActivity)||0)-(parseTs(b.lastActivity)||0))[0];
+  const firstWin = [...thisMonth].sort((a,b)=>(parseTs(a.acceptedAt || a.lastActivity)||0)-(parseTs(b.acceptedAt || b.lastActivity)||0))[0];
   const firstRep = firstWin?.doc.SalesRep || "";
 
   // Hat trick — who got 3 wins today
@@ -4306,7 +4427,7 @@ function renderHighlights() {
 
   // Lightning — who closed fastest
   const lightningRep = fastWins.length ? (fastWins.sort((a,b)=>{
-    const da=(parseTs(a.lastActivity)-parseTs(a.createdAt)), db=(parseTs(b.lastActivity)-parseTs(b.createdAt));
+    const da=(parseTs(a.acceptedAt || a.lastActivity)-parseTs(a.createdAt)), db=(parseTs(b.acceptedAt || b.lastActivity)-parseTs(b.createdAt));
     return da-db;
   })[0]?.doc.SalesRep||"") : "";
 
@@ -4314,20 +4435,20 @@ function renderHighlights() {
   const consistentRep = topRep ? topRep[0] : "";
 
   const achievements = [
-    {icon:"🩸", name:"First Blood",      desc:"First win of the month",                   unlocked:thisMonth.length>=1,   note:firstRep ? `${firstRep} · ${shortDate(firstWin?.lastActivity)}` : ""},
+    {icon:"🩸", name:"First Blood",      desc:"First win of the month",                   unlocked:thisMonth.length>=1,   note:firstRep ? `${firstRep} · ${shortDate(firstWin?.acceptedAt || firstWin?.lastActivity)}` : ""},
     {icon:"🎩", name:"Hat Trick",        desc:"3 wins in a single day",                   unlocked:todayWins.length>=3,   note:hatTrickReps},
-    {icon:"🔥", name:"On Fire",          desc:"5+ wins this month",                        unlocked:thisMonth.length>=5,   note:onFireRep},
+    {icon:"🔥", name:"On Fire",          desc:"5+ wins this month",                        unlocked:thisMonth.length>=5,   note:thisMonth.length>=5 ? onFireRep : ""},
     {icon:"🐋", name:"Whale Hunter",     desc:"Win a deal worth £50k+",                    unlocked:whaleWins.length>=1,   note:whaleRep ? `${whaleRep} · ${gbp(whaleWins[0]?.doc.SubTotal)}` : ""},
     {icon:"⚡", name:"Lightning Close",  desc:"Quote accepted within 1 hour of sending",   unlocked:fastWins.length>=1,    note:lightningRep ? `${lightningRep} · ${fastWins.length} this month` : ""},
-    {icon:"🏅", name:"Consistent",       desc:"10+ wins this month",                       unlocked:thisMonth.length>=10,  note:consistentRep ? `${consistentRep} leads · ${thisMonth.length} total` : ""},
+    {icon:"🏅", name:"Consistent",       desc:"10+ wins this month",                       unlocked:thisMonth.length>=10,  note:thisMonth.length>=10 && consistentRep ? `${consistentRep} leads · ${thisMonth.length} total` : ""},
   ];
 
   const achHtml = achievements.map(a => `
     <div class="achievement${a.unlocked?" unlocked":""}">
       <div class="achievement-icon">${a.icon}</div>
-      <div class="achievement-name">${a.name}</div>
-      <div class="achievement-desc">${a.desc}</div>
-      ${a.unlocked&&a.note?`<div class="achievement-earned">✓ ${a.note}</div>`:""}
+      <div class="achievement-name">${esc(a.name)}</div>
+      <div class="achievement-desc">${esc(a.desc)}</div>
+      ${a.unlocked&&a.note?`<div class="achievement-earned">✓ ${esc(a.note)}</div>`:""}
     </div>`).join("");
 
   document.getElementById("highlightsContent").innerHTML = `
@@ -4349,24 +4470,46 @@ function renderHighlights() {
         <div class="highlights-stat-label">🐋 Biggest win this month</div>
         ${biggestWin?`
           <div class="highlights-stat-hero" style="color:var(--green)">${gbp(biggestWin.doc.SubTotal)}</div>
-          <div class="highlights-stat-sub">${biggestWin.doc.DocName||biggestWin.docNos[0]} — ${biggestWin.doc.SoldToCompany||""}</div>
-          <div class="highlights-stat-sub" style="margin-top:4px;color:var(--muted)">Rep: ${biggestWin.doc.SalesRep||"—"} · Accepted ${shortDate(biggestWin.lastActivity)}</div>
+          <div class="highlights-stat-sub">${esc(biggestWin.doc.DocName||biggestWin.docNos[0])} — ${esc(biggestWin.doc.SoldToCompany||"")}</div>
+          <div class="highlights-stat-sub" style="margin-top:4px;color:var(--muted)">Rep: ${esc(biggestWin.doc.SalesRep||"—")} · Accepted ${shortDate(biggestWin.acceptedAt || biggestWin.lastActivity)}</div>
         `:'<div class="empty" style="padding:12px">No wins this month yet</div>'}
       </div>
       <div class="highlights-stat-card">
         <div class="highlights-stat-label">🔥 Top rep by volume this month</div>
         ${topRep?`
-          <div class="highlights-stat-hero" style="color:var(--amber)">${topRep[0]}</div>
+          <div class="highlights-stat-hero" style="color:var(--amber)">${esc(topRep[0])}</div>
           <div class="highlights-stat-sub">${topRep[1].count} wins · ${gbp(topRep[1].val)}</div>
         `:'<div class="empty" style="padding:12px">No data</div>'}
       </div>
     </div>`;
 }
 
-setInterval(loadData, 60000);
+// Pause polling when tab is hidden; refresh when it becomes visible again if data is stale
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) return;
+  // If it's been longer than one poll interval since last update, refresh now
+  if (!lastUpdatedTs || (Date.now() - lastUpdatedTs.getTime()) > POLL_INTERVAL_MS) {
+    loadData();
+  }
+});
+
+// Mark the timestamp as stale if data hasn't refreshed in a while (e.g. 12 minutes)
+setInterval(() => {
+  if (!lastUpdatedTs) return;
+  const age = Date.now() - lastUpdatedTs.getTime();
+  const top = document.getElementById("topbarUpdated");
+  if (!top) return;
+  if (age > POLL_INTERVAL_MS + 2 * 60 * 1000) {
+    top.classList.add("stale");
+  } else {
+    top.classList.remove("stale");
+  }
+}, 30000);
+
 requestNotifications();
 updateNotifBtn();
 loadData();
+startPolling();
 </script>
 </body>
 </html>
