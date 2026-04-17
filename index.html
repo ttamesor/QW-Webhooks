@@ -529,6 +529,98 @@ body::after {
 .pill-unseen   { background: rgba(242,92,92,0.12);   color: var(--red);    border: 1px solid rgba(242,92,92,0.25); }
 .pill-expired  { background: rgba(251,146,60,0.12);  color: var(--orange); border: 1px solid rgba(251,146,60,0.2); }
 
+/* Health score chip (shown inline next to doc name) */
+.health-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 7px;
+  border-radius: 20px;
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  margin-left: 6px;
+  white-space: nowrap;
+}
+.health-high  { background: rgba(34,211,160,0.14); color: var(--green);  border: 1px solid rgba(34,211,160,0.28); }
+.health-mid   { background: rgba(245,166,35,0.14); color: var(--amber);  border: 1px solid rgba(245,166,35,0.28); }
+.health-low   { background: rgba(251,146,60,0.12); color: var(--orange); border: 1px solid rgba(251,146,60,0.25); }
+.health-vlow  { background: rgba(242,92,92,0.1);   color: var(--red);    border: 1px solid rgba(242,92,92,0.22); }
+
+.q-health-reason {
+  font-style: italic;
+  opacity: 0.85;
+}
+
+/* Health breakdown in the quote modal */
+.health-breakdown {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin: 12px 0 16px;
+}
+.health-breakdown-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.health-breakdown-label {
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+}
+.health-breakdown-score {
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: 1.2rem;
+  letter-spacing: -0.5px;
+}
+.health-breakdown-reason {
+  font-size: 0.82rem;
+  color: var(--dim);
+  margin-bottom: 12px;
+}
+.health-parts {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.health-part {
+  background: var(--bg3);
+  border-radius: 6px;
+  padding: 8px 10px;
+  text-align: center;
+}
+.health-part-label {
+  font-size: 0.62rem;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  color: var(--muted);
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+.health-part-val {
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: var(--font-mono);
+}
+.health-bar-track {
+  height: 4px;
+  background: var(--bg3);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+.health-bar-fill {
+  height: 100%;
+  transition: width 0.4s ease;
+}
+
 /* ─── RIGHT SIDEBAR ─── */
 .right-col {
   display: flex;
@@ -2124,7 +2216,13 @@ body.comfortable .quote-row { padding: 15px 24px; }
       <div class="quotes-col" id="quotesCol">
         <div class="col-header">
           <span class="col-title">Quotes</span>
-          <span class="col-count" id="quoteCount"></span>
+          <div style="display:flex;align-items:center;gap:10px">
+            <select class="period-select" id="sortMode" onchange="handleSortChange()" title="Sort order" style="font-size:0.72rem;padding:4px 8px">
+              <option value="health" selected>Sort: Health score</option>
+              <option value="value">Sort: Value (£)</option>
+            </select>
+            <span class="col-count" id="quoteCount"></span>
+          </div>
         </div>
         <div class="filter-summary" id="filterSummary"></div>
         <div class="quotes-scroll" id="quotesList">
@@ -2311,6 +2409,59 @@ let searchQuery = "";
 let seenEventKeys = new Set();
 let notificationsReady = false;
 let isFirstLoad = true;
+
+/* ── Config: thresholds and filter definitions ──
+   Centralised so adding a tab is one line, and business rules live in one place. */
+const THRESHOLDS = {
+  hotViews:         3,       // views >= this → hot
+  highValue:     10000,      // £ — high-value threshold
+  whale:         50000,      // £ — "whale" achievement threshold
+  chaseDays:         3,      // days with zero views → needs chasing
+  goneColdDays:     14,      // days silent after some activity → gone cold
+  staleRecentDays:   3,      // stale but not yet chasing cutoff
+  expiryDays:       30,      // default quote validity (used for visual expiry)
+  day:        86400000,      // ms
+  week:     7*86400000,      // ms
+  fastWinMs:  86400000,      // "fast win" = accepted within 24h of send
+  lightningMs: 3600000,      // "lightning close" = accepted within 1h of send
+};
+
+const T = THRESHOLDS;
+
+/* One definition per tab — used by filtered(), updateCounts(), and generateCSV().
+   Each predicate is called with (quote, now) where now is Date.now(). */
+const FILTERS = {
+  all:           (_q, _n) => true,
+  hot:           (q, _n)  => !q.accepted && q.views >= T.hotViews,
+  accepted:      (q, _n)  => q.accepted,
+  stale:         (q, _n)  => !q.accepted && q.views === 0,
+  expired:       (q, _n)  => q.expiredView && !q.accepted,
+  highvalue:     (q, _n)  => !q.accepted && parseFloat(q.doc.SubTotal||0) >= T.highValue,
+  chasing:       (q, n)   => !q.accepted && q.views === 0 && parseTs(q.createdAt) && (n - parseTs(q.createdAt)) > T.chaseDays * T.day,
+  gonecold:      (q, n)   => !q.accepted && q.views > 0 && parseTs(q.lastActivity) && (n - parseTs(q.lastActivity)) > T.goneColdDays * T.day,
+  viewedtoday:   (q, n)   => parseTs(q.lastActivity) && (n - parseTs(q.lastActivity)) < T.day && (q.lastActivityType === "QuoteValet.ViewedExternal" || q.lastActivityType === "QuoteValet.ViewedExternalFirstView"),
+  senttoday:     (q, n)   => parseTs(q.createdAt) && (n - parseTs(q.createdAt)) < T.day,
+  thisweek:      (q, n)   => parseTs(q.lastActivity) && (n - parseTs(q.lastActivity)) < T.week,
+  fastwins:      (q, _n)  => {
+    if (!q.accepted || q.createdSynthetic || !q.createdAt) return false;
+    const a = parseTs(q.acceptedAt || q.lastActivity), c = parseTs(q.createdAt);
+    return a && c && (a - c) < T.fastWinMs;
+  },
+  thismonthwins: (q, _n) => {
+    if (!q.accepted) return false;
+    const d = parseTs(q.acceptedAt || q.lastActivity);
+    const n = new Date();
+    return d && d.getMonth() === n.getMonth() && d.getFullYear() === n.getFullYear();
+  },
+  trending:      (q, n) => {
+    if (q.accepted || q.views < 2) return false;
+    const rv = q.events.filter(e => (e.type === "QuoteValet.ViewedExternal" || e.type === "QuoteValet.ViewedExternalFirstView") && parseTs(e.ts) && (n - parseTs(e.ts)) < T.week).length;
+    const ov = q.events.filter(e => (e.type === "QuoteValet.ViewedExternal" || e.type === "QuoteValet.ViewedExternalFirstView") && parseTs(e.ts) && (n - parseTs(e.ts)) >= T.week && (n - parseTs(e.ts)) < T.week * 2).length;
+    return rv > ov && rv >= 2;  // tighter: require 2+ recent views, not just 1
+  },
+  revised:       (q, _n) => q.events.some(e => e.type === "QuoteValet.UpdatedForCustomer") && !q.accepted,
+  nearlythere:   (q, _n) => !q.accepted && (q.views === 1 || q.views === 2),
+};
 
 /* ── Notifications ── */
 function requestNotifications() {
@@ -2577,11 +2728,112 @@ function buildQuotes() {
       q.lastActivityType = "QuoteValet.CreatedForCustomer";
     }
   });
+
+  computeHealthScores();
+}
+
+/* ── Quote Health Score ──
+   A 0-100 score blending deal value, engagement signal, timing, and rep history.
+   Higher = more likely to benefit from attention today. */
+function computeHealthScores() {
+  const list = Object.values(quotes);
+  if (!list.length) return;
+
+  // Pre-compute rep historical conversion rate (only reps with 5+ quotes)
+  const repStats = {};
+  list.forEach(q => {
+    const rep = q.doc.SalesRep || "Unknown";
+    if (!repStats[rep]) repStats[rep] = { sent: 0, won: 0 };
+    repStats[rep].sent++;
+    if (q.accepted) repStats[rep].won++;
+  });
+  Object.values(repStats).forEach(r => {
+    r.rate = r.sent >= 5 ? r.won / r.sent : null;  // null if not enough signal
+  });
+
+  // Value normalisation against 90th percentile so one whale doesn't flatten the scale
+  const openVals = list.filter(q => !q.accepted).map(q => parseFloat(q.doc.SubTotal||0)).sort((a,b)=>a-b);
+  const p90Val = openVals.length ? openVals[Math.floor(openVals.length * 0.9)] || 1 : 1;
+
+  const now = Date.now();
+
+  list.forEach(q => {
+    // Accepted quotes don't need a health score
+    if (q.accepted) {
+      q.healthScore  = 100;
+      q.healthReason = "Accepted";
+      q.healthParts  = null;
+      return;
+    }
+
+    const value = parseFloat(q.doc.SubTotal||0);
+    const createdTs = parseTs(q.createdAt);
+    const lastTs    = parseTs(q.lastActivity);
+    const daysSinceCreated = createdTs ? (now - createdTs) / T.day : 0;
+    const daysSinceActivity = lastTs ? (now - lastTs) / T.day : 999;
+
+    // Component 1: VALUE (0-30) — log-scaled against 90th percentile
+    const valueScore = Math.min(30, Math.round((Math.log10(Math.max(value, 1)) / Math.log10(Math.max(p90Val, 10))) * 30));
+
+    // Component 2: ENGAGEMENT (0-35) — view count and recency
+    let engagementScore = 0;
+    if (q.views === 0) engagementScore = 0;
+    else if (q.views === 1) engagementScore = 10;
+    else if (q.views === 2) engagementScore = 18;
+    else if (q.views === 3) engagementScore = 26;
+    else engagementScore = Math.min(32, 26 + (q.views - 3) * 2);
+    // Boost for recent view (within 48h)
+    if (daysSinceActivity < 2 && q.views > 0) engagementScore = Math.min(35, engagementScore + 5);
+
+    // Component 3: TIMING (0-20) — penalise old quotes with no views, reward fresh ones
+    let timingScore;
+    if (q.views === 0) {
+      // Unseen: decays after 3 days, harshly after 10
+      if (daysSinceCreated < 1)      timingScore = 18;
+      else if (daysSinceCreated < 3) timingScore = 14;
+      else if (daysSinceCreated < 7) timingScore = 8;
+      else                            timingScore = 3;
+    } else {
+      // Has views: decays based on time since last activity
+      if (daysSinceActivity < 2)       timingScore = 20;
+      else if (daysSinceActivity < 7)  timingScore = 15;
+      else if (daysSinceActivity < 14) timingScore = 8;
+      else                              timingScore = 2;
+    }
+
+    // Component 4: REP HISTORY (0-15) — scaled from their close rate
+    const repRate = repStats[q.doc.SalesRep]?.rate;
+    const repScore = repRate === null || repRate === undefined
+      ? 8   // unknown rep: neutral midpoint
+      : Math.round(repRate * 30);  // 50% close rate = 15, 33% = 10, etc.
+    const repScoreClamped = Math.min(15, repScore);
+
+    const total = valueScore + engagementScore + timingScore + repScoreClamped;
+
+    // Reason — the single most salient driver
+    let reason;
+    if (q.expiredView)                         reason = "Expired quote was viewed";
+    else if (q.views >= 3 && daysSinceActivity < 2) reason = "Hot: recent repeat views";
+    else if (q.views >= 3)                     reason = "Hot: 3+ views";
+    else if (q.views > 0 && daysSinceActivity < 1) reason = "Active: just viewed";
+    else if (q.views === 0 && daysSinceCreated > 3) reason = "Overdue chase: unseen for " + Math.round(daysSinceCreated) + "d";
+    else if (q.views === 0 && daysSinceCreated < 1) reason = "Just sent, awaiting first view";
+    else if (q.views > 0 && daysSinceActivity > 14) reason = "Silent for " + Math.round(daysSinceActivity) + "d after initial views";
+    else if (value >= T.whale)                 reason = "High value deal";
+    else                                       reason = "Worth a check-in";
+
+    q.healthScore  = total;
+    q.healthReason = reason;
+    q.healthParts  = { value: valueScore, engagement: engagementScore, timing: timingScore, rep: repScoreClamped };
+  });
 }
 
 /* ── Filtering ── */
+let sortMode = "health";   // "health" | "value" — toggled by the sort dropdown
+
 function filtered() {
   let list = Object.values(quotes);
+  const now = Date.now();
 
   // Rep filter
   if (repFilter) {
@@ -2599,31 +2851,20 @@ function filtered() {
     });
   }
 
-  switch(currentTab) {
-    case "hot":           list = list.filter(x => !x.accepted && x.views >= 3); break;
-    case "accepted":      list = list.filter(x => x.accepted); break;
-    case "stale":         list = list.filter(x => !x.accepted && x.views === 0); break;
-    case "expired":       list = list.filter(x => x.expiredView && !x.accepted); break;
-    case "highvalue":     list = list.filter(x => !x.accepted && parseFloat(x.doc.SubTotal||0) >= 10000); break;
-    case "chasing":       list = list.filter(x => !x.accepted && x.views === 0 && parseTs(x.createdAt) && (Date.now() - parseTs(x.createdAt)) > 3 * 86400000); break;
-    case "gonecold":      list = list.filter(x => !x.accepted && x.views > 0 && parseTs(x.lastActivity) && (Date.now() - parseTs(x.lastActivity)) > 14 * 86400000); break;
-    case "viewedtoday":   list = list.filter(x => parseTs(x.lastActivity) && (Date.now() - parseTs(x.lastActivity)) < 86400000 && (x.lastActivityType === "QuoteValet.ViewedExternal" || x.lastActivityType === "QuoteValet.ViewedExternalFirstView")); break;
-    case "senttoday":     list = list.filter(x => parseTs(x.createdAt) && (Date.now() - parseTs(x.createdAt)) < 86400000); break;
-    case "fastwins":      list = list.filter(x => { if (!x.accepted || x.createdSynthetic || !x.createdAt) return false; const a = parseTs(x.acceptedAt || x.lastActivity); const c = parseTs(x.createdAt); return a && c && (a - c) < 86400000; }); break;
-    case "thismonthwins": list = list.filter(x => { if (!x.accepted) return false; const d = parseTs(x.acceptedAt || x.lastActivity); const n = new Date(); return d && d.getMonth() === n.getMonth() && d.getFullYear() === n.getFullYear(); }); break;
-    case "thisweek":      list = list.filter(x => parseTs(x.lastActivity) && (Date.now() - parseTs(x.lastActivity)) < 7 * 86400000); break;
-    case "trending":      list = list.filter(x => {
-      if (x.accepted || x.views < 2) return false;
-      const now = Date.now(); const week = 7 * 86400000;
-      const recentViews = x.events.filter(e => (e.type === "QuoteValet.ViewedExternal" || e.type === "QuoteValet.ViewedExternalFirstView") && parseTs(e.ts) && (now - parseTs(e.ts)) < week).length;
-      const olderViews  = x.events.filter(e => (e.type === "QuoteValet.ViewedExternal" || e.type === "QuoteValet.ViewedExternalFirstView") && parseTs(e.ts) && (now - parseTs(e.ts)) >= week && (now - parseTs(e.ts)) < week * 2).length;
-      return recentViews > olderViews && recentViews >= 1;
-    }); break;
-    case "revised":       list = list.filter(x => x.events.some(e => e.type === "QuoteValet.UpdatedForCustomer") && !x.accepted); break;
-    case "nearlythere":   list = list.filter(x => !x.accepted && (x.views === 1 || x.views === 2)); break;
-  }
+  const predicate = FILTERS[currentTab];
+  if (predicate) list = list.filter(q => predicate(q, now));
 
-  list.sort((a,b) => parseFloat(b.doc.SubTotal||0) - parseFloat(a.doc.SubTotal||0));
+  // Sort: for the Accepted tab always by value (health is 100 for all).
+  // Otherwise use the user's chosen sort mode.
+  if (currentTab === "accepted" || sortMode === "value") {
+    list.sort((a,b) => parseFloat(b.doc.SubTotal||0) - parseFloat(a.doc.SubTotal||0));
+  } else {
+    list.sort((a,b) => {
+      const diff = (b.healthScore||0) - (a.healthScore||0);
+      if (diff !== 0) return diff;
+      return parseFloat(b.doc.SubTotal||0) - parseFloat(a.doc.SubTotal||0);
+    });
+  }
   return list;
 }
 
@@ -2661,27 +2902,20 @@ function renderStats() {
 
 function updateCounts() {
   const list = Object.values(quotes);
-  document.getElementById("countAll").textContent          = list.length;
-  document.getElementById("countHot").textContent          = list.filter(q => !q.accepted && q.views >= 3).length;
-  document.getElementById("countAccepted").textContent     = list.filter(q => q.accepted).length;
-  document.getElementById("countStale").textContent        = list.filter(q => !q.accepted && q.views === 0).length;
-  document.getElementById("countExpired").textContent      = list.filter(q => q.expiredView && !q.accepted).length;
-  document.getElementById("countHighValue").textContent    = list.filter(q => !q.accepted && parseFloat(q.doc.SubTotal||0) >= 10000).length;
-  document.getElementById("countChasing").textContent      = list.filter(q => !q.accepted && q.views === 0 && parseTs(q.createdAt) && (Date.now() - parseTs(q.createdAt)) > 3 * 86400000).length;
-  document.getElementById("countGoneCold").textContent     = list.filter(q => !q.accepted && q.views > 0 && parseTs(q.lastActivity) && (Date.now() - parseTs(q.lastActivity)) > 14 * 86400000).length;
-  document.getElementById("countViewedToday").textContent  = list.filter(q => parseTs(q.lastActivity) && (Date.now() - parseTs(q.lastActivity)) < 86400000 && (q.lastActivityType === "QuoteValet.ViewedExternal" || q.lastActivityType === "QuoteValet.ViewedExternalFirstView")).length;
-  document.getElementById("countSentToday").textContent    = list.filter(q => parseTs(q.createdAt) && (Date.now() - parseTs(q.createdAt)) < 86400000).length;
-  document.getElementById("countFastWins").textContent     = list.filter(q => { if (!q.accepted || q.createdSynthetic || !q.createdAt) return false; const a = parseTs(q.acceptedAt || q.lastActivity); const c = parseTs(q.createdAt); return a && c && (a - c) < 86400000; }).length;
-  document.getElementById("countThisMonthWins").textContent= list.filter(q => { if (!q.accepted) return false; const d = parseTs(q.acceptedAt || q.lastActivity); const n = new Date(); return d && d.getMonth() === n.getMonth() && d.getFullYear() === n.getFullYear(); }).length;
-  document.getElementById("countThisWeek").textContent     = list.filter(q => parseTs(q.lastActivity) && (Date.now() - parseTs(q.lastActivity)) < 7 * 86400000).length;
-  document.getElementById("countTrending").textContent     = list.filter(q => {
-    if (q.accepted || q.views < 2) return false;
-    const now = Date.now(); const week = 7 * 86400000;
-    const rv = q.events.filter(e => (e.type === "QuoteValet.ViewedExternal" || e.type === "QuoteValet.ViewedExternalFirstView") && parseTs(e.ts) && (now - parseTs(e.ts)) < week).length;
-    const ov = q.events.filter(e => (e.type === "QuoteValet.ViewedExternal" || e.type === "QuoteValet.ViewedExternalFirstView") && parseTs(e.ts) && (now - parseTs(e.ts)) >= week && (now - parseTs(e.ts)) < week * 2).length;
-    return rv > ov && rv >= 1;
-  }).length;
-  document.getElementById("countRevised").textContent      = list.filter(q => q.events.some(e => e.type === "QuoteValet.UpdatedForCustomer") && !q.accepted).length;
+  const now  = Date.now();
+  const countFor = key => list.filter(q => FILTERS[key](q, now)).length;
+
+  const ids = {
+    all: "countAll", hot: "countHot", accepted: "countAccepted", stale: "countStale",
+    expired: "countExpired", highvalue: "countHighValue", chasing: "countChasing",
+    gonecold: "countGoneCold", viewedtoday: "countViewedToday", senttoday: "countSentToday",
+    fastwins: "countFastWins", thismonthwins: "countThisMonthWins", thisweek: "countThisWeek",
+    trending: "countTrending", revised: "countRevised",
+  };
+  Object.entries(ids).forEach(([key, id]) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = countFor(key);
+  });
 }
 
 function eventLabel(type) {
@@ -2709,7 +2943,7 @@ function renderSummary(list) {
   const wonVal   = list.filter(q => q.accepted).reduce((s,q) => s + parseFloat(q.doc.SubTotal||0), 0);
 
   const summaries = {
-    all:           `<strong>${list.length}</strong> quotes tracked · total value <span class="fs-val">${gbp(totalVal)}</span> · <strong>${accepted}</strong> accepted worth <span class="fs-val">${gbp(wonVal)}</span>`,
+    all:           `<strong>${list.length}</strong> quotes tracked · total value <span class="fs-val">${gbp(totalVal)}</span> · <strong>${accepted}</strong> accepted worth <span class="fs-val">${gbp(wonVal)}</span> · <em>sorted by ${sortMode === 'health' ? 'health score — highest-leverage quotes first' : 'value'}</em>`,
     hot:           `<strong>${list.length}</strong> hot prospects with 3+ views · combined value <span class="fs-val">${gbp(totalVal)}</span> — these are your best opportunities right now`,
     accepted:      `<strong>${list.length}</strong> quotes accepted · total won value <span class="fs-val">${gbp(wonVal)}</span>`,
     stale:         `<strong>${list.length}</strong> quotes sent but <strong>never opened</strong> by the customer · <span class="fs-val">${gbp(totalVal)}</span> — includes all unsent views, even recent ones. A subset (Chasing Needed) flags those sitting 3+ days`,
@@ -2773,17 +3007,24 @@ function renderQuotes() {
 
     const quoteUrl = q.doc.SalesRepFacingUrl || "";
 
+    // Health chip — only for open quotes. Colour graded.
+    const healthChip = (!q.accepted && q.healthScore != null)
+      ? `<span class="health-chip ${healthClass(q.healthScore)}" title="${esc(q.healthReason || '')}">♥ ${q.healthScore}</span>`
+      : "";
+
     return `
       <div class="quote-row" onclick="showDetail('${esc(docId)}')">
         <div class="q-main">
           <div class="q-top">
             <span class="q-docno">${esc(docNoDisplay)}</span>
             ${docname ? `<span class="q-docname">${esc(docname)}</span>` : ''}
+            ${healthChip}
           </div>
           <div class="q-customer">${esc(customerLine)}</div>
           <div class="q-meta">
             ${createdDate !== '—' ? `<div class="q-meta-item">📅 <span>${esc(createdDate)}</span></div>` : ''}
             ${showLastActivity ? `<div class="q-meta-item">↻ <span>${esc(lastEvtLabel)} ${esc(lastEvtDate)}</span></div>` : ''}
+            ${!q.accepted && q.healthReason ? `<div class="q-meta-item q-health-reason">${esc(q.healthReason)}</div>` : ''}
           </div>
         </div>
         <div class="q-right">
@@ -2794,6 +3035,20 @@ function renderQuotes() {
       </div>
     `;
   }).join("");
+}
+
+function healthClass(score) {
+  if (score >= 70) return "health-high";
+  if (score >= 45) return "health-mid";
+  if (score >= 25) return "health-low";
+  return "health-vlow";
+}
+
+function handleSortChange() {
+  const sel = document.getElementById("sortMode");
+  if (!sel) return;
+  sortMode = sel.value;
+  renderQuotes();
 }
 
 function getPeriodRange(period) {
@@ -2959,10 +3214,46 @@ function showDetail(docId) {
     }).join("");
 
   const createdDate = parseTs(q.createdAt);
-  const expiryDate  = createdDate ? new Date(createdDate.getTime() + 30 * 86400000) : null;
+  const expiryDate  = createdDate ? new Date(createdDate.getTime() + T.expiryDays * T.day) : null;
   const expiryStr   = expiryDate ? expiryDate.toLocaleDateString("en-GB", {day:"numeric", month:"short", year:"numeric"}) : "—";
   const isExpired   = expiryDate && expiryDate < new Date() && !q.accepted;
-  const expiryStyle = isExpired ? "color:var(--red)" : expiryDate && (expiryDate - Date.now()) < 7*86400000 ? "color:var(--amber)" : "";
+  const expiryStyle = isExpired ? "color:var(--red)" : expiryDate && (expiryDate - Date.now()) < 7 * T.day ? "color:var(--amber)" : "";
+
+  // Build health breakdown (open quotes only)
+  const healthHtml = (!q.accepted && q.healthScore != null && q.healthParts) ? (() => {
+    const p = q.healthParts;
+    const bar = (v, max, colour) => `<div class="health-bar-track"><div class="health-bar-fill" style="width:${Math.round((v/max)*100)}%;background:${colour}"></div></div>`;
+    return `
+      <div class="health-breakdown">
+        <div class="health-breakdown-head">
+          <span class="health-breakdown-label">Quote Health Score</span>
+          <span class="health-breakdown-score ${healthClass(q.healthScore)}">♥ ${q.healthScore} / 100</span>
+        </div>
+        <div class="health-breakdown-reason">${esc(q.healthReason || '')}</div>
+        <div class="health-parts">
+          <div class="health-part">
+            <div class="health-part-label">Value</div>
+            <div class="health-part-val">${p.value}<span style="opacity:0.5;font-size:0.7em">/30</span></div>
+            ${bar(p.value, 30, 'var(--blue)')}
+          </div>
+          <div class="health-part">
+            <div class="health-part-label">Engagement</div>
+            <div class="health-part-val">${p.engagement}<span style="opacity:0.5;font-size:0.7em">/35</span></div>
+            ${bar(p.engagement, 35, 'var(--purple)')}
+          </div>
+          <div class="health-part">
+            <div class="health-part-label">Timing</div>
+            <div class="health-part-val">${p.timing}<span style="opacity:0.5;font-size:0.7em">/20</span></div>
+            ${bar(p.timing, 20, 'var(--amber)')}
+          </div>
+          <div class="health-part">
+            <div class="health-part-label">Rep trend</div>
+            <div class="health-part-val">${p.rep}<span style="opacity:0.5;font-size:0.7em">/15</span></div>
+            ${bar(p.rep, 15, 'var(--green)')}
+          </div>
+        </div>
+      </div>`;
+  })() : '';
 
   document.getElementById("mBody").innerHTML = `
     <div class="modal-amount">${gbp(doc.SubTotal)}</div>
@@ -2971,6 +3262,7 @@ function showDetail(docId) {
       <span>↗ Open quote in QuoteValet</span>
       <span class="modal-quote-url">${esc(doc.SalesRepFacingUrl.replace(/^https?:\/\//, '').slice(0, 55))}…</span>
     </a>` : ''}
+    ${healthHtml}
     <div class="detail-grid">
       <div class="detail-cell">
         <div class="detail-cell-label">Company</div>
@@ -3034,8 +3326,8 @@ function showRepScorecard(repName) {
   const avgClose = closeTimes.length ? Math.round(closeTimes.reduce((a,b)=>a+b,0) / closeTimes.length) : null;
 
   // Needs attention
-  const needsChase = open.filter(q => q.views === 0 && parseTs(q.createdAt) && (Date.now() - parseTs(q.createdAt)) > 3 * 86400000);
-  const goneCold   = open.filter(q => q.views > 0 && parseTs(q.lastActivity) && (Date.now() - parseTs(q.lastActivity)) > 14 * 86400000);
+  const needsChase = open.filter(q => q.views === 0 && parseTs(q.createdAt) && (Date.now() - parseTs(q.createdAt)) > T.chaseDays * T.day);
+  const goneCold   = open.filter(q => q.views > 0 && parseTs(q.lastActivity) && (Date.now() - parseTs(q.lastActivity)) > T.goneColdDays * T.day);
 
   const repInitials = repName.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2);
   const colours = ["#4f8ef7","#22d3a0","#a78bfa","#f5a623","#f25c5c","#2dd4bf"];
@@ -3246,8 +3538,8 @@ function buildDataSummary() {
   const hot       = list.filter(q => !q.accepted && q.views >= 3);
   const stale     = list.filter(q => !q.accepted && q.views === 0);
   const expired   = list.filter(q => q.expiredView && !q.accepted);
-  const chasing   = list.filter(q => !q.accepted && q.views === 0 && parseTs(q.createdAt) && (now - parseTs(q.createdAt)) > 3 * 86400000);
-  const highval   = list.filter(q => !q.accepted && parseFloat(q.doc.SubTotal||0) >= 10000);
+  const chasing   = list.filter(q => !q.accepted && q.views === 0 && parseTs(q.createdAt) && (now - parseTs(q.createdAt)) > T.chaseDays * T.day);
+  const highval   = list.filter(q => !q.accepted && parseFloat(q.doc.SubTotal||0) >= T.highValue);
 
   const pipeVal   = open.reduce((s,q) => s + parseFloat(q.doc.SubTotal||0), 0);
   const wonVal    = accepted.reduce((s,q) => s + parseFloat(q.doc.SubTotal||0), 0);
@@ -3286,7 +3578,7 @@ function buildDataSummary() {
     const viewEvents = q.events.filter(e => e.type === "QuoteValet.ViewedExternal" || e.type === "QuoteValet.ViewedExternalFirstView");
     if (viewEvents.length < 2) return false;
     const times = viewEvents.map(e => parseTs(e.ts)).filter(Boolean).sort((a,b)=>a-b);
-    return (times[times.length-1] - times[0]) < 48*3600000;
+    return (times[times.length-1] - times[0]) < 2 * T.day;
   });
 
   // Top open quotes by value
@@ -3312,26 +3604,21 @@ function buildDataSummary() {
 }
 
 function generateCSV(type) {
-  const list  = Object.values(quotes);
-  const now   = Date.now();
-  const curMo = new Date().getMonth();
-  const curYr = new Date().getFullYear();
+  const list = Object.values(quotes);
+  const now  = Date.now();
+
+  // Map CSV types to FILTERS keys
+  const typeMap = { thismonth: "thismonthwins", hot: "hot", chasing: "chasing" };
+  const filterKey = typeMap[type];
 
   let rows, filename;
-
-  if (type === "thismonth") {
-    rows = list.filter(q => {
-      if (!q.accepted) return false;
-      const d = parseTs(q.acceptedAt || q.lastActivity);
-      return d && d.getMonth() === curMo && d.getFullYear() === curYr;
-    });
-    filename = "accepted-this-month.csv";
-  } else if (type === "hot") {
-    rows = list.filter(q => !q.accepted && q.views >= 3);
-    filename = "hot-prospects.csv";
-  } else if (type === "chasing") {
-    rows = list.filter(q => !q.accepted && q.views === 0 && parseTs(q.createdAt) && (now - parseTs(q.createdAt)) > 3 * 86400000);
-    filename = "quotes-needing-chase.csv";
+  if (filterKey && FILTERS[filterKey]) {
+    rows = list.filter(q => FILTERS[filterKey](q, now));
+    filename = {
+      thismonth: "accepted-this-month.csv",
+      hot:       "hot-prospects.csv",
+      chasing:   "quotes-needing-chase.csv",
+    }[type];
   } else {
     rows = list;
     filename = "all-quotes.csv";
@@ -3339,11 +3626,11 @@ function generateCSV(type) {
 
   rows.sort((a,b) => parseFloat(b.doc.SubTotal||0) - parseFloat(a.doc.SubTotal||0));
 
-  const headers = ["Doc No","Doc Name","Company","Contact","Sales Rep","Value","Views","Status","Created","Expires","Last Activity","Last Event"];
-  const escape  = v => `"${String(v||"").replace(/"/g,'""')}"`;
+  const headers = ["Doc No","Doc Name","Company","Contact","Sales Rep","Value","Views","Status","Health","Created","Expires","Last Activity","Last Event"];
+  const escapeCsv = v => `"${String(v||"").replace(/"/g,'""')}"`;
 
   const csvRows = rows.map(q => {
-    const expiry    = parseTs(q.createdAt) ? new Date(parseTs(q.createdAt).getTime() + 30*86400000) : null;
+    const expiry    = parseTs(q.createdAt) ? new Date(parseTs(q.createdAt).getTime() + T.expiryDays * T.day) : null;
     const expiryStr = expiry ? expiry.toLocaleDateString("en-GB", {day:"numeric", month:"short", year:"numeric"}) : "—";
     return [
       q.docNos.join(" → "),
@@ -3354,14 +3641,15 @@ function generateCSV(type) {
       parseFloat(q.doc.SubTotal||0).toFixed(2),
       q.views,
       q.accepted ? "Accepted" : q.views > 0 ? "Viewed" : "Unseen",
+      q.healthScore != null ? q.healthScore : "",
       shortDate(q.createdAt),
       expiryStr,
       shortDate(q.lastActivity),
       eventLabel(q.lastActivityType)
-    ].map(escape).join(",");
+    ].map(escapeCsv).join(",");
   });
 
-  const csv  = [headers.map(escape).join(","), ...csvRows].join("\n");
+  const csv  = [headers.map(escapeCsv).join(","), ...csvRows].join("\n");
   const blob = new Blob([csv], { type: "text/csv" });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement("a");
@@ -3373,7 +3661,7 @@ function generateCSV(type) {
   // Flash confirmation in the body
   const body = document.getElementById("aiBody");
   const prev = body.innerHTML;
-  body.innerHTML = `<div class="ai-idle"><div class="ai-idle-icon">✓</div><div class="ai-idle-title">CSV downloaded</div><div class="ai-idle-sub"><strong>${rows.length} rows</strong> exported to <strong>${filename}</strong></div></div>`;
+  body.innerHTML = `<div class="ai-idle"><div class="ai-idle-icon">✓</div><div class="ai-idle-title">CSV downloaded</div><div class="ai-idle-sub"><strong>${rows.length} rows</strong> exported to <strong>${esc(filename)}</strong></div></div>`;
   setTimeout(() => { body.innerHTML = prev; }, 2500);
 }
 
@@ -4403,9 +4691,9 @@ function renderHighlights() {
 
   // Achievements
   const allAccepted = list.filter(q=>q.accepted);
-  const todayWins   = allAccepted.filter(q=>{const d=parseTs(q.acceptedAt || q.lastActivity);return d&&(Date.now()-d)<86400000;});
-  const fastWins    = thisMonth.filter(q=>{if (q.createdSynthetic) return false; const c=parseTs(q.createdAt),l=parseTs(q.acceptedAt || q.lastActivity);return c&&l&&(l-c)<3600000;});
-  const whaleWins   = thisMonth.filter(q=>parseFloat(q.doc.SubTotal||0)>=50000);
+  const todayWins   = allAccepted.filter(q=>{const d=parseTs(q.acceptedAt || q.lastActivity);return d&&(Date.now()-d)<T.day;});
+  const fastWins    = thisMonth.filter(q=>{if (q.createdSynthetic) return false; const c=parseTs(q.createdAt),l=parseTs(q.acceptedAt || q.lastActivity);return c&&l&&(l-c)<T.lightningMs;});
+  const whaleWins   = thisMonth.filter(q=>parseFloat(q.doc.SubTotal||0)>=T.whale);
 
   // Who won first this month
   const firstWin = [...thisMonth].sort((a,b)=>(parseTs(a.acceptedAt || a.lastActivity)||0)-(parseTs(b.acceptedAt || b.lastActivity)||0))[0];
